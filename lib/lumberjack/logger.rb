@@ -102,7 +102,7 @@ module Lumberjack
         message = yield if message.nil? && block_given?
         message = @formatter.format(message)
         entry = LogEntry.new(time, severity, message, progname || self.progname, Process.pid, Lumberjack.unit_of_work_id)
-        device.write(entry)
+        device.write(entry) rescue $stderr.puts(entry.to_s)
       end
       nil
     end

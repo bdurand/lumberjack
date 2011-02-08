@@ -8,11 +8,11 @@ module Lumberjack
     
     def initialize(time, severity, message, progname, pid, unit_of_work_id)
       @time = time
-      @severity = severity
+      @severity = (severity.is_a?(Fixnum) ? severity : Severity.label_to_level(severity))
       @message = message
       @progname = progname
       @pid = pid
-      @unit_of_work_id = unit_of_work_id
+      @unit_of_work_id = unit_of_work_id.to_s if unit_of_work_id
     end
     
     def severity_label

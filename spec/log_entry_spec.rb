@@ -13,6 +13,11 @@ describe Lumberjack::LogEntry do
     entry.severity.should == Lumberjack::Severity::INFO
   end
   
+  it "should convert a severity label to a numeric level" do
+    entry = Lumberjack::LogEntry.new(Time.now, "INFO", "test", "app", 1500, "ABCD")
+    entry.severity.should == Lumberjack::Severity::INFO
+  end
+  
   it "should get the severity as a string" do
     Lumberjack::LogEntry.new(Time.now, Lumberjack::Severity::DEBUG, "test", "app", 1500, nil).severity_label.should == "DEBUG"
     Lumberjack::LogEntry.new(Time.now, Lumberjack::Severity::INFO, "test", "app", 1500, nil).severity_label.should == "INFO"

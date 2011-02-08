@@ -264,6 +264,20 @@ describe Lumberjack::Logger do
       output.string.should == "2011-01-30T12:31:56.123 UNKNOWN [test(#{Process.pid}) #] test#{n}"
     end
     
+    it "should ouput entries to STDERR if they can't be written the the device" do
+      stderr = $stderr
+      $stderr = StringIO.new
+      begin
+        time = Time.parse("2011-01-30T12:31:56.123")
+        Time.stub!(:now).and_return(time)
+        device.should_receive(:write).and_raise("Cannot write to device")
+        logger.add(Lumberjack::Severity::INFO, "test")
+        $stderr.string.chomp.should == "2011-01-30T12:31:56 INFO [test(#{Process.pid})] test"
+      ensure
+        $stderr = stderr
+      end
+    end
+    
     context "log helper methods" do
       let(:device){ Lumberjack::Device::Writer.new(output, :buffer_size => 0, :template => ":message") }
       
