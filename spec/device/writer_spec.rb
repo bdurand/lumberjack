@@ -82,6 +82,20 @@ describe Lumberjack::Device::Writer do
     stream.string.should == "TEST MESSAGE#{Lumberjack::LINE_SEPARATOR}"
   end
   
+  it "should write to STDERR if an error is raised when flushing to the stream" do
+    stderr = $stderr
+    $stderr = StringIO.new
+    begin
+      device = Lumberjack::Device::Writer.new(stream, :template => ":message")
+      stream.should_receive(:write).and_raise("Cannot write to stream")
+      device.write(entry)
+      device.flush
+      $stderr.string.should == "test message#{Lumberjack::LINE_SEPARATOR}"
+    ensure
+      $stderr = stderr
+    end
+  end
+  
   context "multi line messages" do
     let(:message){ "line 1#{Lumberjack::LINE_SEPARATOR}line 2#{Lumberjack::LINE_SEPARATOR}line 3" }
     let(:entry){ Lumberjack::LogEntry.new(time, Lumberjack::Severity::INFO, message, "app", 12345, "ABCD") }

@@ -83,9 +83,15 @@ module Lumberjack
         @lock.synchronize do
           before_flush
           unless @buffer.empty?
-            stream.write(@buffer.join(Lumberjack::LINE_SEPARATOR) << Lumberjack::LINE_SEPARATOR)
+            out = @buffer.join(Lumberjack::LINE_SEPARATOR) << Lumberjack::LINE_SEPARATOR
+            begin
+              stream.write(out)
+              stream.flush
+            rescue
+              $stderr.write(out)
+              $stderr.flush
+            end
             @buffer.clear
-            stream.flush
           end
         end
       end
