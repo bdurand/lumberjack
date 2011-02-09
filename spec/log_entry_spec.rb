@@ -6,11 +6,15 @@ describe Lumberjack::LogEntry do
     t = Time.now
     entry = Lumberjack::LogEntry.new(t, Lumberjack::Severity::INFO, "test", "app", 1500, "ABCD")
     entry.time.should == t
+    entry.time = t + 1
+    entry.time.should == t + 1
   end
   
   it "should have a severity" do
     entry = Lumberjack::LogEntry.new(Time.now, Lumberjack::Severity::INFO, "test", "app", 1500, "ABCD")
     entry.severity.should == Lumberjack::Severity::INFO
+    entry.severity = Lumberjack::Severity::WARN
+    entry.severity.should == Lumberjack::Severity::WARN
   end
   
   it "should convert a severity label to a numeric level" do
@@ -31,21 +35,29 @@ describe Lumberjack::LogEntry do
   it "should have a message" do
     entry = Lumberjack::LogEntry.new(Time.now, Lumberjack::Severity::INFO, "test", "app", 1500, "ABCD")
     entry.message.should == "test"
+    entry.message = "new message"
+    entry.message.should == "new message"
   end
   
   it "should have a progname" do
     entry = Lumberjack::LogEntry.new(Time.now, Lumberjack::Severity::INFO, "test", "app", 1500, "ABCD")
     entry.progname.should == "app"
+    entry.progname = "prog"
+    entry.progname.should == "prog"
   end
   
   it "should have a pid" do
     entry = Lumberjack::LogEntry.new(Time.now, Lumberjack::Severity::INFO, "test", "app", 1500, "ABCD")
     entry.pid.should == 1500
+    entry.pid = 150
+    entry.pid.should == 150
   end
   
   it "should have a unit_of_work_id" do
     entry = Lumberjack::LogEntry.new(Time.now, Lumberjack::Severity::INFO, "test", "app", 1500, "ABCD")
     entry.unit_of_work_id.should == "ABCD"
+    entry.unit_of_work_id = "1234"
+    entry.unit_of_work_id.should == "1234"
   end
   
   it "should be converted to a string" do

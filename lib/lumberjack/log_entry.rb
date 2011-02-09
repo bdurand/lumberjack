@@ -2,7 +2,7 @@ module Lumberjack
   # An entry in a log is a data structure that captures the log message as well as
   # information about the system that logged the message.
   class LogEntry
-    attr_reader :time, :message, :severity, :progname, :pid, :unit_of_work_id
+    attr_accessor :time, :message, :severity, :progname, :pid, :unit_of_work_id
     
     TIME_FORMAT = "%Y-%m-%dT%H:%M:%S".freeze
     

@@ -19,7 +19,7 @@ module Lumberjack
       # 3 bytes machine
       oid << @@host_key
       # 2 bytes pid
-      oid << [Process.pid % 0xFFFF].pack(SHORT_BIG_ENDIAN)
+      oid << [$$ % 0xFFFF].pack(SHORT_BIG_ENDIAN)
       # 3 bytes counter
       oid << [increment].pack(LONG_BIG_ENDIAN)[1, 3]
       @bytes = oid.unpack(UNSIGNED_12_BYTE)

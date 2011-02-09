@@ -87,7 +87,8 @@ module Lumberjack
             begin
               stream.write(out)
               stream.flush
-            rescue
+            rescue => e
+              $stderr.write("#{e.class.name}: #{e.message}#{' at ' + e.backtrace.first if e.backtrace}")
               $stderr.write(out)
               $stderr.flush
             end

@@ -101,8 +101,13 @@ module Lumberjack
         time = Time.now
         message = yield if message.nil? && block_given?
         message = @formatter.format(message)
-        entry = LogEntry.new(time, severity, message, progname || self.progname, Process.pid, Lumberjack.unit_of_work_id)
-        device.write(entry) rescue $stderr.puts(entry.to_s)
+        entry = LogEntry.new(time, severity, message, progname || self.progname, $$, Lumberjack.unit_of_work_id)
+        begin
+          device.write(entry)
+        rescue => e
+          $stderr.puts("#{e.class.name}: #{e.message}#{' at ' + e.backtrace.first if e.backtrace}")
+          $stderr.puts(entry.to_s)
+        end
       end
       nil
     end

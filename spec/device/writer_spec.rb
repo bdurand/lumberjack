@@ -87,10 +87,11 @@ describe Lumberjack::Device::Writer do
     $stderr = StringIO.new
     begin
       device = Lumberjack::Device::Writer.new(stream, :template => ":message")
-      stream.should_receive(:write).and_raise("Cannot write to stream")
+      stream.should_receive(:write).and_raise(StandardError.new("Cannot write to stream"))
       device.write(entry)
       device.flush
-      $stderr.string.should == "test message#{Lumberjack::LINE_SEPARATOR}"
+      $stderr.string.should include("test message#{Lumberjack::LINE_SEPARATOR}")
+      $stderr.string.should include("StandardError: Cannot write to stream")
     ensure
       $stderr = stderr
     end

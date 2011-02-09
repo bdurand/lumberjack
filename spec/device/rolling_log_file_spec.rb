@@ -65,7 +65,7 @@ describe Lumberjack::Device::RollingLogFile do
         thread_count.times do
           threads << Thread.new do
             entry_count.times do |i|
-              device.write(Lumberjack::LogEntry.new(Time.now, severity, message, "test", Process.pid, nil))
+              device.write(Lumberjack::LogEntry.new(Time.now, severity, message, "test", $$, nil))
               device.flush if i % 10 == 0
             end
           end
