@@ -61,9 +61,9 @@ describe Lumberjack::LogEntry do
   end
   
   it "should be converted to a string" do
-    t = Time.parse("2011-01-29T12:15:32")
+    t = Time.parse("2011-01-29T12:15:32.001")
     entry = Lumberjack::LogEntry.new(t, Lumberjack::Severity::INFO, "test", "app", 1500, "ABCD")
-    entry.to_s.should == "2011-01-29T12:15:32 INFO [app(1500) #ABCD] test"
+    entry.to_s.should == "[2011-01-29T12:15:32.001 INFO app(1500) #ABCD] test"
   end
 
 end

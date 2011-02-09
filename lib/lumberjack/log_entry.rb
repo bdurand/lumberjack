@@ -12,7 +12,7 @@ module Lumberjack
       @message = message
       @progname = progname
       @pid = pid
-      @unit_of_work_id = unit_of_work_id.to_s if unit_of_work_id
+      @unit_of_work_id = unit_of_work_id
     end
     
     def severity_label
@@ -20,7 +20,7 @@ module Lumberjack
     end
     
     def to_s
-      buf = "#{time.strftime(TIME_FORMAT)} #{severity_label} [#{progname}(#{pid})"
+      buf = "[#{time.strftime(TIME_FORMAT)}.#{(time.usec / 1000.0).round.to_s.rjust(3, '0')} #{severity_label} #{progname}(#{pid})"
       if unit_of_work_id
         buf << " #"
         buf << unit_of_work_id

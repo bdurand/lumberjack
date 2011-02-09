@@ -58,7 +58,7 @@ describe Lumberjack::Device::Writer do
     device = Lumberjack::Device::Writer.new(stream)
     device.write(entry)
     device.flush
-    stream.string.should == "2011-01-15T14:23:45.123 INFO [app(12345) #ABCD] test message#{Lumberjack::LINE_SEPARATOR}"
+    stream.string.should == "[2011-01-15T14:23:45.123 INFO app(12345) #ABCD] test message#{Lumberjack::LINE_SEPARATOR}"
   end
   
   it "should write entries out to the stream with a custom template" do
@@ -72,7 +72,7 @@ describe Lumberjack::Device::Writer do
     device = Lumberjack::Device::Writer.new(stream, :time_format => :microseconds)
     device.write(entry)
     device.flush
-    stream.string.should == "2011-01-15T14:23:45.123000 INFO [app(12345) #ABCD] test message#{Lumberjack::LINE_SEPARATOR}"
+    stream.string.should == "[2011-01-15T14:23:45.123000 INFO app(12345) #ABCD] test message#{Lumberjack::LINE_SEPARATOR}"
   end
   
   it "should be able to specify a block template for log entries" do
@@ -105,14 +105,14 @@ describe Lumberjack::Device::Writer do
       device = Lumberjack::Device::Writer.new(stream)
       device.write(entry)
       device.flush
-      stream.string.split(Lumberjack::LINE_SEPARATOR).should == ["2011-01-15T14:23:45.123 INFO [app(12345) #ABCD] line 1", "> [#ABCD] line 2", "> [#ABCD] line 3"]
+      stream.string.split(Lumberjack::LINE_SEPARATOR).should == ["[2011-01-15T14:23:45.123 INFO app(12345) #ABCD] line 1", "> [#ABCD] line 2", "> [#ABCD] line 3"]
     end
   
     it "should be able to specify a template for multiple line messages" do
       device = Lumberjack::Device::Writer.new(stream, :additional_lines => " // :message")
       device.write(entry)
       device.flush
-      stream.string.should == "2011-01-15T14:23:45.123 INFO [app(12345) #ABCD] line 1 // line 2 // line 3#{Lumberjack::LINE_SEPARATOR}"
+      stream.string.should == "[2011-01-15T14:23:45.123 INFO app(12345) #ABCD] line 1 // line 2 // line 3#{Lumberjack::LINE_SEPARATOR}"
     end
   end
 end

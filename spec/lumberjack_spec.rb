@@ -7,10 +7,10 @@ describe Lumberjack do
       Lumberjack.unit_of_work_id.should == nil
       Lumberjack.unit_of_work do
         id_1 = Lumberjack.unit_of_work_id
-        id_1.should be_a(Lumberjack::UniqueIdentifier)
+        id_1.should match(/^[0-9A-F]{12}$/)
         Lumberjack.unit_of_work do
           id_2 = Lumberjack.unit_of_work_id
-          id_2.should be_a(Lumberjack::UniqueIdentifier)
+          id_2.should match(/^[0-9A-F]{12}$/)
           id_2.should_not == id_1
         end
         id_1.should == Lumberjack.unit_of_work_id

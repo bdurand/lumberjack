@@ -2,7 +2,7 @@ module Lumberjack
   class Device
     # This logging device writes log entries as strings to an IO stream.
     class Writer < Device
-      DEFAULT_FIRST_LINE_TEMPLATE = ":time :severity [:progname(:pid) #:unit_of_work_id] :message".freeze
+      DEFAULT_FIRST_LINE_TEMPLATE = "[:time :severity :progname(:pid) #:unit_of_work_id] :message".freeze
       DEFAULT_ADDITIONAL_LINES_TEMPLATE = "#{Lumberjack::LINE_SEPARATOR}> [#:unit_of_work_id] :message".freeze
 
       # The size of the internal buffer. Defaults to 32K.
@@ -46,8 +46,9 @@ module Lumberjack
       # <tt>:additional_lines</tt> and <tt>:time_format</tt> options will be passed through to the
       # Template constuctor.
       #
-      # The default template is <tt>":time :severity [:progname #:unit_of_work_id] :message"</tt>
-      # with additional lines formatted as <tt>"\n [#:unit_of_work_id] :message"</tt>.
+      # The default template is <tt>"[:time :severity :progname(:pid) #:unit_of_work_id] :message"</tt>
+      # with additional lines formatted as <tt>"\n [#:unit_of_work_id] :message"</tt>. The unit of
+      # work id will only appear if it is present.
       def initialize(stream, options = {})
         @lock = Mutex.new
         @stream = stream

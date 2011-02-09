@@ -22,6 +22,8 @@ module Lumberjack
     # can specify the <tt>:time_format</tt> option which can be either a time format template as documented in
     # +Time#strftime+ or the values +:milliseconds+ or +:microseconds+ to use the standard format with the
     # specified precision.
+    #
+    # Messages will have white space stripped from both ends.
     def initialize(first_line, options = {})
       @first_line_template = compile(first_line)
       additional_lines = options[:additional_lines] || "#{Lumberjack::LINE_SEPARATOR}:message"
@@ -33,7 +35,7 @@ module Lumberjack
     
     # Convert an entry into a string using the template.
     def call(entry)
-      lines = entry.message.split(Lumberjack::LINE_SEPARATOR)
+      lines = entry.message.strip.split(Lumberjack::LINE_SEPARATOR)
       formatted_time = format_time(entry.time) if @template_include_time
       message = @first_line_template % [formatted_time, entry.severity_label, entry.progname, entry.pid, entry.unit_of_work_id, lines.shift]
       lines.each do |line|
@@ -48,7 +50,7 @@ module Lumberjack
       if @time_format.is_a?(String)
         time.strftime(@time_format)
       elsif @time_format == :milliseconds
-        time.strftime(DEFAULT_TIME_FORMAT) << MILLISECOND_FORMAT % (time.usec / 1000).round
+        time.strftime(DEFAULT_TIME_FORMAT) << MILLISECOND_FORMAT % (time.usec / 1000.0).round
       else
         time.strftime(DEFAULT_TIME_FORMAT) << MICROSECOND_FORMAT % time.usec
       end

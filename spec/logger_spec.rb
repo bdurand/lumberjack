@@ -217,21 +217,21 @@ describe Lumberjack::Logger do
       time = Time.parse("2011-01-30T12:31:56.123")
       Time.stub!(:now).and_return(time)
       logger.add(Lumberjack::Severity::INFO, "test")
-      output.string.should == "2011-01-30T12:31:56.123 INFO [test(#{$$}) #] test#{n}"
+      output.string.should == "[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}"
     end
 
     it "should add entries with a severity label" do
       time = Time.parse("2011-01-30T12:31:56.123")
       Time.stub!(:now).and_return(time)
       logger.add(:info, "test")
-      output.string.should == "2011-01-30T12:31:56.123 INFO [test(#{$$}) #] test#{n}"
+      output.string.should == "[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}"
     end
 
     it "should add entries with a custom progname and message" do
       time = Time.parse("2011-01-30T12:31:56.123")
       Time.stub!(:now).and_return(time)
       logger.add(Lumberjack::Severity::INFO, "test", "app")
-      output.string.should == "2011-01-30T12:31:56.123 INFO [app(#{$$}) #] test#{n}"
+      output.string.should == "[2011-01-30T12:31:56.123 INFO app(#{$$}) #] test#{n}"
     end
 
     it "should add entries with a local progname and message" do
@@ -240,28 +240,28 @@ describe Lumberjack::Logger do
       logger.set_progname("block") do
         logger.add(Lumberjack::Severity::INFO, "test")
       end
-      output.string.should == "2011-01-30T12:31:56.123 INFO [block(#{$$}) #] test#{n}"
+      output.string.should == "[2011-01-30T12:31:56.123 INFO block(#{$$}) #] test#{n}"
     end
     
     it "should add entries with a block" do
       time = Time.parse("2011-01-30T12:31:56.123")
       Time.stub!(:now).and_return(time)
       logger.add(Lumberjack::Severity::INFO){"test"}
-      output.string.should == "2011-01-30T12:31:56.123 INFO [test(#{$$}) #] test#{n}"
+      output.string.should == "[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}"
     end
     
     it "should log entries (::Logger compatibility)" do
       time = Time.parse("2011-01-30T12:31:56.123")
       Time.stub!(:now).and_return(time)
       logger.log(Lumberjack::Severity::INFO, "test")
-      output.string.should == "2011-01-30T12:31:56.123 INFO [test(#{$$}) #] test#{n}"
+      output.string.should == "[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}"
     end
     
     it "should append messages with unknown severity to the log" do
       time = Time.parse("2011-01-30T12:31:56.123")
       Time.stub!(:now).and_return(time)
       logger << "test"
-      output.string.should == "2011-01-30T12:31:56.123 UNKNOWN [test(#{$$}) #] test#{n}"
+      output.string.should == "[2011-01-30T12:31:56.123 UNKNOWN test(#{$$}) #] test#{n}"
     end
     
     it "should ouput entries to STDERR if they can't be written the the device" do
@@ -272,7 +272,7 @@ describe Lumberjack::Logger do
         Time.stub!(:now).and_return(time)
         device.should_receive(:write).and_raise(StandardError.new("Cannot write to device"))
         logger.add(Lumberjack::Severity::INFO, "test")
-        $stderr.string.should include("2011-01-30T12:31:56 INFO [test(#{$$})] test")
+        $stderr.string.should include("[2011-01-30T12:31:56.123 INFO test(#{$$})] test")
         $stderr.string.should include("StandardError: Cannot write to device")
       ensure
         $stderr = stderr
