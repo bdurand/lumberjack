@@ -1,6 +1,6 @@
 = Lumberjack
 
-Lumberjack is a simple, powerful, and fast logging implementation in Ruby. It uses the same API as the standard library Logger class and as ActiveSupport::BufferedLogger in Rails.
+Lumberjack is a simple, powerful, and fast logging implementation in Ruby. It uses nearly the same API as the Logger class in the Ruby standard library and as ActiveSupport::BufferedLogger in Rails.
 
 == Usage
 

@@ -1,21 +1,25 @@
 module Lumberjack
   class Device
     # This is an abstract class for a device that appends entries to a file and periodically archives
-    # the existing file and starts a one. Subclasses must implement the roll_file? and archive_file_name
+    # the existing file and starts a one. Subclasses must implement the roll_file? and archive_file_suffix
     # methods.
+    #
+    # The <tt>:keep</tt> option can be used to specify a maximum number of rolled log files to keep.
+    # Older files will be deleted based on the time they were created. The default is to keep all files.
     class RollingLogFile < LogFile
       attr_reader :path
+      attr_accessor :keep
       
       def initialize(path, options = {})
         @path = File.expand_path(path)
+        @keep = options[:keep]
         super(path, options)
         @file_inode = stream.lstat.ino rescue nil
       end
       
-      # Returns the full path to the file that the log will be archived to. The file name should
-      # change after the file is rolled. The log file will be renamed when it is rolled, so the
-      # archive name must exist on the same file system as the log file.
-      def archive_file_name
+      # Returns a suffix that will be appended to the file name when it is archived.. The suffix should
+      # change after it is time to roll the file. The log file will be renamed when it is rolled.
+      def archive_file_suffix
         raise NotImplementedError
       end
       
@@ -56,13 +60,14 @@ module Lumberjack
       # file path. Rolling a file is safe in multi-threaded or multi-process environments.
       def roll_file! #:nodoc:
         do_once(stream) do
-          archive_file = archive_file_name
+          archive_file = "#{path}.#{archive_file_suffix}"
           stream.flush
           current_inode = File.stat(path).ino rescue nil
           if @file_inode && current_inode == @file_inode && !File.exist?(archive_file)
             begin
               File.rename(path, archive_file)
               after_roll
+              cleanup_files!
             rescue SystemCallError
               # Ignore rename errors since it indicates the file was already rolled
             end
@@ -71,6 +76,17 @@ module Lumberjack
         reopen_file
       rescue => e
         STDERR.write("Failed to roll file #{path}: #{e.inspect}\n#{e.backtrace.join("\n")}\n")
+      end
+    end
+    
+    def cleanup_files!
+      if keep
+        files = Dir.glob("#{path}.*").collect{|f| [f, File.ctime(f)]}.sort{|a,b| b.last <=> a.last}.collect{|a| a.first}
+        if files.size > keep
+          files[keep, files.length].each do |f|
+            File.delete(f)
+          end
+        end
       end
     end
     

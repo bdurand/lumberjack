@@ -25,7 +25,7 @@ describe Lumberjack::Device::RollingLogFile do
     device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message")
     device.should_receive(:roll_file?).and_return(false, true)
     device.should_receive(:after_roll)
-    device.stub!(:archive_file_name).and_return("#{log_file}.rolled")
+    device.stub!(:archive_file_suffix).and_return("rolled")
     device.write(entry)
     device.flush
     device.write(Lumberjack::LogEntry.new(Time.now, 1, "Another log entry", nil, $$, nil))
@@ -49,7 +49,6 @@ describe Lumberjack::Device::RollingLogFile do
   end
   
   it "should roll the file properly with multiple thread and processes using it" do
-    STDOUT.sync = true
     log_file = File.join(tmp_dir, "test_4.log")
     process_count = 8
     thread_count = 4
@@ -92,6 +91,27 @@ describe Lumberjack::Device::RollingLogFile do
     
     file_count.should > 3
     line_count.should == process_count * thread_count * entry_count
+  end
+  
+  it "should only keep a specified number of archived log files" do
+    log_file = File.join(tmp_dir, "test_5.log")
+    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :keep => 2)
+    device.should_receive(:roll_file?).and_return(false, true, true, true)
+    device.stub!(:archive_file_suffix).and_return("delete", "another", "keep")
+    t = Time.now
+    File.should_receive(:ctime).with(log_file).any_number_of_times.and_return(t)
+    File.should_receive(:ctime).with("#{log_file}.delete").any_number_of_times.and_return(t + 1)
+    File.should_receive(:ctime).with("#{log_file}.another").any_number_of_times.and_return(t + 2)
+    File.should_receive(:ctime).with("#{log_file}.keep").any_number_of_times.and_return(t + 3)
+    device.write(entry)
+    device.flush
+    device.write(entry)
+    device.flush
+    device.write(entry)
+    device.flush
+    device.write(entry)
+    device.close
+    Dir.glob("#{log_file}*").sort.should == [log_file, "#{log_file}.another", "#{log_file}.keep"]
   end
 
 end

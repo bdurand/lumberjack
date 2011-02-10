@@ -32,8 +32,8 @@ module Lumberjack
         super
       end
 
-      def archive_file_name
-        "#{path}.#{next_archive_number}"
+      def archive_file_suffix
+        next_archive_number.to_s
       end
 
       def roll_file?

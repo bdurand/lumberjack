@@ -48,7 +48,7 @@ describe Lumberjack::Device::SizeRollingLogFile do
       File.open("#{log_file}.#{i}", 'w'){|f| f.write(i.to_s)}
     end
     device = Lumberjack::Device::SizeRollingLogFile.new(log_file, :max_size => "100M")
-    device.archive_file_name.should == "#{log_file}.12"
+    device.archive_file_suffix.should == "12"
   end
 
 end

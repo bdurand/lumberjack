@@ -22,14 +22,14 @@ module Lumberjack
         super
       end
 
-      def archive_file_name
+      def archive_file_suffix
         case @roll_period
         when :weekly
-          "#{path}.#{@file_date.strftime('week-of-%Y-%m-%d')}"
+          "#{@file_date.strftime('week-of-%Y-%m-%d')}"
         when :monthly
-          "#{path}.#{@file_date.strftime('%Y-%m')}"
+          "#{@file_date.strftime('%Y-%m')}"
         else
-          "#{path}.#{@file_date.strftime('%Y-%m-%d')}"
+          "#{@file_date.strftime('%Y-%m-%d')}"
         end
       end
 
