@@ -48,7 +48,7 @@ A unit of work can be used to tie together all log messages within a block. This
 
 When a Logger logs a LogEntry, it sends it to a Lumberjack::Device. Lumberjack comes with a variety of devices for logging to IO streams or files.
 
-* Lumberjack::Device::Stream - Writes log entries to an IO stream.
+* Lumberjack::Device::Writer - Writes log entries to an IO stream.
 * Lumberjack::Device::LogFile - Writes log entries to a file.
 * Lumberjack::Device::DateRollingLogFile - Writes log entries to a file that will automatically roll itself based on date.
 * Lumberjack::Device::SizeRollingLogFile - Writes log entries to a file that will automatically roll itself based on size.
