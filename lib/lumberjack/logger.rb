@@ -114,7 +114,7 @@ module Lumberjack
     
     alias_method :log, :add
     
-    # Flush the logging device.
+    # Flush the logging device. Messages are not guaranteed to be written until this method is called.
     def flush
       device.flush
       @last_flushed_at = Time.now
