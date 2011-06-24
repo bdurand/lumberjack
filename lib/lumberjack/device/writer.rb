@@ -7,7 +7,7 @@ module Lumberjack
       DEFAULT_ADDITIONAL_LINES_TEMPLATE = "#{Lumberjack::LINE_SEPARATOR}> [#:unit_of_work_id] :message".freeze
 
       # The size of the internal buffer. Defaults to 32K.
-      attr_accessor :buffer_size
+      attr_reader :buffer_size
       
       # Internal buffer to batch writes to the stream.
       class Buffer # :nodoc:
@@ -57,7 +57,7 @@ module Lumberjack
         @stream = stream
         @stream.sync = true if @stream.respond_to?(:sync=)
         @buffer = Buffer.new
-        @buffer_size = (options[:buffer_size] || 32 * 1024)
+        @buffer_size = (options[:buffer_size] || 0)
         template = (options[:template] || DEFAULT_FIRST_LINE_TEMPLATE)
         if template.respond_to?(:call)
           @template = template
@@ -65,6 +65,13 @@ module Lumberjack
           additional_lines = (options[:additional_lines] || DEFAULT_ADDITIONAL_LINES_TEMPLATE)
           @template = Template.new(template, :additional_lines => additional_lines, :time_format => options[:time_format])
         end
+      end
+      
+      # Set the buffer size in bytes. The device will only be physically written to when the buffer size
+      # is exceeded.
+      def buffer_size=(value)
+        @buffer_size = value
+        flush
       end
       
       # Write an entry to the stream. The entry will be converted into a string using the defined template.

@@ -8,7 +8,7 @@ describe Lumberjack::Device::Writer do
   let(:entry){ Lumberjack::LogEntry.new(time, Lumberjack::Severity::INFO, "test message", "app", 12345, "ABCD") }
   
   it "should buffer output and not write directly to the stream" do
-    device = Lumberjack::Device::Writer.new(stream, :template => ":message")
+    device = Lumberjack::Device::Writer.new(stream, :template => ":message", :buffer_size => 32767)
     device.write(entry)
     stream.string.should == ""
     device.flush
@@ -34,7 +34,7 @@ describe Lumberjack::Device::Writer do
     def io.sync; @sync; end
     io.init
     
-    device = Lumberjack::Device::Writer.new(io, :template => ":message")
+    device = Lumberjack::Device::Writer.new(io, :template => ":message", :buffer_size => 32767)
     device.write(entry)
     io.string.should == ""
     device.flush
@@ -49,9 +49,9 @@ describe Lumberjack::Device::Writer do
     device.buffer_size.should == 100
   end
   
-  it "should have a default buffer size of 32K" do
+  it "should have a default buffer size of 0" do
     device = Lumberjack::Device::Writer.new(stream)
-    device.buffer_size.should == 32768
+    device.buffer_size.should == 0
   end
   
   it "should write entries out to the stream with a default template" do

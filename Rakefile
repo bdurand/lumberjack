@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'rake'
-require 'rake/gempackagetask'
-require 'rake/rdoctask'
+require 'rubygems/package_task'
+require 'rdoc/task'
 
 desc 'Default: run unit tests.'
 task :default => :test
@@ -42,7 +42,7 @@ spec_file = File.expand_path('../lumberjack.gemspec', __FILE__)
 if File.exist?(spec_file)
   spec = eval(File.read(spec_file))
 
-  Rake::GemPackageTask.new(spec) do |p|
+  Gem::PackageTask.new(spec) do |p|
     p.gem_spec = spec
   end
   Rake.application["package"].prerequisites.unshift("rbx:delete_rbc_files")

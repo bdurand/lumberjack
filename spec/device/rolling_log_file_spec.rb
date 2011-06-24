@@ -13,7 +13,7 @@ describe Lumberjack::Device::RollingLogFile do
   let(:entry){ Lumberjack::LogEntry.new(Time.now, 1, "New log entry", nil, $$, nil) }
 
   it "should check for rolling the log file on flush" do
-    device = Lumberjack::Device::RollingLogFile.new(File.join(tmp_dir, "test.log"))
+    device = Lumberjack::Device::RollingLogFile.new(File.join(tmp_dir, "test.log"), :buffer_size => 32767)
     device.write(entry)
     device.should_receive(:roll_file?).twice.and_return(false)
     device.flush
@@ -22,7 +22,7 @@ describe Lumberjack::Device::RollingLogFile do
   
   it "should roll the file by archiving the existing file and opening a new stream and calling after_roll" do
     log_file = File.join(tmp_dir, "test_2.log")
-    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message")
+    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :buffer_size => 32767)
     device.should_receive(:roll_file?).and_return(false, true)
     device.should_receive(:after_roll)
     device.stub!(:archive_file_suffix).and_return("rolled")
@@ -59,7 +59,7 @@ describe Lumberjack::Device::RollingLogFile do
     
     process_count.times do
       Process.fork do
-        device = Lumberjack::Device::SizeRollingLogFile.new(log_file, :max_size => max_size, :template => ":message")
+        device = Lumberjack::Device::SizeRollingLogFile.new(log_file, :max_size => max_size, :template => ":message", :buffer_size => 32767)
         threads = []
         thread_count.times do
           threads << Thread.new do
@@ -95,7 +95,7 @@ describe Lumberjack::Device::RollingLogFile do
   
   it "should only keep a specified number of archived log files" do
     log_file = File.join(tmp_dir, "test_5.log")
-    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :keep => 2)
+    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :keep => 2, :buffer_size => 32767)
     device.should_receive(:roll_file?).and_return(false, true, true, true)
     device.stub!(:archive_file_suffix).and_return("delete", "another", "keep")
     t = Time.now

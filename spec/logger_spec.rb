@@ -173,7 +173,7 @@ describe Lumberjack::Logger do
   context "flushing" do
     it "should autoflush the buffer if it hasn't been flushed in a specified number of seconds" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :flush_seconds => 0.1, :level => Lumberjack::Severity::INFO, :template => ":message")
+      logger = Lumberjack::Logger.new(output, :flush_seconds => 0.1, :level => Lumberjack::Severity::INFO, :template => ":message", :buffer_size => 32767)
       logger.info("message 1")
       logger.info("message 2")
       output.string.should == ""
@@ -187,7 +187,7 @@ describe Lumberjack::Logger do
     
     it "should write the log entries to the device on flush and update the last flushed time" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :level => Lumberjack::Severity::INFO, :template => ":message")
+      logger = Lumberjack::Logger.new(output, :level => Lumberjack::Severity::INFO, :template => ":message", :buffer_size => 32767)
       logger.info("message 1")
       output.string.should == ""
       last_flushed_at = logger.last_flushed_at
@@ -198,7 +198,7 @@ describe Lumberjack::Logger do
     
     it "should flush the buffer and close the devices" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :level => Lumberjack::Severity::INFO, :template => ":message")
+      logger = Lumberjack::Logger.new(output, :level => Lumberjack::Severity::INFO, :template => ":message", :buffer_size => 32767)
       logger.info("message 1")
       output.string.should == ""
       logger.close
