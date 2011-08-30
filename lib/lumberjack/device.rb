@@ -8,6 +8,7 @@ module Lumberjack
     autoload :RollingLogFile, File.expand_path("../device/rolling_log_file.rb", __FILE__)
     autoload :SizeRollingLogFile, File.expand_path("../device/size_rolling_log_file.rb", __FILE__)
     autoload :Writer, File.expand_path("../device/writer.rb", __FILE__)
+    autoload :Couchdb, File.expand_path("../device/couchdb.rb", __FILE__)
 
     # Subclasses must implement this method to write a LogEntry.
     def write(entry)
