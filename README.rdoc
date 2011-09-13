@@ -57,7 +57,8 @@ When a Logger logs a LogEntry, it sends it to a Lumberjack::Device. Lumberjack c
 If you'd like to send you log to a different kind of output, you just need to extend the Device class and implement the +write+ method. Or check out these plugins:
 
 * lumberjack_syslog_device[https://github.com/bdurand/lumberjack_syslog_device] - send your log messages to the system wide syslog service
-* lumberjack_mongo_device[https://github.com/bdurand/lumberjack_mongo_device] - send your logs to a MongoDB[http://www.mongodb.org/] NoSQL data store
+* lumberjack_mongo_device[https://github.com/bdurand/lumberjack_mongo_device] - store your log messages to a MongoDB[http://www.mongodb.org/] NoSQL data store
+* lumberjack-couchdb-driver[https://github.com/narkisr/lumberjack-couchdb-driver] - store your log messages to a CouchDB[http://couchdb.apache.org/] NoSQL data store
 
 === Customize Formatting
 
