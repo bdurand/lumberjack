@@ -11,7 +11,7 @@ module Lumberjack
   autoload :Severity, File.expand_path("../lumberjack/severity.rb", __FILE__)
   autoload :Template, File.expand_path("../lumberjack/template.rb", __FILE__)
   
-  LINE_SEPARATOR = (Config::CONFIG['host_os'].match(/mswin/i) ? "\r\n" : "\n")
+  LINE_SEPARATOR = (RbConfig::CONFIG['host_os'].match(/mswin/i) ? "\r\n" : "\n")
 
   class << self
     # Define a unit of work within a block. Within the block supplied to this
