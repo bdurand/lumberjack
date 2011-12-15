@@ -37,7 +37,9 @@ module Lumberjack
       end
 
       def roll_file?
-        stream.stat.size >= @max_size
+        stream.stat.size > @max_size
+      rescue SystemCallError => e
+        false
       end
       
       protected

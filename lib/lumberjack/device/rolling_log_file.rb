@@ -15,6 +15,7 @@ module Lumberjack
         @keep = options[:keep]
         super(path, options)
         @file_inode = stream.lstat.ino rescue nil
+        @@rolls = []
       end
       
       # Returns a suffix that will be appended to the file name when it is archived.. The suffix should
@@ -63,7 +64,7 @@ module Lumberjack
           archive_file = "#{path}.#{archive_file_suffix}"
           stream.flush
           current_inode = File.stat(path).ino rescue nil
-          if @file_inode && current_inode == @file_inode && !File.exist?(archive_file)
+          if @file_inode && current_inode == @file_inode && !File.exist?(archive_file) && File.exist?(path)
             begin
               File.rename(path, archive_file)
               after_roll
@@ -72,8 +73,8 @@ module Lumberjack
               # Ignore rename errors since it indicates the file was already rolled
             end
           end
+          reopen_file
         end
-        reopen_file
       rescue => e
         STDERR.write("Failed to roll file #{path}: #{e.inspect}\n#{e.backtrace.join("\n")}\n")
       end

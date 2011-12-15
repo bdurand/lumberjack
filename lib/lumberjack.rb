@@ -22,7 +22,6 @@ module Lumberjack
     # Lumberjack::Rack::UnitOfWork class.
     def unit_of_work
       save_val = Thread.current[:lumberjack_logger_unit_of_work_id]
-      #Thread.current[:lumberjack_logger_unit_of_work_id] = UniqueIdentifier.new
       Thread.current[:lumberjack_logger_unit_of_work_id] = rand(0xFFFFFFFFFFFF).to_s(16).rjust(12, '0').upcase
       begin
         return yield

@@ -193,7 +193,7 @@ describe Lumberjack::Logger do
       last_flushed_at = logger.last_flushed_at
       logger.flush
       output.string.split(Lumberjack::LINE_SEPARATOR).should == ["message 1"]
-      logger.last_flushed_at.should > last_flushed_at
+      logger.last_flushed_at.should >= last_flushed_at
     end
     
     it "should flush the buffer and close the devices" do
