@@ -11,7 +11,7 @@ module Lumberjack
 
     # Subclasses must implement this method to write a LogEntry.
     def write(entry)
-      raise NotImpelementedError
+      raise NotImplementedError
     end
     
     # Subclasses may implement this method to close the device.
