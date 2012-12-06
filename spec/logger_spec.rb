@@ -18,6 +18,12 @@ describe Lumberjack::Logger do
       logger.device.class.should == Lumberjack::Device::Writer
     end
     
+    it "should use Multiplexer when passing in array of devices" do
+      output = [:null,:null]
+      logger = Lumberjack::Logger.new(output)
+      logger.device.class.should == Lumberjack::Device::Multiplexer
+    end
+
     it "should open a file path in a device" do
       logger = Lumberjack::Logger.new(File.join(tmp_dir, "log_file_1.log"))
       logger.device.class.should == Lumberjack::Device::LogFile

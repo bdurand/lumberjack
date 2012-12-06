@@ -264,6 +264,8 @@ module Lumberjack
     def open_device(device, options) #:nodoc:
       if device.is_a?(Device)
         device
+      elsif device.is_a?(Array)
+        Device::Multiplexer.new(device.map {|d| open_device(d, options) })
       elsif device.respond_to?(:write)
         Device::Writer.new(device, options)
       elsif device == :null

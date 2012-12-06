@@ -4,6 +4,7 @@ module Lumberjack
   class Device
     autoload :DateRollingLogFile, File.expand_path("../device/date_rolling_log_file.rb", __FILE__)
     autoload :LogFile, File.expand_path("../device/log_file.rb", __FILE__)
+    autoload :Multiplexer, File.expand_path("../device/multiplexer.rb", __FILE__)
     autoload :Null, File.expand_path("../device/null.rb", __FILE__)
     autoload :RollingLogFile, File.expand_path("../device/rolling_log_file.rb", __FILE__)
     autoload :SizeRollingLogFile, File.expand_path("../device/size_rolling_log_file.rb", __FILE__)
