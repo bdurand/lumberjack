@@ -1,6 +1,7 @@
 require 'rbconfig'
 require 'time'
 require 'thread'
+require 'securerandom'
 
 module Lumberjack
   autoload :Device, File.expand_path("../lumberjack/device.rb", __FILE__)
@@ -22,7 +23,7 @@ module Lumberjack
     # Lumberjack::Rack::UnitOfWork class.
     def unit_of_work
       save_val = Thread.current[:lumberjack_logger_unit_of_work_id]
-      Thread.current[:lumberjack_logger_unit_of_work_id] = rand(0xFFFFFFFFFFFF).to_s(16).rjust(12, '0').upcase
+      Thread.current[:lumberjack_logger_unit_of_work_id] = SecureRandom.hex(6).upcase
       begin
         return yield
       ensure
