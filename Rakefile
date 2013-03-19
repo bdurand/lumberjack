@@ -37,9 +37,4 @@ if File.exist?(spec_file)
     p.gem_spec = spec
   end
   Rake.application["package"].prerequisites.unshift("rbx:delete_rbc_files")
-
-  desc "Release to rubygems.org"
-  task :release => :package do
-    Rake::Task['gem:push'].invoke
-  end
 end
