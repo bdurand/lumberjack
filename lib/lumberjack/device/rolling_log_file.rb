@@ -103,7 +103,7 @@ module Lumberjack
         # Execute only if the file we locked is still the same one that needed to be rolled
         yield if verify && verify.ino == @file_inode && verify.size > 0
       ensure
-        stream.flock(File::LOCK_UN) rescue nil
+        file.flock(File::LOCK_UN) rescue nil
       end
     end
   end

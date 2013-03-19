@@ -22,7 +22,7 @@ end
 namespace :rbx do
   desc "Cleanup *.rbc files in lib directory"
   task :delete_rbc_files do
-    FileList["lib/**/*.rbc"].each do |rbc_file|
+    FileList["**/*.rbc"].each do |rbc_file|
       File.delete(rbc_file)
     end
     nil
@@ -40,8 +40,6 @@ if File.exist?(spec_file)
 
   desc "Release to rubygems.org"
   task :release => :package do
-    require 'rake/gemcutter'
-    Rake::Gemcutter::Tasks.new(spec).define
     Rake::Task['gem:push'].invoke
   end
 end

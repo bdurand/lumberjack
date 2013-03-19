@@ -11,7 +11,7 @@ module Lumberjack
       def initialize(path, options = {})
         @path = File.expand_path(path)
         FileUtils.mkdir_p(File.dirname(@path))
-        super(File.new(@path, 'a'), options)
+        super(File.new(@path, 'a', :encoding => "ascii-8bit"), options)
       end
     end
   end

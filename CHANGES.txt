@@ -1,3 +1,13 @@
+1.0.3
+
+- Change log file output format to binary to avoid encoding warnings.
+- Fixed bug in log file rolling that left the file locked.
+
+1.0.2
+
+- Remove deprecation warnings under ruby 1.9.3.
+- Add more error checking around file rolling.
+
 1.0.1
 
 - Writes are no longer buffered by default.
