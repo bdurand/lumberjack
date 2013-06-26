@@ -17,6 +17,13 @@ describe Lumberjack do
       end
       Lumberjack.unit_of_work_id.should == nil
     end
+    
+    it "should allow you to specify a unit of work id for a block" do
+      Lumberjack.unit_of_work("foo") do
+        Lumberjack.unit_of_work_id.should == "foo"
+      end
+      Lumberjack.unit_of_work_id.should == nil
+    end
   end
   
 end

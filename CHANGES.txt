@@ -1,3 +1,7 @@
+1.0.4
+
+- Add ability to supply a unit of work id for a block instead of having one generated every time.
+
 1.0.3
 
 - Change log file output format to binary to avoid encoding warnings.
