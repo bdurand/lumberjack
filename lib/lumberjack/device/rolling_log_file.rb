@@ -29,34 +29,6 @@ module Lumberjack
         raise NotImplementedError
       end
       
-      protected
-      
-      # This method will be called after a file has been rolled. Subclasses can
-      # implement code to reset the state of the device. This method is thread safe.
-      def after_roll
-      end
-      
-      # Handle rolling the file before flushing.
-      def before_flush # :nodoc:
-        path_inode = File.lstat(path).ino rescue nil
-        if path_inode != @file_inode
-          @file_inode = path_inode
-          reopen_file
-        else
-          roll_file! if roll_file?
-        end
-      end
-
-      private
-
-      def reopen_file
-        old_stream = stream
-        self.stream = File.open(path, 'a')
-        stream.sync = true
-        @file_inode = stream.lstat.ino rescue nil
-        old_stream.close
-      end
-      
       # Roll the log file by renaming it to the archive file name and then re-opening a stream to the log
       # file path. Rolling a file is safe in multi-threaded or multi-process environments.
       def roll_file! #:nodoc:
@@ -77,6 +49,34 @@ module Lumberjack
         end
       rescue => e
         STDERR.write("Failed to roll file #{path}: #{e.inspect}\n#{e.backtrace.join("\n")}\n")
+      end
+
+      protected
+      
+      # This method will be called after a file has been rolled. Subclasses can
+      # implement code to reset the state of the device. This method is thread safe.
+      def after_roll
+      end
+      
+      # Handle rolling the file before flushing.
+      def before_flush # :nodoc:
+        path_inode = File.lstat(path).ino rescue nil
+        if path_inode != @file_inode
+          @file_inode = path_inode
+          reopen_file
+        else
+          roll_file! if roll_file?
+        end
+      end
+      
+      private
+
+      def reopen_file
+        old_stream = stream
+        self.stream = File.open(path, 'a')
+        stream.sync = true
+        @file_inode = stream.lstat.ino rescue nil
+        old_stream.close
       end
     end
     
