@@ -12,6 +12,7 @@ module Lumberjack
       # with the <tt>:roll</tt> option which may contain a value of <tt>:daily</tt>, <tt>:weekly</tt>,
       # or <tt>:monthly</tt>.
       def initialize(path, options = {})
+        @manual = options[:manual]
         @file_date = Date.today
         if options[:roll] && options[:roll].to_s.match(/(daily)|(weekly)|(monthly)/i)
           @roll_period = $~[0].downcase.to_sym
@@ -34,17 +35,21 @@ module Lumberjack
       end
 
       def roll_file?
-        date = Date.today
-        if date.year > @file_date.year
-          true
-        elsif @roll_period == :daily && date.yday > @file_date.yday
-          true
-        elsif @roll_period == :weekly && date.cweek > @file_date.cweek
-          true
-        elsif @roll_period == :monthly && date.month > @file_date.month
+        if @manual
           true
         else
-          false
+          date = Date.today
+          if date.year > @file_date.year
+            true
+          elsif @roll_period == :daily && date.yday > @file_date.yday
+            true
+          elsif @roll_period == :weekly && date.cweek > @file_date.cweek
+            true
+          elsif @roll_period == :monthly && date.month > @file_date.month
+            true
+          else
+            false
+          end
         end
       end
       
