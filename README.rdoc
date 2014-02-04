@@ -60,6 +60,11 @@ If you'd like to send you log to a different kind of output, you just need to ex
 * lumberjack_mongo_device[https://github.com/bdurand/lumberjack_mongo_device] - store your log messages to a MongoDB[http://www.mongodb.org/] NoSQL data store
 * lumberjack-couchdb-driver[https://github.com/narkisr/lumberjack-couchdb-driver] - store your log messages to a CouchDB[http://couchdb.apache.org/] NoSQL data store
 
+If you'd like to log to multiple devices concurrently, the Logger constructor will accept an array of devices and write messages to each device. 
+
+  logger = Lumberjack::Logger.new(['/tmp/log.1','/tmp/log.2'])
+  logger.info ("this message will appear in both log files!") 
+
 === Customize Formatting
 
 When a message is logged, it is first converted into a string. You can customize how it is converted by adding mappings to a Formatter.
