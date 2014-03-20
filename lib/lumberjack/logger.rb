@@ -24,22 +24,22 @@ module Lumberjack
   # using a Formatter associated with the logger.
   class Logger
     include Severity
-    
+
     # The Formatter object used to convert messages into strings.
     attr_reader :formatter
-    
+
     # The time that the device was last flushed.
     attr_reader :last_flushed_at
-    
+
     # The name of the program associated with log messages.
     attr_writer :progname
-    
+
     # The device being written to.
     attr_reader :device
-    
+
     # Set +silencer+ to false to disable silencing the log.
     attr_accessor :silencer
-    
+
     # Create a new logger to log to a Device.
     #
     # The +device+ argument can be in any one of several formats.
@@ -60,27 +60,27 @@ module Lumberjack
     # All other options are passed to the device constuctor.
     def initialize(device = STDOUT, options = {})
       @thread_settings = {}
-      
+
       options = options.dup
       self.level = options.delete(:level) || INFO
       self.progname = options.delete(:progname)
       max_flush_seconds = options.delete(:flush_seconds).to_f
-      
+
       @device = open_device(device, options)
       @formatter = Formatter.new
       @lock = Mutex.new
       @last_flushed_at = Time.now
       @silencer = true
-      
+
       create_flusher_thread(max_flush_seconds) if max_flush_seconds > 0
     end
-    
+
     # Get the level of severity of entries that are logged. Entries with a lower
     # severity level will be ignored.
     def level
       thread_local_value(:lumberjack_logger_level) || @level
     end
-    
+
     # Add a message to the log with a given severity. The message can be either
     # passed in the +message+ argument or supplied with a block. This method
     # is not normally called. Instead call one of the helper functions
@@ -97,94 +97,105 @@ module Lumberjack
     #   logger.add(Lumberjack::Severity::DEBUG){"Start processing with options #{options.inspect}"}
     def add(severity, message = nil, progname = nil)
       severity = Severity.label_to_level(severity) if severity.is_a?(String) || severity.is_a?(Symbol)
-      if severity && severity >= level
-        time = Time.now
-        message = yield if message.nil? && block_given?
-        message = @formatter.format(message)
-        entry = LogEntry.new(time, severity, message, progname || self.progname, $$, Lumberjack.unit_of_work_id)
-        begin
-          device.write(entry)
-        rescue => e
-          $stderr.puts("#{e.class.name}: #{e.message}#{' at ' + e.backtrace.first if e.backtrace}")
-          $stderr.puts(entry.to_s)
+
+      return unless severity && severity >= level
+
+      time = Time.now
+      if message.nil?
+        if block_given?
+          message = yield
+        else
+          message = progname
+          progname = nil
         end
       end
+
+      message = @formatter.format(message)
+      progname ||= self.progname
+      entry = LogEntry.new(time, severity, message, progname, $$, Lumberjack.unit_of_work_id)
+      begin
+        device.write(entry)
+      rescue => e
+        $stderr.puts("#{e.class.name}: #{e.message}#{' at ' + e.backtrace.first if e.backtrace}")
+        $stderr.puts(entry.to_s)
+      end
+
       nil
     end
-    
+
     alias_method :log, :add
-    
+
     # Flush the logging device. Messages are not guaranteed to be written until this method is called.
     def flush
       device.flush
       @last_flushed_at = Time.now
       nil
     end
-    
+
     # Close the logging device.
     def close
       flush
       @device.close if @device.respond_to?(:close)
     end
-    
+
     # Log a +FATAL+ message. The message can be passed in either the +message+ argument or in a block.
     def fatal(message = nil, progname = nil, &block)
       add(FATAL, message, progname, &block)
     end
-    
+
     # Return +true+ if +FATAL+ messages are being logged.
     def fatal?
       level <= FATAL
     end
-    
+
     # Log an +ERROR+ message. The message can be passed in either the +message+ argument or in a block.
     def error(message = nil, progname = nil, &block)
       add(ERROR, message, progname, &block)
     end
-    
+
     # Return +true+ if +ERROR+ messages are being logged.
     def error?
       level <= ERROR
     end
-    
+
     # Log a +WARN+ message. The message can be passed in either the +message+ argument or in a block.
     def warn(message = nil, progname = nil, &block)
       add(WARN, message, progname, &block)
     end
-    
+
     # Return +true+ if +WARN+ messages are being logged.
     def warn?
       level <= WARN
     end
-    
+
     # Log an +INFO+ message. The message can be passed in either the +message+ argument or in a block.
     def info(message = nil, progname = nil, &block)
       add(INFO, message, progname, &block)
     end
-    
+
     # Return +true+ if +INFO+ messages are being logged.
     def info?
       level <= INFO
     end
-    
+
     # Log a +DEBUG+ message. The message can be passed in either the +message+ argument or in a block.
     def debug(message = nil, progname = nil, &block)
       add(DEBUG, message, progname, &block)
     end
-    
+
     # Return +true+ if +DEBUG+ messages are being logged.
     def debug?
       level <= DEBUG
     end
-    
+
     # Log a message when the severity is not known. Unknown messages will always appear in the log.
     # The message can be passed in either the +message+ argument or in a block.
     def unknown(message = nil, progname = nil, &block)
       add(UNKNOWN, message, progname, &block)
     end
-    
+
     alias_method :<<, :unknown
-    
+
     # Set the minimum level of severity of messages to log.
     def level=(severity)
       if severity.is_a?(Fixnum)
@@ -193,7 +204,7 @@ module Lumberjack
         @level = Severity.label_to_level(severity)
       end
     end
-    
+
     # Silence the logger by setting a new log level inside a block. By default, only +ERROR+ or +FATAL+
     # messages will be logged.
     #
@@ -210,7 +221,7 @@ module Lumberjack
         yield
       end
     end
-    
+
     # Set the program name that is associated with log messages. If a block
     # is given, the program name will be valid only within the block.
     def set_progname(value, &block)
@@ -220,14 +231,14 @@ module Lumberjack
         self.progname = value
       end
     end
-    
+
     # Get the program name associated with log messages.
     def progname
       thread_local_value(:lumberjack_logger_progname) || @progname
     end
-        
+
     private
-    
+
     # Set a local value for a thread tied to this object.
     def set_thread_local_value(name, value) #:nodoc:
       values = Thread.current[name]
@@ -242,13 +253,13 @@ module Lumberjack
         values[self] = value
       end
     end
-    
+
     # Get a local value for a thread tied to this object.
     def thread_local_value(name) #:nodoc:
       values = Thread.current[name]
       values[self] if values
     end
-    
+
     # Set a local value for a thread tied to this object within a block.
     def push_thread_local_value(name, value) #:nodoc:
       save_val = thread_local_value(name)
@@ -259,7 +270,7 @@ module Lumberjack
         set_thread_local_value(name, save_val)
       end
     end
-    
+
     # Open a logging device.
     def open_device(device, options) #:nodoc:
       if device.is_a?(Device)
@@ -279,7 +290,7 @@ module Lumberjack
         end
       end
     end
-    
+
     # Create a thread that will periodically call flush.
     def create_flusher_thread(flush_seconds) #:nodoc:
       if flush_seconds > 0
