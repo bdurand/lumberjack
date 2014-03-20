@@ -1,3 +1,9 @@
+1.0.5
+
+- Update docs.
+- Make compatible with Ruby 2.1.1 Pathname.
+- Make compatible with standard library Logger's use of progname as default message.
+
 1.0.4
 
 - Add ability to supply a unit of work id for a block instead of having one generated every time.
