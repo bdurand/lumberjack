@@ -264,7 +264,7 @@ module Lumberjack
     def open_device(device, options) #:nodoc:
       if device.is_a?(Device)
         device
-      elsif device.respond_to?(:write)
+      elsif device.respond_to?(:write) && device.respond_to?(:flush)
         Device::Writer.new(device, options)
       elsif device == :null
         Device::Null.new

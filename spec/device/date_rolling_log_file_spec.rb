@@ -20,8 +20,8 @@ describe Lumberjack::Device::DateRollingLogFile do
     logger = Lumberjack::Logger.new(device, :buffer_size => 2)
     logger.error("test day one")
     logger.flush
-    Time.stub!(:now).and_return(now + one_day)
-    Date.stub!(:today).and_return(today + 1)
+    Time.stub(:now => now + one_day)
+    Date.stub(:today => today + 1)
     logger.error("test day two")
     logger.close
     
@@ -37,8 +37,8 @@ describe Lumberjack::Device::DateRollingLogFile do
     logger = Lumberjack::Logger.new(device, :buffer_size => 2)
     logger.error("test week one")
     logger.flush
-    Time.stub!(:now).and_return(now + (7 * one_day))
-    Date.stub!(:today).and_return(today + 7)
+    Time.stub(:now => now + (7 * one_day))
+    Date.stub(:today => today + 7)
     logger.error("test week two")
     logger.close
     
@@ -54,8 +54,8 @@ describe Lumberjack::Device::DateRollingLogFile do
     logger = Lumberjack::Logger.new(device, :buffer_size => 2)
     logger.error("test month one")
     logger.flush
-    Time.stub!(:now).and_return(now + (31 * one_day))
-    Date.stub!(:today).and_return(today + 31)
+    Time.stub(:now => now + (31 * one_day))
+    Date.stub(:today => today + 31)
     logger.error("test month two")
     logger.close
     

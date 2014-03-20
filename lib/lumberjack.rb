@@ -3,16 +3,17 @@ require 'time'
 require 'thread'
 
 module Lumberjack
-  autoload :Device, File.expand_path("../lumberjack/device.rb", __FILE__)
-  autoload :Formatter, File.expand_path("../lumberjack/formatter.rb", __FILE__)
-  autoload :LogEntry, File.expand_path("../lumberjack/log_entry.rb", __FILE__)
-  autoload :Logger, File.expand_path("../lumberjack/logger.rb", __FILE__)
-  autoload :Rack, File.expand_path("../lumberjack/rack.rb", __FILE__)
-  autoload :Severity, File.expand_path("../lumberjack/severity.rb", __FILE__)
-  autoload :Template, File.expand_path("../lumberjack/template.rb", __FILE__)
-  
   LINE_SEPARATOR = (RbConfig::CONFIG['host_os'].match(/mswin/i) ? "\r\n" : "\n")
 
+  load File.expand_path("../lumberjack/severity.rb", __FILE__)
+  load File.expand_path("../lumberjack/log_entry.rb", __FILE__)
+  load File.expand_path("../lumberjack/formatter.rb", __FILE__)
+  load File.expand_path("../lumberjack/device.rb", __FILE__)
+  load File.expand_path("../lumberjack/logger.rb", __FILE__)
+  load File.expand_path("../lumberjack/template.rb", __FILE__)
+
+  autoload :Rack, File.expand_path("../lumberjack/rack.rb", __FILE__)
+  
   class << self
     # Define a unit of work within a block. Within the block supplied to this
     # method, calling +unit_of_work_id+ will return the same value that can

@@ -98,3 +98,35 @@ The built in stream based logging devices use an internal buffer. The size of th
 The built in devices include two that can automatically roll log files based either on date or on file size. When a log file is rolled, it will be renamed with a suffix and a new file will be created to receive new log entries. This can keep your log files from growing to unusable sizes and removes the need to schedule an external process to roll the files.
 
 There is a similar feature in the standard library Logger class, but the implementation here is safe to use with multiple processes writing to the same log file.
+
+== Examples
+
+These example are for Rails applications, but there is no dependency on Rails for using this gem. Most of the examples are applicable to any Ruby application.
+
+In a Rails application you can replace the default production logger by adding this to your config/environments/production.rb file:
+
+  # Add the unit of work id to each request
+  config.middleware.insert(0, Lumberjack::Rack::UnitOfWork)
+  # Change the logger to use Lumberjack
+  log_file_path = Rails.root + "log" + "#{Rails.env}.log"
+  config.logger = Lumberjack::Logger.new(log_file, :level => :warn)
+
+To set up a logger to roll every day at midnight, you could use this code (you can also specify :weekly or :monthly):
+
+  config.logger = Lumberjack::Logger.new(log_file_path, :roll => :daily)
+
+To set up a logger to roll log files when they get to 100Mb, you could use this:
+
+  config.logger = Lumberjack::Logger.new(log_file_path, :max_size => 100.megabytes)
+  
+To change the log message format, you could use this code:
+
+  config.logger = Lumberjack::Logger.new(log_file_path, :template => ":time - :message")
+
+To change the log message format to output JSON, you could use this code (this example requires the multi-json gem):
+  
+  config.logger = Lumberjack::Logger.new(log_file_path, :template => lambda{|e| MultiJson.dump(e)})
+
+To send log messages to syslog instead of to a file, you could use this (require the lumberjack_syslog_device gem):
+
+  config.logger = Lumberjack::Logger.new(Lumberjack::SyslogDevice.new)

@@ -8,10 +8,10 @@ module Lumberjack
   # By default, all object will be converted to strings using their inspect method except for Strings
   # and Exceptions. Strings are not converted and Exceptions are converted using the ExceptionFormatter.
   class Formatter
-    autoload :ExceptionFormatter, File.expand_path("../formatter/exception_formatter.rb", __FILE__)
-    autoload :InspectFormatter, File.expand_path("../formatter/inspect_formatter.rb", __FILE__)
-    autoload :PrettyPrintFormatter, File.expand_path("../formatter/pretty_print_formatter.rb", __FILE__)
-    autoload :StringFormatter, File.expand_path("../formatter/string_formatter.rb", __FILE__)
+    load File.expand_path("../formatter/exception_formatter.rb", __FILE__)
+    load File.expand_path("../formatter/inspect_formatter.rb", __FILE__)
+    load File.expand_path("../formatter/pretty_print_formatter.rb", __FILE__)
+    load File.expand_path("../formatter/string_formatter.rb", __FILE__)
     
     def initialize
       @class_formatters = {}
