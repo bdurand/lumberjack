@@ -1,6 +1,7 @@
 1.0.5
 
 - Update docs.
+- Remove autoload calls to make thread safe.
 - Make compatible with Ruby 2.1.1 Pathname.
 - Make compatible with standard library Logger's use of progname as default message.
 
