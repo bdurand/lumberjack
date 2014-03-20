@@ -3,6 +3,7 @@ Gem::Specification.new do |s|
   s.version = File.read(File.expand_path("../VERSION", __FILE__)).strip
   s.summary = "A simple, powerful, and very fast logging utility that can be a drop in replacement for Logger or ActiveSupport::BufferedLogger."
   s.description = "A simple, powerful, and very fast logging utility that can be a drop in replacement for Logger or ActiveSupport::BufferedLogger. Provides support for automatically rolling log files even with multiple processes writing the same log file."
+  s.license = 'MIT'
 
   s.authors = ['Brian Durand']
   s.email = ['bdurand@embellishedvisions.com']
