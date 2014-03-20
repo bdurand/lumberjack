@@ -245,7 +245,7 @@ describe Lumberjack::Logger do
 
     it "should add entries with a progname but no message or block" do
       time = Time.parse("2011-01-30T12:31:56.123")
-      Time.stub!(:now).and_return(time)
+      Time.stub(:now => time)
       logger.set_progname("default") do
         logger.add(Lumberjack::Severity::INFO, nil, "message")
       end
