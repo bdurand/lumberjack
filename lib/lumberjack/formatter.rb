@@ -12,15 +12,21 @@ module Lumberjack
     load File.expand_path("../formatter/inspect_formatter.rb", __FILE__)
     load File.expand_path("../formatter/pretty_print_formatter.rb", __FILE__)
     load File.expand_path("../formatter/string_formatter.rb", __FILE__)
-    
-    def initialize
+
+    def initialize(logger)
       @class_formatters = {}
       @default_formatter = InspectFormatter.new
+      @logger = logger
       add(Object, @default_formatter)
       add(String, :string)
       add(Exception, :exception)
     end
-    
+
+    # Add support for Rails 4.
+    def call(severity, datetime = nil, progname = nil, msg = nil)
+      @logger.log(severity, msg, progname)
+    end
+
     # Add a formatter for a class. The formatter can be specified as either an object
     # that responds to the +call+ method or as a symbol representing one of the predefined
     # formatters, or as a block to the method call.
@@ -49,20 +55,20 @@ module Lumberjack
       @class_formatters[klass] = formatter
       self
     end
-    
+
     # Remove the formatter associated with a class. Remove statements can be chained together.
     def remove(klass)
       @class_formatters.delete(klass)
       self
     end
-    
+
     # Format a message object as a string.
     def format(message)
       formatter_for(message.class).call(message)
     end
 
     private
-    
+
     # Find the formatter for a class by looking it up using the class hierarchy.
     def formatter_for(klass) #:nodoc:
       while klass != nil do
