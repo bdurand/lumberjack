@@ -67,7 +67,7 @@ module Lumberjack
       max_flush_seconds = options.delete(:flush_seconds).to_f
 
       @device = open_device(device, options)
-      @formatter = Formatter.new
+      @_formatter = Formatter.new
       @lock = Mutex.new
       @last_flushed_at = Time.now
       @silencer = true
@@ -110,7 +110,7 @@ module Lumberjack
         end
       end
 
-      message = @formatter.format(message)
+      message = @_formatter.format(message)
       progname ||= self.progname
       entry = LogEntry.new(time, severity, message, progname, $$, Lumberjack.unit_of_work_id)
       begin

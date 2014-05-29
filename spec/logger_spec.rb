@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'pathname'
 
 describe Lumberjack::Logger do
 
@@ -20,6 +21,11 @@ describe Lumberjack::Logger do
 
     it "should open a file path in a device" do
       logger = Lumberjack::Logger.new(File.join(tmp_dir, "log_file_1.log"))
+      logger.device.class.should == Lumberjack::Device::LogFile
+    end
+
+    it "should open a pathname in a device" do
+      logger = Lumberjack::Logger.new(Pathname.new(File.join(tmp_dir, "log_file_1.log")))
       logger.device.class.should == Lumberjack::Device::LogFile
     end
 
