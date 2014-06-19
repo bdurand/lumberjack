@@ -1,3 +1,7 @@
+1.0.7
+
+- Fix broken formatter attribute method.
+
 1.0.6
 
 - Fix internal variable name conflict with ActiveSupport logging extensions.
