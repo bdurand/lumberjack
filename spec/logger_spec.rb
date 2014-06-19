@@ -19,6 +19,12 @@ describe Lumberjack::Logger do
       logger.device.class.should == Lumberjack::Device::Writer
     end
 
+    it "should have a formatter" do
+      output = StringIO.new
+      logger = Lumberjack::Logger.new(output)
+      logger.formatter.should be
+    end
+
     it "should open a file path in a device" do
       logger = Lumberjack::Logger.new(File.join(tmp_dir, "log_file_1.log"))
       logger.device.class.should == Lumberjack::Device::LogFile
