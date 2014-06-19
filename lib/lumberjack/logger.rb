@@ -25,9 +25,6 @@ module Lumberjack
   class Logger
     include Severity
 
-    # The Formatter object used to convert messages into strings.
-    attr_reader :formatter
-
     # The time that the device was last flushed.
     attr_reader :last_flushed_at
 
@@ -73,6 +70,11 @@ module Lumberjack
       @silencer = true
 
       create_flusher_thread(max_flush_seconds) if max_flush_seconds > 0
+    end
+
+    # Get the Formatter object used to convert messages into strings.
+    def formatter
+      @_formatter
     end
 
     # Get the level of severity of entries that are logged. Entries with a lower
