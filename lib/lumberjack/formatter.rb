@@ -15,8 +15,8 @@ module Lumberjack
     
     def initialize
       @class_formatters = {}
-      @default_formatter = InspectFormatter.new
-      add(Object, @default_formatter)
+      @_default_formatter = InspectFormatter.new
+      add(Object, @_default_formatter)
       add(String, :string)
       add(Exception, :exception)
     end
@@ -70,7 +70,7 @@ module Lumberjack
         return formatter if formatter
         klass = klass.superclass
       end
-      @default_formatter
+      @_default_formatter
     end
   end
 end
