@@ -1,3 +1,7 @@
+1.0.9
+
+- Add method so Formatter is compatible with ActiveSupport logging extensions.
+
 1.0.8
 
 - Fix another internal variable name conflict with ActiveSupport logging extensions.

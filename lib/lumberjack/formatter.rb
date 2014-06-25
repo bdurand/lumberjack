@@ -60,6 +60,11 @@ module Lumberjack
     def format(message)
       formatter_for(message.class).call(message)
     end
+    
+    # Hack for compatibility with Logger::Formatter
+    def call(severity, timestamp, progname, msg)
+      "#{format(msg)}\n"
+    end    
 
     private
     
