@@ -19,7 +19,11 @@ module Lumberjack
         end
         
         def <<(string)
-          @values << string
+          @values << string.encode(
+            "UTF-8",
+            invalid: :replace,
+            undef: :replace
+          )
           @size += string.size
         end
         

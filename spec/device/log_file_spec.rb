@@ -23,4 +23,19 @@ describe Lumberjack::Device::LogFile do
     File.read(log_file).should == "Existing contents\nNew log entry#{Lumberjack::LINE_SEPARATOR}"
   end
 
+  it "properly handles messages with broken UTF-8 characters" do
+    log_file = File.join(tmp_dir, "test_6.log")
+    device = Lumberjack::Device::LogFile.new(log_file,
+      :keep => 2, :buffer_size => 32767)
+
+    message = [0xC4, 0x90, 0xE1, 0xBB].pack("c*").force_encoding "ASCII-8BIT"
+    entry = Lumberjack::LogEntry.new(Time.now, 1, message, nil, $$, nil)
+    device.write entry
+
+    message = "message"
+    entry = Lumberjack::LogEntry.new(Time.now, 1, message, nil, $$, nil)
+    device.write entry
+
+    device.flush
+  end
 end
