@@ -51,7 +51,7 @@ module Lumberjack
 
       def reopen_file
         old_stream = stream
-        self.stream = File.open(path, 'a')
+        self.stream = File.open(path, 'a', encoding: EXTERNAL_ENCODING)
         stream.sync = true
         @file_inode = stream.lstat.ino rescue nil
         old_stream.close
