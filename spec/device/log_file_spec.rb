@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 require 'spec_helper'
 
 describe Lumberjack::Device::LogFile do
@@ -32,10 +33,12 @@ describe Lumberjack::Device::LogFile do
     entry = Lumberjack::LogEntry.new(Time.now, 1, message, nil, $$, nil)
     device.write entry
 
-    message = "message"
+    message = "проверка"
     entry = Lumberjack::LogEntry.new(Time.now, 1, message, nil, $$, nil)
     device.write entry
 
-    device.flush
+    expect do
+      device.flush
+    end.to_not raise_error
   end
 end
