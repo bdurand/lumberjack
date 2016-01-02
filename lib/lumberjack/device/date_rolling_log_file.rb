@@ -37,11 +37,11 @@ module Lumberjack
         date = Date.today
         if date.year > @file_date.year
           true
-        elsif @roll_period == :daily && date.yday > @file_date.yday
+        elsif @roll_period == :daily && date.yday != @file_date.yday
           true
-        elsif @roll_period == :weekly && date.cweek > @file_date.cweek
+        elsif @roll_period == :weekly && date.cweek != @file_date.cweek
           true
-        elsif @roll_period == :monthly && date.month > @file_date.month
+        elsif @roll_period == :monthly && date.month != @file_date.month
           true
         else
           false
