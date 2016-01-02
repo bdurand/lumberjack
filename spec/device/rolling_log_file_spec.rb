@@ -16,7 +16,7 @@ describe Lumberjack::Device::RollingLogFile do
   it "should check for rolling the log file on flush" do
     device = Lumberjack::Device::RollingLogFile.new(File.join(tmp_dir, "test.log"), :buffer_size => 32767)
     device.write(entry)
-    device.should_receive(:roll_file?).twice.and_return(false)
+    expect(device).to receive(:roll_file?).twice.and_return(false)
     device.flush
     device.close
   end
@@ -24,8 +24,8 @@ describe Lumberjack::Device::RollingLogFile do
   it "should roll the file by archiving the existing file and opening a new stream and calling after_roll" do
     log_file = File.join(tmp_dir, "test_2.log")
     device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :buffer_size => 32767)
-    device.should_receive(:roll_file?).and_return(false, true)
-    device.should_receive(:after_roll)
+    expect(device).to receive(:roll_file?).and_return(false, true)
+    expect(device).to receive(:after_roll)
     device.stub(:archive_file_suffix => "rolled")
     device.write(entry)
     device.flush
@@ -108,12 +108,12 @@ describe Lumberjack::Device::RollingLogFile do
   it "should only keep a specified number of archived log files" do
     log_file = File.join(tmp_dir, "test_5.log")
     device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :keep => 2, :buffer_size => 32767)
-    device.should_receive(:roll_file?).and_return(false, true, true, true)
-    device.should_receive(:archive_file_suffix).and_return("delete", "another", "keep")
+    expect(device).to receive(:roll_file?).and_return(false, true, true, true)
+    expect(device).to receive(:archive_file_suffix).and_return("delete", "another", "keep")
     t = Time.now
-    File.should_receive(:ctime).with("#{log_file}.delete").at_least(1).times.and_return(t + 1)
-    File.should_receive(:ctime).with("#{log_file}.another").at_least(1).times.and_return(t + 2)
-    File.should_receive(:ctime).with("#{log_file}.keep").at_least(1).times.and_return(t + 3)
+    expect(File).to receive(:ctime).with("#{log_file}.delete").at_least(1).times.and_return(t + 1)
+    expect(File).to receive(:ctime).with("#{log_file}.another").at_least(1).times.and_return(t + 2)
+    expect(File).to receive(:ctime).with("#{log_file}.keep").at_least(1).times.and_return(t + 3)
     device.write(entry)
     device.flush
     device.write(entry)

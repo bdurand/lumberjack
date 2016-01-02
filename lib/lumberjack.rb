@@ -6,14 +6,13 @@ require 'securerandom'
 module Lumberjack
   LINE_SEPARATOR = (RbConfig::CONFIG['host_os'].match(/mswin/i) ? "\r\n" : "\n")
 
-  load File.expand_path("../lumberjack/severity.rb", __FILE__)
-  load File.expand_path("../lumberjack/log_entry.rb", __FILE__)
-  load File.expand_path("../lumberjack/formatter.rb", __FILE__)
-  load File.expand_path("../lumberjack/device.rb", __FILE__)
-  load File.expand_path("../lumberjack/logger.rb", __FILE__)
-  load File.expand_path("../lumberjack/template.rb", __FILE__)
-
-  autoload :Rack, File.expand_path("../lumberjack/rack.rb", __FILE__)
+  require File.expand_path("../lumberjack/severity.rb", __FILE__)
+  require File.expand_path("../lumberjack/log_entry.rb", __FILE__)
+  require File.expand_path("../lumberjack/formatter.rb", __FILE__)
+  require File.expand_path("../lumberjack/device.rb", __FILE__)
+  require File.expand_path("../lumberjack/logger.rb", __FILE__)
+  require File.expand_path("../lumberjack/template.rb", __FILE__)
+  require File.expand_path("../lumberjack/rack.rb", __FILE__)
   
   class << self
     # Define a unit of work within a block. Within the block supplied to this

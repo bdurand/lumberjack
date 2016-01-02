@@ -1,6 +1,16 @@
 require File.expand_path("../../lib/lumberjack.rb", __FILE__)
 require 'stringio'
 require 'fileutils'
+require 'timecop'
+
+RSpec.configure do |config|
+  config.expect_with :rspec do |c|
+    c.syntax = [:should, :expect]
+  end
+  config.mock_with :rspec do |c|
+    c.syntax = [:should, :expect]
+  end
+end
 
 def tmp_dir
   File.expand_path("../tmp", __FILE__)

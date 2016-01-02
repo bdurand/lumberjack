@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.license = 'MIT'
 
   s.authors = ['Brian Durand']
-  s.email = ['bdurand@embellishedvisions.com']
+  s.email = ['bbdurand@gmail.com']
   s.homepage = "http://github.com/bdurand/lumberjack"
 
   s.files = ['README.rdoc', 'VERSION', 'Rakefile', 'MIT_LICENSE'] +  Dir.glob('lib/**/*'), Dir.glob('spec/**/*')
@@ -15,4 +15,7 @@ Gem::Specification.new do |s|
   s.has_rdoc = true
   s.rdoc_options = ["--charset=UTF-8", "--main", "README.rdoc"]
   s.extra_rdoc_files = ["README.rdoc"]
+  
+  s.add_development_dependency("rspec", [">= 3.0"])
+  s.add_development_dependency("timecop", [">= 0.8.0"])
 end
