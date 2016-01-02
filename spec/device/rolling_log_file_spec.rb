@@ -125,4 +125,26 @@ describe Lumberjack::Device::RollingLogFile do
     Dir.glob("#{log_file}*").sort.should == [log_file, "#{log_file}.another", "#{log_file}.keep"]
   end
 
+  context "when file is rolled" do
+    let(:log_file) { File.join(tmp_dir, "test_6.log") }
+
+    let(:device) do
+      device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :keep => 2, :buffer_size => 32767)
+      device.stub(:roll_file?).and_return(true)
+      device.stub(:archive_file_suffix => "rolled")
+      device
+    end
+
+    before do
+      device.write(entry)
+      device.flush
+    end
+
+    it "reopens file with proper encoding" do
+      encoding = device.send(:stream).external_encoding
+      expect(encoding).to_not be_nil
+      expect(encoding.name).to eq "ASCII-8BIT"
+    end
+  end
+
 end
