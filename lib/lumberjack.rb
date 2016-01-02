@@ -1,6 +1,7 @@
 require 'rbconfig'
 require 'time'
 require 'thread'
+require 'securerandom'
 
 module Lumberjack
   LINE_SEPARATOR = (RbConfig::CONFIG['host_os'].match(/mswin/i) ? "\r\n" : "\n")
@@ -26,7 +27,7 @@ module Lumberjack
     # Lumberjack::Rack::UnitOfWork class.
     def unit_of_work(id = nil)
       save_val = Thread.current[:lumberjack_logger_unit_of_work_id]
-      id ||= rand(0xFFFFFFFFFFFF).to_s(16).rjust(12, '0').upcase
+      id ||= SecureRandom.hex(6)
       Thread.current[:lumberjack_logger_unit_of_work_id] = id
       begin
         return yield
