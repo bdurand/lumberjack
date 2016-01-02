@@ -27,8 +27,8 @@ PLATFORMS
 
 DEPENDENCIES
   lumberjack!
-  rspec (>= 3.0)
-  timecop (>= 0.8.0)
+  rspec (~> 3.0)
+  timecop (~> 0.8)
 
 BUNDLED WITH
    1.10.6
