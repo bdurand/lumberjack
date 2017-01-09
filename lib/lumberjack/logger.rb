@@ -200,7 +200,7 @@ module Lumberjack
 
     # Set the minimum level of severity of messages to log.
     def level=(severity)
-      if severity.is_a?(Fixnum)
+      if severity.is_a?(Integer)
         @level = severity
       else
         @level = Severity.label_to_level(severity)

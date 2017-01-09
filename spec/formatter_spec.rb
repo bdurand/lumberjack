@@ -32,7 +32,7 @@ describe Lumberjack::Formatter do
   
   it "should format an object based on the class hierarchy" do
     formatter.add(Numeric){|obj| "number: #{obj}"}
-    formatter.add(Fixnum){|obj| "fixed number: #{obj}"}
+    formatter.add(Integer){|obj| "fixed number: #{obj}"}
     formatter.format(10).should == "fixed number: 10"
     formatter.format(10.1).should == "number: 10.1"
   end
