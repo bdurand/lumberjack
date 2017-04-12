@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Lumberjack::Device::RollingLogFile do
 
   before :all do

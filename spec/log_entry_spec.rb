@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Lumberjack::LogEntry do
   
   it "should have a time" do

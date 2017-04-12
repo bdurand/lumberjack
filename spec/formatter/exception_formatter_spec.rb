@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Lumberjack::Formatter::ExceptionFormatter do
 
   it "should convert an exception without a backtrace to a string" do

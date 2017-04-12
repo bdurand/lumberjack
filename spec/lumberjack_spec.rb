@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Lumberjack do
   
   context "unit of work" do

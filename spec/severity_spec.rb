@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Lumberjack::Severity do
   
   it "should convert a level to a label" do

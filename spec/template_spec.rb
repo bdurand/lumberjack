@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Lumberjack::Template do
   
   let(:time_string){ "2011-01-15T14:23:45.123" }

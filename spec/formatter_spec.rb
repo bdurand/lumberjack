@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Lumberjack::Formatter do
 
   let(:formatter){ Lumberjack::Formatter.new }
