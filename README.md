@@ -60,9 +60,11 @@ When a Logger logs a LogEntry, it sends it to a Lumberjack::Device. Lumberjack c
 
 If you'd like to send you log to a different kind of output, you just need to extend the Device class and implement the +write+ method. Or check out these plugins:
 
-* lumberjack_syslog_device[https://github.com/bdurand/lumberjack_syslog_device] - send your log messages to the system wide syslog service
-* lumberjack_mongo_device[https://github.com/bdurand/lumberjack_mongo_device] - store your log messages to a MongoDB[http://www.mongodb.org/] NoSQL data store
-* lumberjack-couchdb-driver[https://github.com/narkisr/lumberjack-couchdb-driver] - store your log messages to a CouchDB[http://couchdb.apache.org/] NoSQL data store
+* [lumberjack_syslog_device](https://github.com/bdurand/lumberjack_syslog_device) - send your log messages to the system wide syslog service
+* [lumberjack_multi-device](https://github.com/astevens/lumberjack_multi-device) - send log messages to multiple devices
+* [lumberjack_mongo_device](https://github.com/bdurand/lumberjack_mongo_device) - store your log messages to a [MongoDB](http://www.mongodb.org/) NoSQL data store
+* [lumberjack-couchdb-driver](https://github.com/narkisr/lumberjack-couchdb-driver) - store your log messages to a [CouchDB](http://couchdb.apache.org/) NoSQL data store
+* [lumberjack_heroku_device](https://github.com/tonycoco/lumberjack_heroku_device) - log to Heroku's logging system
 
 ### Customize Formatting
 
@@ -117,8 +119,8 @@ In a Rails application you can replace the default production logger by adding t
 
 ```ruby
   # Use the ActionDispatch request id as the unit of work id. This will use just the first chunk of the request id.
-  # If you want to use the whole id, change the last argument to `false`
-  config.middleware.insert_after ActionDispatch::RequestId, Lumberjack::Rack::RequestId, true
+  # If you want to use an abbreviated request id for terseness, change the last argument to `true`
+  config.middleware.insert_after ActionDispatch::RequestId, Lumberjack::Rack::RequestId, false
   # Use a custom unit of work id to each request
   # config.middleware.insert(0, Lumberjack::Rack::UnitOfWork)
   # Change the logger to use Lumberjack

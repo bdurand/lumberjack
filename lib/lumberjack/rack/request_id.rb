@@ -6,7 +6,7 @@ module Lumberjack
     class RequestId
       REQUEST_ID = "action_dispatch.request_id".freeze
   
-      def initialize(app, abbreviated = true)
+      def initialize(app, abbreviated = false)
         @app = app
         @abbreviated = abbreviated
       end

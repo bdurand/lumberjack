@@ -4,7 +4,7 @@ describe Lumberjack::Rack::RequestId do
   
   it "should use the action dispatch request id if it exists" do
     app = lambda{|env| [200, {"Content-Type" => env["Content-Type"], "Unit-Of-Work" => Lumberjack.unit_of_work_id.to_s}, ["OK"]]}
-    handler = Lumberjack::Rack::RequestId.new(app, false)
+    handler = Lumberjack::Rack::RequestId.new(app)
     
     response = handler.call("Content-Type" => "text/plain", "action_dispatch.request_id" => "0123-4567-89ab-cdef")
     response[0].should == 200
@@ -13,9 +13,9 @@ describe Lumberjack::Rack::RequestId do
     response[2].should == ["OK"]
   end
   
-  it "should use an abbreviated action dispatch request id by default" do
+  it "should use an abbreviated action dispatch request id if abbreviated is true" do
     app = lambda{|env| [200, {"Content-Type" => env["Content-Type"], "Unit-Of-Work" => Lumberjack.unit_of_work_id.to_s}, ["OK"]]}
-    handler = Lumberjack::Rack::RequestId.new(app)
+    handler = Lumberjack::Rack::RequestId.new(app, true)
     
     response = handler.call("Content-Type" => "text/plain", "action_dispatch.request_id" => "0123-4567-89ab-cdef")
     response[0].should == 200
