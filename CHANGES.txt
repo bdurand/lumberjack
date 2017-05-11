@@ -1,3 +1,7 @@
+1.0.12
+
+- Add support for ActionDispatch request id for better Rails compatibility.
+
 1.0.11
 
 - Fix Ruby 2.4 deprecation warning on Fixnum (thanks koic).

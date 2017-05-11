@@ -1,11 +1,12 @@
-= Lumberjack
+# Lumberjack
 
 Lumberjack is a simple, powerful, and fast logging implementation in Ruby. It uses nearly the same API as the Logger class in the Ruby standard library and as ActiveSupport::BufferedLogger in Rails.
 
-== Usage
+## Usage
 
 This code aims to be extremely simple to use. The core interface it the Lumberjack::Logger which is used to log messages (which can be any object) with a specified Severity. Each logger has a level associated with it and messages are only written if their severity is greater than or equal to the level.
 
+```ruby
   logger = Lumberjack::Logger.new("logs/application.log")  # Open a new log file with INFO level
   logger.info("Begin request")
   logger.debug(request.params)  # Message not written unless the level is set to DEBUG
@@ -16,12 +17,13 @@ This code aims to be extremely simple to use. The core interface it the Lumberja
     raise
   end
   logger.info("End request")
+```
 
 This is all you need to know to log messages.
 
-== Features
+## Features
 
-=== Meta data
+### Meta data
 
 When messages are added to the log, additional data about the message is kept in a Lumberjack::LogEntry. This means you don't need to worry about adding the time or process id to your log messages as they will be automatically recorded.
 
@@ -33,18 +35,20 @@ The following information is recorded for each message:
 * process id - The process id (pid) of the process that logged the message.
 * unit of work id - The unique 12 byte hexadecimal number generated for a unit of work.
 
-=== Units Of Work
+### Units Of Work
 
 A unit of work can be used to tie together all log messages within a block. This can be very useful to isolate a group of messages that represent one path through the system. For instance, in a web application, a single request represents a natural unit of work,  and when you are looking through a log file, it is useful to see the entire set of log entries as a unit instead of interspersed with messages from other concurrent requests.
 
+```ruby
   # All log entries in this block will get a common unit of work id.
   Lumberjack.unit_of_work do
     logger.info("Begin request")
     yield
     logger.info("End request")
   end
+```
 
-=== Pluggable Devices
+### Pluggable Devices
 
 When a Logger logs a LogEntry, it sends it to a Lumberjack::Device. Lumberjack comes with a variety of devices for logging to IO streams or files.
 
@@ -60,15 +64,18 @@ If you'd like to send you log to a different kind of output, you just need to ex
 * lumberjack_mongo_device[https://github.com/bdurand/lumberjack_mongo_device] - store your log messages to a MongoDB[http://www.mongodb.org/] NoSQL data store
 * lumberjack-couchdb-driver[https://github.com/narkisr/lumberjack-couchdb-driver] - store your log messages to a CouchDB[http://couchdb.apache.org/] NoSQL data store
 
-=== Customize Formatting
+### Customize Formatting
 
 When a message is logged, it is first converted into a string. You can customize how it is converted by adding mappings to a Formatter.
 
+```ruby
   logger.formatter.add(Hash, :pretty_print)  # use the Formatter::PrettyPrintFormatter for all Hashes
   logger.formatter.add(MyClass){|obj| "#{obj.class}@#{obj.id}"}  # use a block to provide a custom format
+```
 
 If you use the built in devices, you can also customize the Template used to format the LogEntry.
   
+```ruby
   # Change the format of the time in the log
   Lumberjack::Logger.new("application.log", :time_format => "%m/%d/%Y %H:%M:%S")
 
@@ -78,8 +85,9 @@ If you use the built in devices, you can also customize the Template used to for
   # Use a custom template as a block that only includes the first character of the severity
   template = lambda{|e| "#{e.severity_label[0, 1]} #{e.time} - #{e.message}"}
   Lumberjack::Logger.new("application.log", :template => template)
+```
 
-=== Buffered Performance
+### Buffered Performance
 
 The logger has hooks for devices that support buffering to increase performance by batching physical writes. Log entries are not guaranteed to be written until the Lumberjack::Logger#flush method is called.
 
@@ -87,46 +95,63 @@ You can use the <tt>:flush_seconds</tt> option on the logger to periodically flu
 
 The built in stream based logging devices use an internal buffer. The size of the buffer (in bytes) can be set with the <tt>:buffer_size</tt> options when initializing a logger. The default behavior is to not to buffer.
 
+```ruby
   # Set buffer to flush after 8K has been written to the log.
   logger = Lumberjack::Logger.new("application.log", :buffer_size => 8192)
   
   # Turn off buffering so entries are immediately written to disk.
   logger = Lumberjack::Logger.new("application.log", :buffer_size => 0)
+```
 
-=== Automatic Log Rolling
+### Automatic Log Rolling
 
 The built in devices include two that can automatically roll log files based either on date or on file size. When a log file is rolled, it will be renamed with a suffix and a new file will be created to receive new log entries. This can keep your log files from growing to unusable sizes and removes the need to schedule an external process to roll the files.
 
 There is a similar feature in the standard library Logger class, but the implementation here is safe to use with multiple processes writing to the same log file.
 
-== Examples
+## Examples
 
 These example are for Rails applications, but there is no dependency on Rails for using this gem. Most of the examples are applicable to any Ruby application.
 
 In a Rails application you can replace the default production logger by adding this to your config/environments/production.rb file:
 
-  # Add the unit of work id to each request
-  config.middleware.insert(0, Lumberjack::Rack::UnitOfWork)
+```ruby
+  # Use the ActionDispatch request id as the unit of work id. This will use just the first chunk of the request id.
+  # If you want to use the whole id, change the last argument to `false`
+  config.middleware.insert_after ActionDispatch::RequestId, Lumberjack::Rack::RequestId, true
+  # Use a custom unit of work id to each request
+  # config.middleware.insert(0, Lumberjack::Rack::UnitOfWork)
   # Change the logger to use Lumberjack
   log_file_path = Rails.root + "log" + "#{Rails.env}.log"
   config.logger = Lumberjack::Logger.new(log_file, :level => :warn)
+```
 
 To set up a logger to roll every day at midnight, you could use this code (you can also specify :weekly or :monthly):
 
+```ruby
   config.logger = Lumberjack::Logger.new(log_file_path, :roll => :daily)
+```
 
 To set up a logger to roll log files when they get to 100Mb, you could use this:
 
+```ruby
   config.logger = Lumberjack::Logger.new(log_file_path, :max_size => 100.megabytes)
+```
   
 To change the log message format, you could use this code:
 
+```ruby
   config.logger = Lumberjack::Logger.new(log_file_path, :template => ":time - :message")
+```
 
 To change the log message format to output JSON, you could use this code (this example requires the multi-json gem):
   
+```ruby
   config.logger = Lumberjack::Logger.new(log_file_path, :template => lambda{|e| MultiJson.dump(e)})
+```
 
 To send log messages to syslog instead of to a file, you could use this (require the lumberjack_syslog_device gem):
 
+```ruby
   config.logger = Lumberjack::Logger.new(Lumberjack::SyslogDevice.new)
+```

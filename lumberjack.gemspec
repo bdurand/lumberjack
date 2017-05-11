@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.email = ['bbdurand@gmail.com']
   s.homepage = "http://github.com/bdurand/lumberjack"
 
-  s.files = ['README.rdoc', 'VERSION', 'Rakefile', 'MIT_LICENSE'].concat(Dir.glob('lib/**/*')).concat(Dir.glob('spec/**/*'))
+  s.files = ['README.md', 'VERSION', 'Rakefile', 'MIT_LICENSE'].concat(Dir.glob('lib/**/*')).concat(Dir.glob('spec/**/*'))
   s.require_path = 'lib'
   
   s.has_rdoc = true
