@@ -10,6 +10,10 @@ describe Lumberjack::Device::DateRollingLogFile do
     delete_tmp_dir
   end
   
+  before :each do
+    delete_tmp_files
+  end
+  
   let(:one_day){ 60 * 60 * 24 }
   
   it "should roll the file daily" do

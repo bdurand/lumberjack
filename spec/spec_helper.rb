@@ -24,3 +24,9 @@ end
 def delete_tmp_dir
   FileUtils.rm_r(tmp_dir)
 end
+
+def delete_tmp_files
+  Dir.glob(File.join(tmp_dir, "*")) do |file|
+    File.delete(file)
+  end
+end

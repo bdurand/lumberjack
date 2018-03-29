@@ -9,6 +9,10 @@ describe Lumberjack::Device::SizeRollingLogFile do
   after :all do
     delete_tmp_dir
   end
+  
+  before :each do
+    delete_tmp_files
+  end
 
   it "should roll a file when it gets to a specified size" do
     log_file = File.join(tmp_dir, "a#{rand(1000000000)}.log")

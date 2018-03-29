@@ -11,6 +11,10 @@ describe Lumberjack::Device::LogFile do
     delete_tmp_dir
   end
   
+  before :each do
+    delete_tmp_files
+  end
+  
   it "should append to a file" do
     log_file = File.join(tmp_dir, "a#{rand(1000000000)}.log")
     File.open(log_file, 'w') do |f|

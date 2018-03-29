@@ -11,6 +11,10 @@ describe Lumberjack::Device::RollingLogFile do
     delete_tmp_dir
   end
   
+  before :each do
+    delete_tmp_files
+  end
+  
   let(:entry){ Lumberjack::LogEntry.new(Time.now, 1, "New log entry", nil, $$, nil) }
 
   it "should check for rolling the log file on flush" do
