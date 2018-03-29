@@ -1,3 +1,5 @@
+# frozen_string_literals: true
+
 module Lumberjack
   class Formatter
     # Format an exception including the backtrace.

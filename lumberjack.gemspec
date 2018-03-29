@@ -7,10 +7,16 @@ Gem::Specification.new do |s|
 
   s.authors = ['Brian Durand']
   s.email = ['bbdurand@gmail.com']
-  s.homepage = "http://github.com/bdurand/lumberjack"
+  s.homepage = "https://github.com/bdurand/lumberjack"
 
   s.files = ['README.md', 'VERSION', 'Rakefile', 'MIT_LICENSE'].concat(Dir.glob('lib/**/*')).concat(Dir.glob('spec/**/*'))
   s.require_path = 'lib'
+  
+  s.metadata    = {
+    "homepage_uri" => "https://github.com/bdurand/lumberjack",
+    "changelog_uri" => "https://github.com/bdurand/lumberjack/blob/master/CHANGELOG.md",
+    "source_code_uri" => "https://github.com/bdurand/lumberjack"
+  }
   
   s.add_development_dependency("rspec", ["~> 3.0"])
   s.add_development_dependency("timecop", ["~> 0.8"])

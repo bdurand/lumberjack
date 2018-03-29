@@ -1,3 +1,5 @@
+# frozen_string_literals: true
+
 require 'date'
 
 module Lumberjack

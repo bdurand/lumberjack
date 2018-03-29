@@ -19,7 +19,7 @@ describe Lumberjack::Device::DateRollingLogFile do
   it "should roll the file daily" do
     now = Time.now
     log_file = File.join(tmp_dir, "a#{rand(1000000000)}.log")
-    device = Lumberjack::Device::DateRollingLogFile.new(log_file, :roll => :daily, :template => ":message")
+    device = Lumberjack::Device::DateRollingLogFile.new(log_file, :roll => :daily, :template => ":message", :min_roll_check => 0)
     logger = Lumberjack::Logger.new(device, :buffer_size => 2)
     Timecop.travel(now) do
       logger.error("test day one")
@@ -37,7 +37,7 @@ describe Lumberjack::Device::DateRollingLogFile do
   it "should roll the file weekly" do
     now = Time.now
     log_file = File.join(tmp_dir, "b#{rand(1000000000)}.log")
-    device = Lumberjack::Device::DateRollingLogFile.new(log_file, :roll => :weekly, :template => ":message")
+    device = Lumberjack::Device::DateRollingLogFile.new(log_file, :roll => :weekly, :template => ":message", :min_roll_check => 0)
     logger = Lumberjack::Logger.new(device, :buffer_size => 2)
     Timecop.freeze(now) do
       logger.error("test week one")
@@ -55,7 +55,7 @@ describe Lumberjack::Device::DateRollingLogFile do
   it "should roll the file monthly" do
     now = Time.now
     log_file = File.join(tmp_dir, "c#{rand(1000000000)}.log")
-    device = Lumberjack::Device::DateRollingLogFile.new(log_file, :roll => :monthly, :template => ":message")
+    device = Lumberjack::Device::DateRollingLogFile.new(log_file, :roll => :monthly, :template => ":message", :min_roll_check => 0)
     logger = Lumberjack::Logger.new(device, :buffer_size => 2)
     Timecop.freeze(now) do
       logger.error("test month one")

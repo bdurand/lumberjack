@@ -1,3 +1,5 @@
+# frozen_string_literals: true
+
 module Lumberjack
   module Rack
     class UnitOfWork

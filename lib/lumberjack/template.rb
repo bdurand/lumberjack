@@ -1,3 +1,5 @@
+# frozen_string_literals: true
+
 module Lumberjack
   # A template converts entries to strings. Templates can contain the following place holders to
   # reference log entry values:

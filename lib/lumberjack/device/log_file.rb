@@ -1,3 +1,5 @@
+# frozen_string_literals: true
+
 require 'fileutils'
 
 module Lumberjack

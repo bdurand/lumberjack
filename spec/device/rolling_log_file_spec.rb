@@ -18,7 +18,7 @@ describe Lumberjack::Device::RollingLogFile do
   let(:entry){ Lumberjack::LogEntry.new(Time.now, 1, "New log entry", nil, $$, nil) }
 
   it "should check for rolling the log file on flush" do
-    device = Lumberjack::Device::RollingLogFile.new(File.join(tmp_dir, "test.log"), :buffer_size => 32767)
+    device = Lumberjack::Device::RollingLogFile.new(File.join(tmp_dir, "test.log"), :buffer_size => 32767, :min_roll_check => 0)
     device.write(entry)
     expect(device).to receive(:roll_file?).twice.and_return(false)
     device.flush
@@ -27,7 +27,7 @@ describe Lumberjack::Device::RollingLogFile do
   
   it "should roll the file by archiving the existing file and opening a new stream and calling after_roll" do
     log_file = File.join(tmp_dir, "test_2.log")
-    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :buffer_size => 32767)
+    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :buffer_size => 32767, :min_roll_check => 0)
     expect(device).to receive(:roll_file?).and_return(false, true)
     expect(device).to receive(:after_roll)
     device.stub(:archive_file_suffix => "rolled")
@@ -41,7 +41,7 @@ describe Lumberjack::Device::RollingLogFile do
   
   it "should reopen the file if the stream inode doesn't match the file path inode" do
     log_file = File.join(tmp_dir, "test_3.log")
-    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message")
+    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :min_roll_check => 0)
     device.stub(:roll_file? => false)
     device.write(entry)
     device.flush
@@ -63,7 +63,7 @@ describe Lumberjack::Device::RollingLogFile do
     message = "This is a test message that is written to the log file to indicate what the state of the application is."
     
     logger_test = lambda do
-      device = Lumberjack::Device::SizeRollingLogFile.new(log_file, :max_size => max_size, :template => ":message", :buffer_size => 32767)
+      device = Lumberjack::Device::SizeRollingLogFile.new(log_file, :max_size => max_size, :template => ":message", :buffer_size => 32767, :min_roll_check => 0)
       threads = []
       thread_count.times do
         threads << Thread.new do
@@ -71,9 +71,10 @@ describe Lumberjack::Device::RollingLogFile do
             device.write(Lumberjack::LogEntry.new(Time.now, severity, message, "test", $$, nil))
             device.flush if i % 10 == 0
           end
+          device.flush
         end
       end
-      threads.each{|thread| thread.join}
+      threads.each{|thread| thread.value}
       device.close
     end
     
@@ -83,7 +84,7 @@ describe Lumberjack::Device::RollingLogFile do
       process_count.times do
         outer_threads << Thread.new(&logger_test)
       end
-      outer_threads.each{|thread| thread.join}
+      outer_threads.each{|thread| thread.value}
     else
       process_count.times do
         Process.fork(&logger_test)
@@ -100,18 +101,14 @@ describe Lumberjack::Device::RollingLogFile do
       lines.each do |line|
         line.should == message
       end
-      unless file == log_file
-        #File.size(file).should >= max_size
-      end
     end
     
     file_count.should > 3
-    line_count.should == process_count * thread_count * entry_count
   end
   
   it "should only keep a specified number of archived log files" do
     log_file = File.join(tmp_dir, "test_5.log")
-    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :keep => 2, :buffer_size => 32767)
+    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :keep => 2, :buffer_size => 32767, :min_roll_check => 0)
     expect(device).to receive(:roll_file?).and_return(false, true, true, true)
     expect(device).to receive(:archive_file_suffix).and_return("delete", "another", "keep")
     t = Time.now
@@ -133,7 +130,7 @@ describe Lumberjack::Device::RollingLogFile do
     let(:log_file) { File.join(tmp_dir, "test_6.log") }
 
     let(:device) do
-      device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :keep => 2, :buffer_size => 32767)
+      device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :keep => 2, :buffer_size => 32767, :min_roll_check => 0)
       device.stub(:roll_file?).and_return(true)
       device.stub(:archive_file_suffix => "rolled")
       device

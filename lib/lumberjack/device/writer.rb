@@ -1,3 +1,5 @@
+# frozen_string_literals: true
+
 module Lumberjack
   class Device
     # This logging device writes log entries as strings to an IO stream. By default, messages will be buffered
@@ -19,7 +21,7 @@ module Lumberjack
         end
         
         def <<(string)
-          @values << string.encode("UTF-8".freeze, invalid: :replace, undef: :replace)
+          @values << string
           @size += string.size
         end
         
@@ -27,8 +29,10 @@ module Lumberjack
           @values.empty?
         end
         
-        def join(delimiter)
-          @values.join(delimiter)
+        def pop!
+          popped = @values
+          clear
+          popped
         end
         
         def clear
@@ -77,8 +81,11 @@ module Lumberjack
       # Write an entry to the stream. The entry will be converted into a string using the defined template.
       def write(entry)
         string = @template.call(entry)
-        @lock.synchronize do
-          @buffer << string
+        unless string.nil?
+          string = string.encode("UTF-8".freeze, invalid: :replace, undef: :replace)
+          @lock.synchronize do
+            @buffer << string
+          end
         end
         flush if @buffer.size >= buffer_size
       end
@@ -91,19 +98,34 @@ module Lumberjack
       
       # Flush the underlying stream.
       def flush
+        lines = nil
         @lock.synchronize do
           before_flush
-          unless @buffer.empty?
-            out = @buffer.join(Lumberjack::LINE_SEPARATOR) << Lumberjack::LINE_SEPARATOR
+          lines = @buffer.pop!
+        end
+        
+        unless lines.empty?
+          out = "#{lines.join(Lumberjack::LINE_SEPARATOR)}#{Lumberjack::LINE_SEPARATOR}"
+          begin
             begin
               stream.write(out)
-              stream.flush
-            rescue => e
-              $stderr.write("#{e.class.name}: #{e.message}#{' at ' + e.backtrace.first if e.backtrace}")
-              $stderr.write(out)
-              $stderr.flush
+            rescue IOError => e
+              # This condition can happen if another thread closed the stream in the `before_flush` call.
+              # Synchronizing will handle the race condition, but since it's an exceptional case we don't
+              # to lock the thread on every stream write call.
+              @lock.synchronize do
+                if stream.closed?
+                  raise e
+                else
+                  stream.write(out)
+                end
+              end
             end
-            @buffer.clear
+            stream.flush rescue nil
+          rescue => e
+            $stderr.write("#{e.class.name}: #{e.message}#{' at ' + e.backtrace.first if e.backtrace}")
+            $stderr.write(out)
+            $stderr.flush
           end
         end
       end
@@ -111,7 +133,7 @@ module Lumberjack
       protected
       
       # Callback method that will be executed before data is written to the stream. Subclasses
-      # can override this method if needed.
+      # can override this method if needed. This method will be called in a mutex lock.
       def before_flush
       end
       

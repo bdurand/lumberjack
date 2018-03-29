@@ -1,3 +1,5 @@
+# frozen_string_literals: true
+
 module Lumberjack
   class Device
     # This is an abstract class for a device that appends entries to a file and periodically archives
@@ -6,6 +8,9 @@ module Lumberjack
     #
     # The <tt>:keep</tt> option can be used to specify a maximum number of rolled log files to keep.
     # Older files will be deleted based on the time they were created. The default is to keep all files.
+    #
+    # The <tt>:min_roll_check</tt> option can be used to specify the number of seconds between checking
+    # the file to determine if it needs to be rolled. The default is to check at most once per second.
     class RollingLogFile < LogFile
       attr_reader :path
       attr_accessor :keep
@@ -16,6 +21,8 @@ module Lumberjack
         super(path, options)
         @file_inode = stream.lstat.ino rescue nil
         @@rolls = []
+        @next_stat_check = Time.now.to_f
+        @min_roll_check = (options[:min_roll_check] || 1.0).to_f
       end
       
       # Returns a suffix that will be appended to the file name when it is archived.. The suffix should
@@ -48,7 +55,7 @@ module Lumberjack
           reopen_file
         end
       rescue => e
-        STDERR.write("Failed to roll file #{path}: #{e.inspect}\n#{e.backtrace.join("\n")}\n")
+        $stderr.write("Failed to roll file #{path}: #{e.inspect}\n#{e.backtrace.join("\n")}\n")
       end
 
       protected
@@ -60,12 +67,15 @@ module Lumberjack
       
       # Handle rolling the file before flushing.
       def before_flush # :nodoc:
-        path_inode = File.lstat(path).ino rescue nil
-        if path_inode != @file_inode
-          @file_inode = path_inode
-          reopen_file
-        else
-          roll_file! if roll_file?
+        if @min_roll_check <= 0.0 || Time.now.to_f >= @next_stat_check
+          @next_stat_check += @min_roll_check
+          path_inode = File.lstat(path).ino rescue nil
+          if path_inode != @file_inode
+            @file_inode = path_inode
+            reopen_file
+          else
+            roll_file! if roll_file?
+          end
         end
       end
       
@@ -73,9 +83,10 @@ module Lumberjack
 
       def reopen_file
         old_stream = stream
-        self.stream = File.open(path, 'a', encoding: EXTERNAL_ENCODING)
-        stream.sync = true
-        @file_inode = stream.lstat.ino rescue nil
+        new_stream = File.open(path, 'a', encoding: EXTERNAL_ENCODING)
+        new_stream.sync = true if buffer_size > 0
+        @file_inode = new_stream.lstat.ino rescue nil
+        self.stream = new_stream
         old_stream.close
       end
     end
