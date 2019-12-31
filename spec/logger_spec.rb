@@ -16,52 +16,52 @@ describe Lumberjack::Logger do
     it "should wrap an IO stream in a device" do
       output = StringIO.new
       logger = Lumberjack::Logger.new(output)
-      logger.device.class.should == Lumberjack::Device::Writer
+      expect(logger.device.class).to eq(Lumberjack::Device::Writer)
     end
 
     it "should have a formatter" do
       output = StringIO.new
       logger = Lumberjack::Logger.new(output)
-      logger.formatter.should be
+      expect(logger.formatter).to be
     end
 
     it "should open a file path in a device" do
       logger = Lumberjack::Logger.new(File.join(tmp_dir, "log_file_1.log"))
-      logger.device.class.should == Lumberjack::Device::LogFile
+      expect(logger.device.class).to eq(Lumberjack::Device::LogFile)
     end
 
     it "should open a pathname in a device" do
       logger = Lumberjack::Logger.new(Pathname.new(File.join(tmp_dir, "log_file_1.log")))
-      logger.device.class.should == Lumberjack::Device::LogFile
+      expect(logger.device.class).to eq(Lumberjack::Device::LogFile)
     end
 
     it "should use the null device if the stream is :null" do
       logger = Lumberjack::Logger.new(:null)
-      logger.device.class.should == Lumberjack::Device::Null
+      expect(logger.device.class).to eq(Lumberjack::Device::Null)
     end
 
     it "should set the level with a numeric" do
       logger = Lumberjack::Logger.new(:null, :level => Lumberjack::Severity::WARN)
-      logger.level.should == Lumberjack::Severity::WARN
+      expect(logger.level).to eq(Lumberjack::Severity::WARN)
     end
 
     it "should set the level with a level" do
       logger = Lumberjack::Logger.new(:null, :level => :warn)
-      logger.level.should == Lumberjack::Severity::WARN
+      expect(logger.level).to eq(Lumberjack::Severity::WARN)
     end
 
     it "should default the level to INFO" do
       logger = Lumberjack::Logger.new(:null)
-      logger.level.should == Lumberjack::Severity::INFO
+      expect(logger.level).to eq(Lumberjack::Severity::INFO)
     end
 
     it "should set the progname"do
       logger = Lumberjack::Logger.new(:null, :progname => "app")
-      logger.progname.should == "app"
+      expect(logger.progname).to eq("app")
     end
 
     it "should create a thread to flush the device" do
-      Thread.should_receive(:new)
+      expect(Thread).to receive(:new)
       logger = Lumberjack::Logger.new(:null, :flush_seconds => 10)
     end
   end
@@ -70,13 +70,13 @@ describe Lumberjack::Logger do
     it "should have a level" do
       logger = Lumberjack::Logger.new
       logger.level = Lumberjack::Severity::DEBUG
-      logger.level.should == Lumberjack::Severity::DEBUG
+      expect(logger.level).to eq(Lumberjack::Severity::DEBUG)
     end
 
     it "should have a progname" do
       logger = Lumberjack::Logger.new
       logger.progname = "app"
-      logger.progname.should == "app"
+      expect(logger.progname).to eq("app")
     end
 
     it "should be able to silence the log in a block" do
@@ -84,12 +84,12 @@ describe Lumberjack::Logger do
       logger = Lumberjack::Logger.new(output, :buffer_size => 0, :level => Lumberjack::Severity::INFO, :template => ":message")
       logger.info("one")
       logger.silence do
-        logger.level.should == Lumberjack::Severity::ERROR
+        expect(logger.level).to eq(Lumberjack::Severity::ERROR)
         logger.info("two")
         logger.error("three")
       end
       logger.info("four")
-      output.string.split.should == ["one", "three", "four"]
+      expect(output.string.split).to eq(["one", "three", "four"])
     end
 
     it "should be able to customize the level of silence in a block" do
@@ -97,13 +97,13 @@ describe Lumberjack::Logger do
       logger = Lumberjack::Logger.new(output, :buffer_size => 0, :level => Lumberjack::Severity::INFO, :template => ":message")
       logger.info("one")
       logger.silence(Lumberjack::Severity::FATAL) do
-        logger.level.should == Lumberjack::Severity::FATAL
+        expect(logger.level).to eq(Lumberjack::Severity::FATAL)
         logger.info("two")
         logger.error("three")
         logger.fatal("woof")
       end
       logger.info("four")
-      output.string.split.should == ["one", "woof", "four"]
+      expect(output.string.split).to eq(["one", "woof", "four"])
     end
 
     it "should not be able to silence the logger if silencing is disabled" do
@@ -112,25 +112,25 @@ describe Lumberjack::Logger do
       logger.silencer = false
       logger.info("one")
       logger.silence do
-        logger.level.should == Lumberjack::Severity::INFO
+        expect(logger.level).to eq(Lumberjack::Severity::INFO)
         logger.info("two")
         logger.error("three")
       end
       logger.info("four")
-      output.string.split.should == ["one", "two", "three", "four"]
+      expect(output.string.split).to eq(["one", "two", "three", "four"])
     end
 
     it "should be able to set the progname in a block" do
       logger = Lumberjack::Logger.new
       logger.set_progname("app")
-      logger.progname.should == "app"
+      expect(logger.progname).to eq("app")
       block_executed = false
       logger.set_progname("xxx") do
         block_executed = true
-        logger.progname.should == "xxx"
+        expect(logger.progname).to eq("xxx")
       end
-      block_executed.should == true
-      logger.progname.should == "app"
+      expect(block_executed).to eq(true)
+      expect(logger.progname).to eq("app")
     end
 
     it "should only affect the current thread when silencing the logger" do
@@ -150,8 +150,8 @@ describe Lumberjack::Logger do
         logger.info("outer")
         status = 2
         logger.close
-        output.string.should include("outer")
-        output.string.should_not include("inner")
+        expect(output.string).to include("outer")
+        expect(output.string).not_to include("inner")
       ensure
         status = 2
       end
@@ -174,8 +174,8 @@ describe Lumberjack::Logger do
         logger.info("outer")
         status = 2
         logger.close
-        output.string.should include("thread1")
-        output.string.should include("thread2")
+        expect(output.string).to include("thread1")
+        expect(output.string).to include("thread2")
       ensure
         status = 2
       end
@@ -188,34 +188,34 @@ describe Lumberjack::Logger do
       logger = Lumberjack::Logger.new(output, :flush_seconds => 0.1, :level => Lumberjack::Severity::INFO, :template => ":message", :buffer_size => 32767)
       logger.info("message 1")
       logger.info("message 2")
-      output.string.should == ""
+      expect(output.string).to eq("")
       sleep(0.15)
-      output.string.split(Lumberjack::LINE_SEPARATOR).should == ["message 1", "message 2"]
+      expect(output.string.split(Lumberjack::LINE_SEPARATOR)).to eq(["message 1", "message 2"])
       logger.info("message 3")
-      output.string.should_not include("message 3")
+      expect(output.string).not_to include("message 3")
       sleep(0.15)
-      output.string.split(Lumberjack::LINE_SEPARATOR).should == ["message 1", "message 2", "message 3"]
+      expect(output.string.split(Lumberjack::LINE_SEPARATOR)).to eq(["message 1", "message 2", "message 3"])
     end
 
     it "should write the log entries to the device on flush and update the last flushed time" do
       output = StringIO.new
       logger = Lumberjack::Logger.new(output, :level => Lumberjack::Severity::INFO, :template => ":message", :buffer_size => 32767)
       logger.info("message 1")
-      output.string.should == ""
+      expect(output.string).to eq("")
       last_flushed_at = logger.last_flushed_at
       logger.flush
-      output.string.split(Lumberjack::LINE_SEPARATOR).should == ["message 1"]
-      logger.last_flushed_at.should >= last_flushed_at
+      expect(output.string.split(Lumberjack::LINE_SEPARATOR)).to eq(["message 1"])
+      expect(logger.last_flushed_at).to be >= last_flushed_at
     end
 
     it "should flush the buffer and close the devices" do
       output = StringIO.new
       logger = Lumberjack::Logger.new(output, :level => Lumberjack::Severity::INFO, :template => ":message", :buffer_size => 32767)
       logger.info("message 1")
-      output.string.should == ""
+      expect(output.string).to eq("")
       logger.close
-      output.string.split(Lumberjack::LINE_SEPARATOR).should == ["message 1"]
-      output.should be_closed
+      expect(output.string.split(Lumberjack::LINE_SEPARATOR)).to eq(["message 1"])
+      expect(output).to be_closed
     end
   end
 
@@ -227,62 +227,62 @@ describe Lumberjack::Logger do
 
     it "should add entries with a numeric severity and a message" do
       time = Time.parse("2011-01-30T12:31:56.123")
-      Time.stub(:now => time)
+      allow(Time).to receive_messages(:now => time)
       logger.add(Lumberjack::Severity::INFO, "test")
-      output.string.should == "[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}"
+      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}")
     end
 
     it "should add entries with a severity label" do
       time = Time.parse("2011-01-30T12:31:56.123")
-      Time.stub(:now => time)
+      allow(Time).to receive_messages(:now => time)
       logger.add(:info, "test")
-      output.string.should == "[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}"
+      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}")
     end
 
     it "should add entries with a custom progname and message" do
       time = Time.parse("2011-01-30T12:31:56.123")
-      Time.stub(:now => time)
+      allow(Time).to receive_messages(:now => time)
       logger.add(Lumberjack::Severity::INFO, "test", "app")
-      output.string.should == "[2011-01-30T12:31:56.123 INFO app(#{$$}) #] test#{n}"
+      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$}) #] test#{n}")
     end
 
     it "should add entries with a local progname and message" do
       time = Time.parse("2011-01-30T12:31:56.123")
-      Time.stub(:now => time)
+      allow(Time).to receive_messages(:now => time)
       logger.set_progname("block") do
         logger.add(Lumberjack::Severity::INFO, "test")
       end
-      output.string.should == "[2011-01-30T12:31:56.123 INFO block(#{$$}) #] test#{n}"
+      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO block(#{$$}) #] test#{n}")
     end
 
     it "should add entries with a progname but no message or block" do
       time = Time.parse("2011-01-30T12:31:56.123")
-      Time.stub(:now => time)
+      allow(Time).to receive_messages(:now => time)
       logger.set_progname("default") do
         logger.add(Lumberjack::Severity::INFO, nil, "message")
       end
-      output.string.should == "[2011-01-30T12:31:56.123 INFO default(#{$$}) #] message#{n}"
+      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO default(#{$$}) #] message#{n}")
     end
 
     it "should add entries with a block" do
       time = Time.parse("2011-01-30T12:31:56.123")
-      Time.stub(:now => time)
+      allow(Time).to receive_messages(:now => time)
       logger.add(Lumberjack::Severity::INFO){"test"}
-      output.string.should == "[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}"
+      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}")
     end
 
     it "should log entries (::Logger compatibility)" do
       time = Time.parse("2011-01-30T12:31:56.123")
-      Time.stub(:now => time)
+      allow(Time).to receive_messages(:now => time)
       logger.log(Lumberjack::Severity::INFO, "test")
-      output.string.should == "[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}"
+      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}")
     end
 
     it "should append messages with unknown severity to the log" do
       time = Time.parse("2011-01-30T12:31:56.123")
-      Time.stub(:now => time)
+      allow(Time).to receive_messages(:now => time)
       logger << "test"
-      output.string.should == "[2011-01-30T12:31:56.123 UNKNOWN test(#{$$}) #] test#{n}"
+      expect(output.string).to eq("[2011-01-30T12:31:56.123 UNKNOWN test(#{$$}) #] test#{n}")
     end
 
     it "should ouput entries to STDERR if they can't be written the the device" do
@@ -290,11 +290,11 @@ describe Lumberjack::Logger do
       $stderr = StringIO.new
       begin
         time = Time.parse("2011-01-30T12:31:56.123")
-        Time.stub(:now => time)
-        device.should_receive(:write).and_raise(StandardError.new("Cannot write to device"))
+        allow(Time).to receive_messages(:now => time)
+        expect(device).to receive(:write).and_raise(StandardError.new("Cannot write to device"))
         logger.add(Lumberjack::Severity::INFO, "test")
-        $stderr.string.should include("[2011-01-30T12:31:56.123 INFO test(#{$$})] test")
-        $stderr.string.should include("StandardError: Cannot write to device")
+        expect($stderr.string).to include("[2011-01-30T12:31:56.123 INFO test(#{$$})] test")
+        expect($stderr.string).to include("StandardError: Cannot write to device")
       ensure
         $stderr = stderr
       end
@@ -307,103 +307,103 @@ describe Lumberjack::Logger do
         logger.add(Lumberjack::Severity::DEBUG, "debug")
         logger.add(Lumberjack::Severity::INFO, "info")
         logger.add(Lumberjack::Severity::ERROR, "error")
-        output.string.should == "info#{n}error#{n}"
+        expect(output.string).to eq("info#{n}error#{n}")
       end
 
       it "should only log fatal messages when the level is set to fatal" do
         logger.level = Lumberjack::Severity::FATAL
         logger.fatal("fatal")
-        logger.fatal?.should == true
+        expect(logger.fatal?).to eq(true)
         logger.error("error")
-        logger.error?.should == false
+        expect(logger.error?).to eq(false)
         logger.warn("warn")
-        logger.warn?.should == false
+        expect(logger.warn?).to eq(false)
         logger.info("info")
-        logger.info?.should == false
+        expect(logger.info?).to eq(false)
         logger.debug("debug")
-        logger.debug?.should == false
+        expect(logger.debug?).to eq(false)
         logger.unknown("unknown")
-        output.string.should == "fatal#{n}unknown#{n}"
+        expect(output.string).to eq("fatal#{n}unknown#{n}")
       end
 
       it "should only log error messages and higher when the level is set to error" do
         logger.level = Lumberjack::Severity::ERROR
         logger.fatal("fatal")
-        logger.fatal?.should == true
+        expect(logger.fatal?).to eq(true)
         logger.error("error")
-        logger.error?.should == true
+        expect(logger.error?).to eq(true)
         logger.warn("warn")
-        logger.warn?.should == false
+        expect(logger.warn?).to eq(false)
         logger.info("info")
-        logger.info?.should == false
+        expect(logger.info?).to eq(false)
         logger.debug("debug")
-        logger.debug?.should == false
+        expect(logger.debug?).to eq(false)
         logger.unknown("unknown")
-        output.string.should == "fatal#{n}error#{n}unknown#{n}"
+        expect(output.string).to eq("fatal#{n}error#{n}unknown#{n}")
       end
 
       it "should only log warn messages and higher when the level is set to warn" do
         logger.level = Lumberjack::Severity::WARN
         logger.fatal("fatal")
-        logger.fatal?.should == true
+        expect(logger.fatal?).to eq(true)
         logger.error("error")
-        logger.error?.should == true
+        expect(logger.error?).to eq(true)
         logger.warn("warn")
-        logger.warn?.should == true
+        expect(logger.warn?).to eq(true)
         logger.info("info")
-        logger.info?.should == false
+        expect(logger.info?).to eq(false)
         logger.debug("debug")
-        logger.debug?.should == false
+        expect(logger.debug?).to eq(false)
         logger.unknown("unknown")
-        output.string.should == "fatal#{n}error#{n}warn#{n}unknown#{n}"
+        expect(output.string).to eq("fatal#{n}error#{n}warn#{n}unknown#{n}")
       end
 
       it "should only log info messages and higher when the level is set to info" do
         logger.level = Lumberjack::Severity::INFO
         logger.fatal("fatal")
-        logger.fatal?.should == true
+        expect(logger.fatal?).to eq(true)
         logger.error("error")
-        logger.error?.should == true
+        expect(logger.error?).to eq(true)
         logger.warn("warn")
-        logger.warn?.should == true
+        expect(logger.warn?).to eq(true)
         logger.info("info")
-        logger.info?.should == true
+        expect(logger.info?).to eq(true)
         logger.debug("debug")
-        logger.debug?.should == false
+        expect(logger.debug?).to eq(false)
         logger.unknown("unknown")
-        output.string.should == "fatal#{n}error#{n}warn#{n}info#{n}unknown#{n}"
+        expect(output.string).to eq("fatal#{n}error#{n}warn#{n}info#{n}unknown#{n}")
       end
 
       it "should log all messages when the level is set to debug" do
         logger.level = Lumberjack::Severity::DEBUG
         logger.fatal("fatal")
-        logger.fatal?.should == true
+        expect(logger.fatal?).to eq(true)
         logger.error("error")
-        logger.error?.should == true
+        expect(logger.error?).to eq(true)
         logger.warn("warn")
-        logger.warn?.should == true
+        expect(logger.warn?).to eq(true)
         logger.info("info")
-        logger.info?.should == true
+        expect(logger.info?).to eq(true)
         logger.debug("debug")
-        logger.debug?.should == true
+        expect(logger.debug?).to eq(true)
         logger.unknown("unknown")
-        output.string.should == "fatal#{n}error#{n}warn#{n}info#{n}debug#{n}unknown#{n}"
+        expect(output.string).to eq("fatal#{n}error#{n}warn#{n}info#{n}debug#{n}unknown#{n}")
       end
 
       it "should only log unkown messages when the level is set above fatal" do
         logger.level = Lumberjack::Severity::FATAL + 1
         logger.fatal("fatal")
-        logger.fatal?.should == false
+        expect(logger.fatal?).to eq(false)
         logger.error("error")
-        logger.error?.should == false
+        expect(logger.error?).to eq(false)
         logger.warn("warn")
-        logger.warn?.should == false
+        expect(logger.warn?).to eq(false)
         logger.info("info")
-        logger.info?.should == false
+        expect(logger.info?).to eq(false)
         logger.debug("debug")
-        logger.debug?.should == false
+        expect(logger.debug?).to eq(false)
         logger.unknown("unknown")
-        output.string.should == "unknown#{n}"
+        expect(output.string).to eq("unknown#{n}")
       end
     end
   end

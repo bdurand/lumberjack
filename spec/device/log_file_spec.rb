@@ -25,7 +25,7 @@ describe Lumberjack::Device::LogFile do
     device.write(Lumberjack::LogEntry.new(Time.now, 1, "New log entry", nil, $$, nil))
     device.close
     
-    File.read(log_file).should == "Existing contents\nNew log entry#{Lumberjack::LINE_SEPARATOR}"
+    expect(File.read(log_file)).to eq("Existing contents\nNew log entry#{Lumberjack::LINE_SEPARATOR}")
   end
 
   it "properly handles messages with broken UTF-8 characters" do

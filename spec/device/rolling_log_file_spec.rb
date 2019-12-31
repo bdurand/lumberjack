@@ -30,27 +30,27 @@ describe Lumberjack::Device::RollingLogFile do
     device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :buffer_size => 32767, :min_roll_check => 0)
     expect(device).to receive(:roll_file?).and_return(false, true)
     expect(device).to receive(:after_roll)
-    device.stub(:archive_file_suffix => "rolled")
+    allow(device).to receive_messages(:archive_file_suffix => "rolled")
     device.write(entry)
     device.flush
     device.write(Lumberjack::LogEntry.new(Time.now, 1, "Another log entry", nil, $$, nil))
     device.close
-    File.read("#{log_file}.rolled").should == "New log entry#{Lumberjack::LINE_SEPARATOR}"
-    File.read(log_file).should == "Another log entry#{Lumberjack::LINE_SEPARATOR}"
+    expect(File.read("#{log_file}.rolled")).to eq("New log entry#{Lumberjack::LINE_SEPARATOR}")
+    expect(File.read(log_file)).to eq("Another log entry#{Lumberjack::LINE_SEPARATOR}")
   end
   
   it "should reopen the file if the stream inode doesn't match the file path inode" do
     log_file = File.join(tmp_dir, "test_3.log")
     device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :min_roll_check => 0)
-    device.stub(:roll_file? => false)
+    allow(device).to receive_messages(:roll_file? => false)
     device.write(entry)
     device.flush
     File.rename(log_file, "#{log_file}.rolled")
     device.flush
     device.write(Lumberjack::LogEntry.new(Time.now, 1, "Another log entry", nil, $$, nil))
     device.close
-    File.read("#{log_file}.rolled").should == "New log entry#{Lumberjack::LINE_SEPARATOR}"
-    File.read(log_file).should == "Another log entry#{Lumberjack::LINE_SEPARATOR}"
+    expect(File.read("#{log_file}.rolled")).to eq("New log entry#{Lumberjack::LINE_SEPARATOR}")
+    expect(File.read(log_file)).to eq("Another log entry#{Lumberjack::LINE_SEPARATOR}")
   end
   
   it "should roll the file properly with multiple thread and processes using it" do
@@ -99,11 +99,11 @@ describe Lumberjack::Device::RollingLogFile do
       lines = File.read(file).split(Lumberjack::LINE_SEPARATOR)
       line_count += lines.size
       lines.each do |line|
-        line.should == message
+        expect(line).to eq(message)
       end
     end
     
-    file_count.should > 3
+    expect(file_count).to be > 3
   end
   
   it "should only keep a specified number of archived log files" do
@@ -123,7 +123,7 @@ describe Lumberjack::Device::RollingLogFile do
     device.flush
     device.write(entry)
     device.close
-    Dir.glob("#{log_file}*").sort.should == [log_file, "#{log_file}.another", "#{log_file}.keep"]
+    expect(Dir.glob("#{log_file}*").sort).to eq([log_file, "#{log_file}.another", "#{log_file}.keep"])
   end
 
   context "when file is rolled" do
@@ -131,8 +131,8 @@ describe Lumberjack::Device::RollingLogFile do
 
     let(:device) do
       device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :keep => 2, :buffer_size => 32767, :min_roll_check => 0)
-      device.stub(:roll_file?).and_return(true)
-      device.stub(:archive_file_suffix => "rolled")
+      allow(device).to receive(:roll_file?).and_return(true)
+      allow(device).to receive_messages(:archive_file_suffix => "rolled")
       device
     end
 

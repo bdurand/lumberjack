@@ -8,7 +8,7 @@ describe Lumberjack::Formatter::PrettyPrintFormatter do
       q.text "woot!"
     end
     formatter = Lumberjack::Formatter::PrettyPrintFormatter.new
-    formatter.call(object).should == "woot!"
+    expect(formatter.call(object)).to eq("woot!")
   end
 
 end
