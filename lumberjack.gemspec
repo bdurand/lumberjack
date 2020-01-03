@@ -1,23 +1,34 @@
-Gem::Specification.new do |s|
-  s.name = 'lumberjack'
-  s.version = File.read(File.expand_path("../VERSION", __FILE__)).strip
-  s.summary = "A simple, powerful, and very fast logging utility that can be a drop in replacement for Logger or ActiveSupport::BufferedLogger."
-  s.description = "A simple, powerful, and very fast logging utility that can be a drop in replacement for Logger or ActiveSupport::BufferedLogger. Provides support for automatically rolling log files even with multiple processes writing the same log file."
-  s.license = 'MIT'
+Gem::Specification.new do |spec|
+  spec.name = 'lumberjack'
+  spec.version = File.read(File.expand_path("../VERSION", __FILE__)).strip
+  spec.authors = ['Brian Durand']
+  spec.email = ['bbdurand@gmail.com']
 
-  s.authors = ['Brian Durand']
-  s.email = ['bbdurand@gmail.com']
-  s.homepage = "https://github.com/bdurand/lumberjack"
+  spec.summary = "A simple, powerful, and very fast logging utility that can be a drop in replacement for Logger or ActiveSupport::BufferedLogger."
+  spec.homepage = "https://github.com/bdurand/lumberjack"
+  spec.license = "MIT"
 
-  s.files = ['README.md', 'VERSION', 'Rakefile', 'MIT_LICENSE'].concat(Dir.glob('lib/**/*')).concat(Dir.glob('spec/**/*'))
-  s.require_path = 'lib'
-  
-  s.metadata    = {
-    "homepage_uri" => "https://github.com/bdurand/lumberjack",
-    "changelog_uri" => "https://github.com/bdurand/lumberjack/blob/master/CHANGELOG.md",
-    "source_code_uri" => "https://github.com/bdurand/lumberjack"
-  }
-  
-  s.add_development_dependency("rspec", ["~> 3.0"])
-  s.add_development_dependency("timecop", ["~> 0.8"])
+  # Specify which files should be added to the gem when it is released.
+  # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
+  ignore_files = %w(
+    .gitignore
+    .travis.yml
+    Appraisals
+    Gemfile
+    Gemfile.lock
+    Rakefile
+    gemfiles/
+    spec/
+  )
+  spec.files         = Dir.chdir(File.expand_path('..', __FILE__)) do
+    `git ls-files -z`.split("\x0").reject{ |f| ignore_files.any?{ |path| f.start_with?(path) } }
+  end
+
+  spec.require_paths = ['lib']
+
+  spec.required_ruby_version = '>= 2.2.2'
+
+  spec.add_development_dependency("rspec", ["~> 3.0"])
+  spec.add_development_dependency("timecop")
+  spec.add_development_dependency "rake"
 end

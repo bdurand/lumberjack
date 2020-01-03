@@ -15,7 +15,18 @@ module Lumberjack
       def initialize(path, options = {})
         @path = File.expand_path(path)
         FileUtils.mkdir_p(File.dirname(@path))
-        super(File.new(@path, 'a', :encoding => EXTERNAL_ENCODING), options)
+        super(file_stream, options)
+      end
+      
+      def reopen
+        close
+        @stream = file_stream
+      end
+      
+      private
+      
+      def file_stream
+        File.new(@path, 'a', :encoding => EXTERNAL_ENCODING)
       end
     end
   end

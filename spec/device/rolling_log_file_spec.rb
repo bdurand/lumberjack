@@ -59,7 +59,7 @@ describe Lumberjack::Device::RollingLogFile do
     thread_count = 4
     entry_count = 400
     max_size = 128
-    severity = Lumberjack::Severity::INFO
+    severity = Logger::INFO
     message = "This is a test message that is written to the log file to indicate what the state of the application is."
     
     logger_test = lambda do

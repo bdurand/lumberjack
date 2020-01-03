@@ -93,9 +93,9 @@ If you use the built in devices, you can also customize the Template used to for
 
 The logger has hooks for devices that support buffering to increase performance by batching physical writes. Log entries are not guaranteed to be written until the Lumberjack::Logger#flush method is called.
 
-You can use the <tt>:flush_seconds</tt> option on the logger to periodically flush the log. This is usually a good idea so you can more easily debug hung processes. Without periodic flushing, a process that hangs may never write anything to the log because the messages are sitting in a buffer. By turning on periodic flushing, the logged messages will be written which can greatly aid in debugging the problem.
+You can use the `:flush_seconds` option on the logger to periodically flush the log. This is usually a good idea so you can more easily debug hung processes. Without periodic flushing, a process that hangs may never write anything to the log because the messages are sitting in a buffer. By turning on periodic flushing, the logged messages will be written which can greatly aid in debugging the problem.
 
-The built in stream based logging devices use an internal buffer. The size of the buffer (in bytes) can be set with the <tt>:buffer_size</tt> options when initializing a logger. The default behavior is to not to buffer.
+The built in stream based logging devices use an internal buffer. The size of the buffer (in bytes) can be set with the `:buffer_size` options when initializing a logger. The default behavior is to not to buffer.
 
 ```ruby
   # Set buffer to flush after 8K has been written to the log.

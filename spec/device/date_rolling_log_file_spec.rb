@@ -5,17 +5,17 @@ describe Lumberjack::Device::DateRollingLogFile do
   before :all do
     create_tmp_dir
   end
-  
+
   after :all do
     delete_tmp_dir
   end
-  
+
   before :each do
     delete_tmp_files
   end
-  
+
   let(:one_day){ 60 * 60 * 24 }
-  
+
   it "should roll the file daily" do
     now = Time.now
     log_file = File.join(tmp_dir, "a#{rand(1000000000)}.log")
@@ -29,7 +29,7 @@ describe Lumberjack::Device::DateRollingLogFile do
       logger.error("test day two")
       logger.close
     end
-  
+
     expect(File.read("#{log_file}.#{now.to_date.strftime('%Y-%m-%d')}")).to eq("test day one#{Lumberjack::LINE_SEPARATOR}")
     expect(File.read(log_file)).to eq("test day two#{Lumberjack::LINE_SEPARATOR}")
   end
@@ -47,7 +47,7 @@ describe Lumberjack::Device::DateRollingLogFile do
       logger.error("test week two")
       logger.close
     end
-    
+
     expect(File.read("#{log_file}.#{now.to_date.strftime('week-of-%Y-%m-%d')}")).to eq("test week one#{Lumberjack::LINE_SEPARATOR}")
     expect(File.read(log_file)).to eq("test week two#{Lumberjack::LINE_SEPARATOR}")
   end
@@ -65,7 +65,7 @@ describe Lumberjack::Device::DateRollingLogFile do
       logger.error("test month two")
       logger.close
     end
-  
+
     expect(File.read("#{log_file}.#{now.to_date.strftime('%Y-%m')}")).to eq("test month one#{Lumberjack::LINE_SEPARATOR}")
     expect(File.read(log_file)).to eq("test month two#{Lumberjack::LINE_SEPARATOR}")
   end

@@ -7,14 +7,15 @@ module Lumberjack
   # * <tt>:time</tt>
   # * <tt>:severity</tt>
   # * <tt>:progname</tt>
-  # * <tt>:unit_of_work_id</tt>
+  # * <tt>:tags</tt>
   # * <tt>:message</tt>
+  #
+  # Any other words prefixed with a colon will be substituted with the value of the tag with that name.
   class Template
-    TEMPLATE_ARGUMENT_ORDER = %w(:time :severity :progname :pid :unit_of_work_id :message).freeze
-    DEFAULT_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S."
-    MILLISECOND_FORMAT = "%03d"
-    MICROSECOND_FORMAT = "%06d"
-    
+    TEMPLATE_ARGUMENT_ORDER = %w(:time :severity :progname :pid :message :tags).freeze
+    MILLISECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%3N"
+    MICROSECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%6N"
+
     # Create a new template from the markup. The +first_line+ argument is used to format only the first
     # line of a message. Additional lines will be added to the message unformatted. If you wish to format
     # the additional lines, use the <tt>:additional_lines</tt> options to specify a template. Note that you'll need
@@ -27,47 +28,86 @@ module Lumberjack
     #
     # Messages will have white space stripped from both ends.
     def initialize(first_line, options = {})
-      @first_line_template = compile(first_line)
+      @first_line_template, @first_line_tags = compile(first_line)
       additional_lines = options[:additional_lines] || "#{Lumberjack::LINE_SEPARATOR}:message"
-      @additional_line_template = compile(additional_lines)
+      @additional_line_template, @additional_line_tags = compile(additional_lines)
       # Formatting the time is relatively expensive, so only do it if it will be used
       @template_include_time = first_line.include?(":time") || additional_lines.include?(":time")
-      @time_format = options[:time_format] || :milliseconds
+      self.datetime_format = (options[:time_format] || :milliseconds)
     end
-    
+
+    def datetime_format=(format)
+      if format == :milliseconds
+        format = MILLISECOND_TIME_FORMAT
+      elsif format == :microseconds
+        format = MICROSECOND_TIME_FORMAT
+      end
+      @time_formatter = Formatter::DateTimeFormatter.new(format)
+    end
+
+    def datetime_format
+      @time_formatter.format
+    end
+
     # Convert an entry into a string using the template.
     def call(entry)
-      lines = entry.message.strip.split(Lumberjack::LINE_SEPARATOR)
-      formatted_time = format_time(entry.time) if @template_include_time
-      message = @first_line_template % [formatted_time, entry.severity_label, entry.progname, entry.pid, entry.unit_of_work_id, lines.shift]
-      lines.each do |line|
-        message << @additional_line_template % [formatted_time, entry.severity_label, entry.progname, entry.pid, entry.unit_of_work_id, line]
+      return entry unless entry.is_a?(LogEntry)
+
+      first_line = entry.message.to_s.strip
+      additional_lines = nil
+      if entry.message.include?(Lumberjack::LINE_SEPARATOR)
+        additional_lines = entry.message.strip.split(Lumberjack::LINE_SEPARATOR)
+        first_line = additional_lines.shift
+      end
+
+      formatted_time = @time_formatter.call(entry.time) if @template_include_time
+      format_args = [formatted_time, entry.severity_label, entry.progname, entry.pid, first_line]
+      tag_arguments = tag_args(entry.tags, @first_line_tags)
+      message = @first_line_template % (format_args + tag_arguments)
+
+      if additional_lines && !additional_lines.empty?
+        tag_arguments = tag_args(entry.tags, @additional_line_tags) unless @additional_line_tags == @first_line_tags
+        additional_lines.each do |line|
+          format_args[format_args.size - 1] = line
+          line_message = @additional_line_template % (format_args + tag_arguments)
+          message << line_message
+        end
       end
       message
     end
-    
+
     private
 
-    def format_time(time) #:nodoc:
-      if @time_format.is_a?(String)
-        time.strftime(@time_format)
-      elsif @time_format == :milliseconds
-        time.strftime(DEFAULT_TIME_FORMAT) << MILLISECOND_FORMAT % (time.usec / 1000.0).round
-      else
-        time.strftime(DEFAULT_TIME_FORMAT) << MICROSECOND_FORMAT % time.usec
+    def tag_args(tags, tag_vars)
+      return [nil] * (tag_vars.size + 1) if tags.nil? || tags.size == 0
+
+      tags_string = String.new
+      tags.each do |name, value|
+        unless tag_vars.include?(name)
+          tags_string << "[#{name}:#{value.inspect}] "
+        end
       end
+
+      args = [tags_string.chop]
+      tag_vars.each do |name|
+        args << tags[name]
+      end
+      args
     end
-    
+
     # Compile the template string into a value that can be used with sprintf.
     def compile(template) #:nodoc:
-      template.gsub(/:[a-z0-9_]+/) do |match|
+      tag_vars = []
+      template = template.gsub(/:[a-z0-9_]+/) do |match|
         position = TEMPLATE_ARGUMENT_ORDER.index(match)
         if position
           "%#{position + 1}$s"
         else
-          match
+          tag_vars << match[1, match.length]
+          "%#{TEMPLATE_ARGUMENT_ORDER.size + tag_vars.size}$s"
         end
       end
+      [template, tag_vars]
     end
   end
 end

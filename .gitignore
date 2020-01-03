@@ -3,3 +3,4 @@ tmp
 rdoc
 *.rbc
 .ruby-version
+.tm_properties

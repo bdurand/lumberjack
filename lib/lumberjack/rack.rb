@@ -2,7 +2,8 @@
 
 module Lumberjack
   module Rack
-    require File.expand_path("../rack/unit_of_work.rb", __FILE__)
-    require File.expand_path("../rack/request_id.rb", __FILE__)
+    require_relative "rack/unit_of_work.rb"
+    require_relative "rack/request_id.rb"
+    require_relative "rack/context.rb"
   end
 end
