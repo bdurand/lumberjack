@@ -1,9 +1,45 @@
+language: ruby
+
 rvm:
-  - 2.2.0
+  - 2.2
   - 2.3
   - 2.4
   - 2.5
   - 2.6
-  - 2.7
-  - rbx
   - jruby
+
+rvm:
+  - "2.6"
+
+gemfile:
+  - Gemfile
+
+matrix:
+  include:
+  - rvm: "2.6"
+    gemfile: Gemfile
+
+  - rvm: "2.6"
+    gemfile: gemfiles/logger.gemfile
+
+  - rvm: "2.6"
+    gemfile: gemfiles/activesupport.gemfile
+
+  - rvm: "2.5"
+    gemfile: Gemfile
+
+  - rvm: "2.4"
+    gemfile: Gemfile
+
+  - rvm: "2.3"
+    gemfile: Gemfile
+
+  - rvm: "2.2"
+    gemfile: Gemfile
+
+  - rvm: "jruby"
+    gemfile: Gemfile
+
+script:
+  - gem list bundler
+  - bundle exec rake spec
