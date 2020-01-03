@@ -1,14 +1,6 @@
 language: ruby
 
 rvm:
-  - 2.2
-  - 2.3
-  - 2.4
-  - 2.5
-  - 2.6
-  - jruby
-
-rvm:
   - "2.6"
 
 gemfile:
@@ -32,9 +24,6 @@ matrix:
     gemfile: Gemfile
 
   - rvm: "2.3"
-    gemfile: Gemfile
-
-  - rvm: "2.2"
     gemfile: Gemfile
 
   - rvm: "jruby"
