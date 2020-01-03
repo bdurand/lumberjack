@@ -15,6 +15,7 @@ module Lumberjack
   require_relative "lumberjack/formatter.rb"
   require_relative "lumberjack/device.rb"
   require_relative "lumberjack/logger.rb"
+  require_relative "lumberjack/tags.rb"
   require_relative "lumberjack/template.rb"
   require_relative "lumberjack/rack.rb"
 
@@ -67,7 +68,7 @@ module Lumberjack
       context = Thread.current[:lumberjack_context]
       context.tags if context
     end
-    
+
     # Set tags on the current context
     def tag(tags)
       context = Thread.current[:lumberjack_context]

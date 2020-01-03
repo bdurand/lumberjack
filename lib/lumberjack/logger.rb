@@ -120,12 +120,12 @@ module Lumberjack
       progname ||= self.progname
       current_tags = self.tags
       if current_tags.empty?
-        tags = tags.transform_keys(&:to_s) unless tags.nil?
+        tags = Tags.stringify_keys(tags) unless tags.nil?
       else
         if tags.nil?
           tags = current_tags.dup
         else
-          tags = current_tags.merge(tags.transform_keys(&:to_s))
+          tags = current_tags.merge(Tags.stringify_keys(tags))
         end
       end
 
@@ -260,7 +260,7 @@ module Lumberjack
     # Set a hash of tags on logger. If a block is given, the tags will only be set
     # for the duration of the block.
     def tag(tags, &block)
-      tags = tags.transform_keys(&:to_s)
+      tags = Tags.stringify_keys(tags)
       if block
         thread_tags = thread_local_value(:lumberjack_logger_tags)
         value = (thread_tags ? thread_tags.merge(tags) : tags)
