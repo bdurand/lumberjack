@@ -390,7 +390,7 @@ describe Lumberjack::Logger do
         output.string.should == "fatal#{n}error#{n}warn#{n}info#{n}debug#{n}unknown#{n}"
       end
 
-      it "should only log unkown messages when the level is set above fatal" do
+      it "should only log unknown messages when the level is set above fatal" do
         logger.level = Lumberjack::Severity::FATAL + 1
         logger.fatal("fatal")
         logger.fatal?.should == false
