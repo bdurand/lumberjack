@@ -9,7 +9,7 @@ module Lumberjack
       end
 
       def call(env)
-        Lumberjack.with_context do
+        Lumberjack.context do
           @app.call(env)
         end
       end

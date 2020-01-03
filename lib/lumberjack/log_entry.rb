@@ -7,7 +7,7 @@ module Lumberjack
     attr_accessor :time, :message, :severity, :progname, :pid, :tags
 
     TIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
-    
+
     UNIT_OF_WORK_ID = "unit_of_work_id"
 
     def initialize(time, severity, message, progname, pid, tags)
@@ -35,12 +35,12 @@ module Lumberjack
     def inspect
       to_s
     end
-    
+
     # Deprecated - backward compatibility with 1.0 API
     def unit_of_work_id
       tags[UNIT_OF_WORK_ID] if tags
     end
-    
+
     # Deprecated - backward compatibility with 1.0 API
     def unit_of_work_id=(value)
       if tags

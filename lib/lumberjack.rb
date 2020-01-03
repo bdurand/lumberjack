@@ -31,7 +31,7 @@ module Lumberjack
     # Lumberjack::Rack::UnitOfWork class.
     def unit_of_work(id = nil)
       id ||= SecureRandom.hex(6)
-      with_context do
+      context do
         context[:unit_of_work_id] = id
         yield
       end
@@ -42,25 +42,26 @@ module Lumberjack
       context[:unit_of_work_id]
     end
 
-    # This method will set a logging context for the scope of a block. Contexts can
-    # be used to store tags that will be attached to all log entries in the block.
+    # Contexts can be used to store tags that will be attached to all log entries in the block.
+    #
+    # If this method is called with a block, it will set a logging context for the scope of a block.
     # If there is already a context in scope, a new one will be created that inherits
     # all the tags of the parent context.
-    def with_context
-      parent_context = Thread.current[:lumberjack_context]
-      Thread.current[:lumberjack_context] = Context.new(parent_context)
-      begin
-        yield
-      ensure
-        Thread.current[:lumberjack_context] = parent_context
-      end
-    end
-
-    # Return the current context. If there is not current context, a new one will be returned
-    # but it will not be saved anywhere in the current scope. This is just so code that expects
-    # a context will always get one.
+    #
+    # Otherwise, it will return the current context. If one doesn't exist, it will return a new one
+    # but that context will not be in any scope.
     def context
-      Thread.current[:lumberjack_context] || Context.new
+      current_context = Thread.current[:lumberjack_context]
+      if block_given?
+        Thread.current[:lumberjack_context] = Context.new(current_context)
+        begin
+          yield
+        ensure
+          Thread.current[:lumberjack_context] = current_context
+        end
+      else
+        current_context || Context.new
+      end
     end
 
     # Return the tags from the current context or nil if there are no tags.

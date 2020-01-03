@@ -10,7 +10,7 @@ module Lumberjack
       attr_reader :max_size
       
       # Create an new log device to the specified file. The maximum size of the log file is specified with
-      # the <tt>:max_size</tt> option. The unit can also be specified: "32K", "100M", "2G" are all valid.
+      # the :max_size option. The unit can also be specified: "32K", "100M", "2G" are all valid.
       def initialize(path, options = {})
         @manual = options[:manual]
         @max_size = options[:max_size]

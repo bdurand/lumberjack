@@ -4,7 +4,7 @@ describe Lumberjack do
 
   describe "context" do
     it "should create a context with tags for a block" do
-      Lumberjack.with_context do
+      Lumberjack.context do
         Lumberjack.tag(foo: "bar")
         expect(Lumberjack.context[:foo]).to eq "bar"
       end
@@ -17,9 +17,9 @@ describe Lumberjack do
     end
 
     it "should inherit parent context tags in sub blocks" do
-      Lumberjack.with_context do
+      Lumberjack.context do
         Lumberjack.tag(foo: "bar")
-        Lumberjack.with_context do
+        Lumberjack.context do
           expect(Lumberjack.context[:foo]).to eq "bar"
           Lumberjack.tag(foo: "baz")
           expect(Lumberjack.context[:foo]).to eq "baz"
@@ -35,7 +35,7 @@ describe Lumberjack do
       Lumberjack.tag(foo: "bar")
       expect(Lumberjack.context_tags).to eq nil
 
-      Lumberjack.with_context do
+      Lumberjack.context do
         Lumberjack.tag(foo: "bar")
         expect(Lumberjack.context_tags).to eq("foo" => "bar")
       end

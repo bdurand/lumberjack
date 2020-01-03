@@ -342,7 +342,7 @@ describe Lumberjack::Logger do
       end
 
       it "should merge logger and context tags" do
-        Lumberjack.with_context do
+        Lumberjack.context do
           Lumberjack.tag(foo: "bar")
           logger.tag(baz: "boo") do
             logger.info("one", count: 1, tag: "b")

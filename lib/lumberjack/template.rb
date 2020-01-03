@@ -4,11 +4,11 @@ module Lumberjack
   # A template converts entries to strings. Templates can contain the following place holders to
   # reference log entry values:
   #
-  # * <tt>:time</tt>
-  # * <tt>:severity</tt>
-  # * <tt>:progname</tt>
-  # * <tt>:tags</tt>
-  # * <tt>:message</tt>
+  # * :time
+  # * :severity
+  # * :progname
+  # * :tags
+  # * :message
   #
   # Any other words prefixed with a colon will be substituted with the value of the tag with that name.
   class Template
@@ -18,11 +18,11 @@ module Lumberjack
 
     # Create a new template from the markup. The +first_line+ argument is used to format only the first
     # line of a message. Additional lines will be added to the message unformatted. If you wish to format
-    # the additional lines, use the <tt>:additional_lines</tt> options to specify a template. Note that you'll need
+    # the additional lines, use the :additional_lines options to specify a template. Note that you'll need
     # to provide the line separator character in this template if you want to keep the message on multiple lines.
     #
     # The time will be formatted as YYYY-MM-DDTHH:MM:SSS.SSS by default. If you wish to change the format, you
-    # can specify the <tt>:time_format</tt> option which can be either a time format template as documented in
+    # can specify the :time_format option which can be either a time format template as documented in
     # +Time#strftime+ or the values +:milliseconds+ or +:microseconds+ to use the standard format with the
     # specified precision.
     #

@@ -46,20 +46,20 @@ module Lumberjack
       end
 
       # Create a new device to write log entries to a stream. Entries are converted to strings
-      # using a Template. The template can be specified using the <tt>:template</tt> option. This can
+      # using a Template. The template can be specified using the :template option. This can
       # either be a Proc or a string that will compile into a Template object.
       #
       # If the template is a Proc, it should accept an LogEntry as its only argument and output a string.
       #
       # If the template is a template string, it will be used to create a Template. The
-      # <tt>:additional_lines</tt> and <tt>:time_format</tt> options will be passed through to the
+      # :additional_lines and :time_format options will be passed through to the
       # Template constuctor.
       #
-      # The default template is <tt>"[:time :severity :progname(:pid) #:unit_of_work_id] :message"</tt>
-      # with additional lines formatted as <tt>"\n [#:unit_of_work_id] :message"</tt>. The unit of
+      # The default template is "[:time :severity :progname(:pid) #:unit_of_work_id] :message"
+      # with additional lines formatted as "\n [#:unit_of_work_id] :message". The unit of
       # work id will only appear if it is present.
       #
-      # The size of the internal buffer in bytes can be set by providing <tt>:buffer_size</tt> (defaults to 32K).
+      # The size of the internal buffer in bytes can be set by providing :buffer_size (defaults to 32K).
       def initialize(stream, options = {})
         @lock = Mutex.new
         @stream = stream

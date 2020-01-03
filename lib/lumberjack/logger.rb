@@ -39,18 +39,18 @@ module Lumberjack
     #
     # If it is a Device object, that object will be used.
     # If it has a +write+ method, it will be wrapped in a Device::Writer class.
-    # If it is <tt>:null</tt>, it will be a Null device that won't record any output.
+    # If it is :null, it will be a Null device that won't record any output.
     # Otherwise, it will be assumed to be file path and wrapped in a Device::LogFile class.
     #
     # This method can take the following options:
     #
-    # * <tt>:level</tt> - The logging level below which messages will be ignored.
-    # * <tt>:formatter</tt> - The formatter to use for outputting messages to the log.
-    # * <tt>:datetime_format</tt> - The format to use for log timestamps.
-    # * <tt>:progname</tt> - The name of the program that will be recorded with each log entry.
-    # * <tt>:flush_seconds</tt> - The maximum number of seconds between flush calls.
-    # * <tt>:roll</tt> - If the log device is a file path, it will be a Device::DateRollingLogFile if this is set.
-    # * <tt>:max_size</tt> - If the log device is a file path, it will be a Device::SizeRollingLogFile if this is set.
+    # * :level - The logging level below which messages will be ignored.
+    # * :formatter - The formatter to use for outputting messages to the log.
+    # * :datetime_format - The format to use for log timestamps.
+    # * :progname - The name of the program that will be recorded with each log entry.
+    # * :flush_seconds - The maximum number of seconds between flush calls.
+    # * :roll - If the log device is a file path, it will be a Device::DateRollingLogFile if this is set.
+    # * :max_size - If the log device is a file path, it will be a Device::SizeRollingLogFile if this is set.
     #
     # All other options are passed to the device constuctor.
     def initialize(device = STDOUT, options = {})
@@ -61,7 +61,8 @@ module Lumberjack
 
       @logdev = open_device(device, options) if device
       @formatter = (options[:formatter] || Formatter.new)
-      self.datetime_format = options[:datetime_format] if options[:datetime_format]
+      time_format = (options[:datetime_format] || options[:time_format])
+      self.datetime_format = time_format if time_format
       @last_flushed_at = Time.now
       @silencer = true
       @tags = {}
@@ -131,7 +132,7 @@ module Lumberjack
 
       entry = LogEntry.new(time, severity, message, progname, $$, tags)
       write_to_device(entry)
-      
+
       true
     end
 
@@ -346,7 +347,7 @@ module Lumberjack
         $stderr.puts(entry.to_s)
       end
     end
-    
+
     # Create a thread that will periodically call flush.
     def create_flusher_thread(flush_seconds) #:nodoc:
       if flush_seconds > 0

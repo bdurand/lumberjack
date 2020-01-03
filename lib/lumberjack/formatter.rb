@@ -39,7 +39,7 @@ module Lumberjack
     # that responds to the +call+ method or as a symbol representing one of the predefined
     # formatters, or as a block to the method call.
     #
-    # The predefined formatters are: <tt>:inspect</tt>, <tt>:string</tt>, <tt>:exception</tt>, and <tt>:pretty_print</tt>.
+    # The predefined formatters are: :inspect, :string, :exception, and :pretty_print.
     #
     # === Examples
     #
