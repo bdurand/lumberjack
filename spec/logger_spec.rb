@@ -447,7 +447,7 @@ describe Lumberjack::Logger do
         expect(output.string).to eq("fatal#{n}error#{n}warn#{n}info#{n}debug#{n}unknown#{n}")
       end
 
-      it "should only log unkown messages when the level is set above fatal" do
+      it "should only log unknown messages when the level is set above fatal" do
         logger.level = Logger::FATAL + 1
         logger.fatal("fatal")
         expect(logger.fatal?).to eq(false)
