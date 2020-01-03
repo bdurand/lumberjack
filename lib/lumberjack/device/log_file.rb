@@ -18,7 +18,7 @@ module Lumberjack
         super(file_stream, options)
       end
       
-      def reopen
+      def reopen(logdev = nil)
         close
         @stream = file_stream
       end

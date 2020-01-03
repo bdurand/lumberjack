@@ -237,7 +237,7 @@ describe Lumberjack::Logger do
     it "should reopen the devices" do
       output = StringIO.new
       logger = Lumberjack::Logger.new(output, :level => Logger::INFO, :template => ":message", :buffer_size => 32767)
-      expect(logger.device).to receive(:reopen)
+      expect(logger.device).to receive(:reopen).and_call_original
       logger.reopen
     end
   end

@@ -1,5 +1,8 @@
 # Lumberjack
 
+[![Build Status](https://travis-ci.org/bdurand/lumberjack.svg?branch=master)](https://travis-ci.org/bdurand/lumberjack)
+[![Maintainability](https://api.codeclimate.com/v1/badges/a0abc03721fff9b0cde1/maintainability)](https://codeclimate.com/github/bdurand/lumberjack/maintainability)
+
 Lumberjack is a simple, powerful, and fast logging implementation in Ruby. It uses nearly the same API as the Logger class in the Ruby standard library and as ActiveSupport::BufferedLogger in Rails.
 
 ## Usage
@@ -76,7 +79,7 @@ When a message is logged, it is first converted into a string. You can customize
 ```
 
 If you use the built in devices, you can also customize the Template used to format the LogEntry.
-  
+
 ```ruby
   # Change the format of the time in the log
   Lumberjack::Logger.new("application.log", :time_format => "%m/%d/%Y %H:%M:%S")
@@ -100,7 +103,7 @@ The built in stream based logging devices use an internal buffer. The size of th
 ```ruby
   # Set buffer to flush after 8K has been written to the log.
   logger = Lumberjack::Logger.new("application.log", :buffer_size => 8192)
-  
+
   # Turn off buffering so entries are immediately written to disk.
   logger = Lumberjack::Logger.new("application.log", :buffer_size => 0)
 ```
@@ -139,7 +142,7 @@ To set up a logger to roll log files when they get to 100Mb, you could use this:
 ```ruby
   config.logger = Lumberjack::Logger.new(log_file_path, :max_size => 100.megabytes)
 ```
-  
+
 To change the log message format, you could use this code:
 
 ```ruby
@@ -147,7 +150,7 @@ To change the log message format, you could use this code:
 ```
 
 To change the log message format to output JSON, you could use this code (this example requires the multi-json gem):
-  
+
 ```ruby
   config.logger = Lumberjack::Logger.new(log_file_path, :template => lambda{|e| MultiJson.dump(e)})
 ```

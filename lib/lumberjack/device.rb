@@ -9,6 +9,7 @@ module Lumberjack
     require_relative "device/rolling_log_file.rb"
     require_relative "device/date_rolling_log_file.rb"
     require_relative "device/size_rolling_log_file.rb"
+    require_relative "device/multi.rb"
     require_relative "device/null.rb"
 
     # Subclasses must implement this method to write a LogEntry.
@@ -22,7 +23,7 @@ module Lumberjack
     end
     
     # Subclasses may implement this method to reopen the device.
-    def reopen
+    def reopen(logdev = nil)
       flush
     end
     
