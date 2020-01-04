@@ -283,6 +283,13 @@ describe Lumberjack::Logger do
       expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$}) #ABCD] test#{n}")
     end
 
+    it "should handle malformed tags" do
+      time = Time.parse("2011-01-30T12:31:56.123")
+      allow(Time).to receive_messages(:now => time)
+      logger.add_entry(Logger::INFO, "test", "app", "ABCD")
+      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$}) #] test#{n}")
+    end
+
     it "should add entries with a severity label" do
       time = Time.parse("2011-01-30T12:31:56.123")
       allow(Time).to receive_messages(:now => time)

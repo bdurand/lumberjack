@@ -149,7 +149,9 @@ module Lumberjack
 
       message = formatter.format(message)
       progname ||= self.progname
+
       current_tags = self.tags
+      tags = nil unless tags.is_a?(Hash)
       if current_tags.empty?
         tags = Tags.stringify_keys(tags) unless tags.nil?
       else
@@ -318,7 +320,7 @@ module Lumberjack
     end
 
     private
-    
+
     # Set a local value for a thread tied to this object.
     def set_thread_local_value(name, value) #:nodoc:
       values = Thread.current[name]
