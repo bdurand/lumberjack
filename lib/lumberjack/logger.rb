@@ -24,14 +24,20 @@ module Lumberjack
   # program name, process id, and unit of work id. The message will be converted to a string, but
   # otherwise, it is up to the device how these values are recorded. Messages are converted to strings
   # using a Formatter associated with the logger.
-  class Logger < ::Logger
-    # include Severity
+  class Logger
+    include Severity
 
     # The time that the device was last flushed.
     attr_reader :last_flushed_at
 
     # Set +silencer+ to false to disable silencing the log.
     attr_accessor :silencer
+    
+    # Set the name of the program to attach to log entries.
+    attr_writer :progname
+    
+    # The device being written to
+    attr_reader :device
 
     # Create a new logger to log to a Device.
     #
@@ -59,8 +65,8 @@ module Lumberjack
       self.progname = options.delete(:progname)
       max_flush_seconds = options.delete(:flush_seconds).to_f
 
-      @logdev = open_device(device, options) if device
-      @formatter = (options[:formatter] || Formatter.new)
+      @device = open_device(device, options) if device
+      @_formatter = (options[:formatter] || Formatter.new)
       time_format = (options[:datetime_format] || options[:time_format])
       self.datetime_format = time_format if time_format
       @last_flushed_at = Time.now
@@ -72,13 +78,13 @@ module Lumberjack
 
     # Get the timestamp format on the device if it has one.
     def datetime_format
-      @logdev.datetime_format if @logdev.respond_to?(:datetime_format)
+      @device.datetime_format if @device.respond_to?(:datetime_format)
     end
 
     # Set the timestamp format on the device if it is supported.
     def datetime_format=(format)
-      if @logdev.respond_to?(:datetime_format=)
-        @logdev.datetime_format = format
+      if @device.respond_to?(:datetime_format=)
+        @device.datetime_format = format
       end
     end
 
@@ -86,6 +92,30 @@ module Lumberjack
     # severity level will be ignored.
     def level
       thread_local_value(:lumberjack_logger_level) || @level
+    end
+    
+    alias_method :sev_threshold, :level
+    
+    # Set the log level using either an integer level like Logger::INFO or a label like
+    # :info or "info"
+    def level=(value)
+      if value.is_a?(Integer)
+        @level = value
+      else
+        @level = Severity::label_to_level(value)
+      end
+    end
+    
+    alias_method :sev_threshold=, :level=
+    
+    # Set the Lumberjack::Formatter used to format objects for logging as messages.
+    def formatter=(value)
+      @_formatter = value
+    end
+    
+    # Get the Lumberjack::Formatter used to format objects for logging as messages.
+    def formatter
+      @_formatter
     end
 
     # Add a message to the log with a given severity. The message can be either
@@ -105,7 +135,7 @@ module Lumberjack
     def add(severity, message = nil, progname = nil, tags = nil)
       severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
 
-      return true unless @logdev && severity && severity >= level
+      return true unless @device && severity && severity >= level
 
       time = Time.now
       if message.nil?
@@ -145,15 +175,14 @@ module Lumberjack
       nil
     end
 
-    # The device being written to.
-    def device
-      @logdev
-    end
-
     # Close the logging device.
     def close
       flush
-      @logdev.close if @logdev.respond_to?(:close)
+      @device.close if @device.respond_to?(:close)
+    end
+    
+    def reopen(logdev = nil)
+      device.reopen(logdev) if device.respond_to?(:reopen)
     end
 
     # Log a +FATAL+ message. The message can be passed in either the +message+ argument or in a block.
@@ -341,7 +370,7 @@ module Lumberjack
 
     def write_to_device(entry) #:nodoc:
       begin
-        @logdev.write(entry)
+        @device.write(entry)
       rescue => e
         $stderr.puts("#{e.class.name}: #{e.message}#{' at ' + e.backtrace.first if e.backtrace}")
         $stderr.puts(entry.to_s)

@@ -3,6 +3,20 @@ require 'pathname'
 
 describe Lumberjack::Logger do
 
+  describe "compatibility" do
+    it "should implement the same public API as the ::Logger class" do
+      logger = ::Logger.new(STDOUT)
+      lumberjack = Lumberjack::Logger.new(STDOUT)
+      (logger.public_methods - Object.public_methods).each do |method_name|
+        logger_method = logger.method(method_name)
+        lumberjack_method = lumberjack.method(method_name)
+        if logger_method.arity != lumberjack_method.arity
+          fail "Lumberjack::Logger.#{method_name} has arity of #{lumberjack_method.arity} instead of #{logger_method.arity}"
+        end
+      end
+    end
+  end
+
   describe "initialization" do
 
     before :all do

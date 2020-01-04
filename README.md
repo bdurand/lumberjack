@@ -177,7 +177,7 @@ There is a similar feature in the standard library Logger class, but the impleme
 
 ## Difference Standard Library Logger
 
-`Lumberjack::Logger` extends from the `Logger` class in the standard library. However, there are some difference with the logic of how messages are ultimately logged.
+`Lumberjack::Logger` does not extend from the `Logger` class in the standard library, but it does implement a compantible API. The main difference is in the flow of how messages are ultimately sent to devices for output.
 
 The standard library Logger logic converts the log entries to strings and then sends the string to the device to be written to a stream. Lumberjack, on the other hand, sends structured data in the form of a `Lumberjack::LogEntry` to the device and lets the device worry about how to format it. The reason for this flip is to better support structured data logging. Devices (even ones that write to streams) can format the entire payload including non-string objects and tags however they need to.
 
