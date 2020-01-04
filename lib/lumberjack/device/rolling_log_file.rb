@@ -6,10 +6,10 @@ module Lumberjack
     # the existing file and starts a one. Subclasses must implement the roll_file? and archive_file_suffix
     # methods.
     #
-    # The <tt>:keep</tt> option can be used to specify a maximum number of rolled log files to keep.
+    # The :keep option can be used to specify a maximum number of rolled log files to keep.
     # Older files will be deleted based on the time they were created. The default is to keep all files.
     #
-    # The <tt>:min_roll_check</tt> option can be used to specify the number of seconds between checking
+    # The :min_roll_check option can be used to specify the number of seconds between checking
     # the file to determine if it needs to be rolled. The default is to check at most once per second.
     class RollingLogFile < LogFile
       attr_reader :path

@@ -1,5 +1,8 @@
 # Lumberjack
 
+[![Build Status](https://travis-ci.org/bdurand/lumberjack.svg?branch=master)](https://travis-ci.org/bdurand/lumberjack)
+[![Maintainability](https://api.codeclimate.com/v1/badges/a0abc03721fff9b0cde1/maintainability)](https://codeclimate.com/github/bdurand/lumberjack/maintainability)
+
 Lumberjack is a simple, powerful, and fast logging implementation in Ruby. It uses nearly the same API as the Logger class in the Ruby standard library and as ActiveSupport::BufferedLogger in Rails.
 
 ## Usage
@@ -33,20 +36,54 @@ The following information is recorded for each message:
 * time - The time at which the message was recorded.
 * program name - The name of the program logging the message. This can be either set for all messages or customized with each message.
 * process id - The process id (pid) of the process that logged the message.
-* unit of work id - The unique 12 byte hexadecimal number generated for a unit of work.
+* tags - An map of name value pairs for addition information about the log context.
 
-### Units Of Work
+### Tags
 
-A unit of work can be used to tie together all log messages within a block. This can be very useful to isolate a group of messages that represent one path through the system. For instance, in a web application, a single request represents a natural unit of work,  and when you are looking through a log file, it is useful to see the entire set of log entries as a unit instead of interspersed with messages from other concurrent requests.
+You can use tags to provide additional meta data about a log message or the context that the log message is being made in. Using tags can keep you log messages clean. You can avoid string interoplation to add additional meta data.
+
+Each of the logger methods includes an additional argument that can be used to specify tags on a messsage:
 
 ```ruby
-  # All log entries in this block will get a common unit of work id.
-  Lumberjack.unit_of_work do
-    logger.info("Begin request")
-    yield
-    logger.info("End request")
-  end
+logger.info("request completed", duration: elapsed_time, status: response.status)
 ```
+
+You can also specify tags on a logger that will be included with every log message.
+
+```ruby
+logger.tag(host: Socket.gethostname)
+```
+
+You can specify tags that will only be applied to the logger in a block as well.
+
+```ruby
+logger.tag(thread_id: Thread.current.object_id) do
+  logger.info("here") # Will include the `thread_id` tag
+end
+logger.info("there") # Will not include the `thread_id` tag
+```
+
+Finally, you can specify a logging context with tags that apply within a block to all loggers.
+
+```ruby
+Lumberjack.context do
+  Lumberjack.tag(request_id: SecureRandom.hex)
+  logger.info("begin request") # Will include the `request_id` tag
+end
+logger.info("no requests") # Will not include the `request_id` tag
+```
+
+Tag keys are always converted to strings. Tags are inherited so that message tags take precedence over block tags which take precedence over global tags.
+
+#### Templates
+
+The built in `Lumberjack::Device::Writer` class has built in support for including tags in the output using the `Lumberjack::Template` class.
+
+You can specify any tag name you want in a template as well as the `:tags` macro for all tags. If a tag name has been used as it's own macro, it will not be included in the `:tags` macro.
+
+#### Unit Of Work
+
+Lumberjack 1.0 had a concept of a unit of work id that could be used to tie log messages together. This has been replaced by tags. There is still an implementation of `Lumberjack.unit_of_work`, but it is just a wrapper on the tag implementation.
 
 ### Pluggable Devices
 
@@ -56,33 +93,60 @@ When a Logger logs a LogEntry, it sends it to a Lumberjack::Device. Lumberjack c
 * Lumberjack::Device::LogFile - Writes log entries to a file.
 * Lumberjack::Device::DateRollingLogFile - Writes log entries to a file that will automatically roll itself based on date.
 * Lumberjack::Device::SizeRollingLogFile - Writes log entries to a file that will automatically roll itself based on size.
+* Lumberjack::Device::Multi - This device wraps mulitiple other devices and will write log entries to each of them.
 * Lumberjack::Device::Null - This device produces no output and is intended for testing environments.
 
 If you'd like to send you log to a different kind of output, you just need to extend the Device class and implement the +write+ method. Or check out these plugins:
 
 * [lumberjack_syslog_device](https://github.com/bdurand/lumberjack_syslog_device) - send your log messages to the system wide syslog service
-* [lumberjack_multi-device](https://github.com/astevens/lumberjack_multi-device) - send log messages to multiple devices
 * [lumberjack_mongo_device](https://github.com/bdurand/lumberjack_mongo_device) - store your log messages to a [MongoDB](http://www.mongodb.org/) NoSQL data store
 * [lumberjack-couchdb-driver](https://github.com/narkisr/lumberjack-couchdb-driver) - store your log messages to a [CouchDB](http://couchdb.apache.org/) NoSQL data store
 * [lumberjack_heroku_device](https://github.com/tonycoco/lumberjack_heroku_device) - log to Heroku's logging system
 
 ### Customize Formatting
 
+#### Formatters
+
 When a message is logged, it is first converted into a string. You can customize how it is converted by adding mappings to a Formatter.
+
+There are several built in classes you can add as formatters
 
 ```ruby
   logger.formatter.add(Hash, :pretty_print)  # use the Formatter::PrettyPrintFormatter for all Hashes
+  logger.formatter.add(Hash, Lumberjack::Formatter::PrettyPrintFormatter.new)  # alternative using a formatter instance
+```
+
+* `Lumberjack::Formatter::ObjectFormatter` - no op conversion that returns the object itself.
+* `Lumberjack::Formatter::StringFormatter` - calls `to_s` on the object.
+* `Lumberjack::Formatter::InspectFormatter` - calls `inspect` on the object.
+* `Lumberjack::Formatter::ExceptionFormatter` - special formatter for exceptions which logs them as multi line statements with the message and backtrace.
+* `Lumberjack::Formatter::DateTimeFormatter` - special formatter for dates and times to format them using `strftime`.
+* `Lumberjack::Formatter::PrettyPrintFormatter` - returns the pretty print format of the object.
+* `Lumberjack::Formatter::IdFormatter` - returns a hash of the object with keys for the id attribute and class.
+* `Lumberjack::Formatter::StructuredFormatter` - crawls the object and applies the formatter recursively to Enumerable objects found in it (arrays, hashes, etc.).
+
+You can also specify a block to use as a formatter:
+
+```ruby
   logger.formatter.add(MyClass){|obj| "#{obj.class}@#{obj.id}"}  # use a block to provide a custom format
 ```
 
+#### Templates
+
 If you use the built in devices, you can also customize the Template used to format the LogEntry.
-  
+
+See `Lumberjack::Template` for a complete list of macros you can use in the template. You can also use a block that receives a `Lumberjack::LogEntry` as a template.
+
 ```ruby
   # Change the format of the time in the log
   Lumberjack::Logger.new("application.log", :time_format => "%m/%d/%Y %H:%M:%S")
 
   # Use a simple template that only includes the time and the message
   Lumberjack::Logger.new("application.log", :template => ":time - :message")
+
+  # Use a simple template that includes tags, but handles the `duration` tag separately.
+  # All tags will appear at the end of the message except for `duration` which will be at the beginning.
+  Lumberjack::Logger.new("application.log", :template => ":time (:duration) - :message - :tags")
 
   # Use a custom template as a block that only includes the first character of the severity
   template = lambda{|e| "#{e.severity_label[0, 1]} #{e.time} - #{e.message}"}
@@ -93,14 +157,14 @@ If you use the built in devices, you can also customize the Template used to for
 
 The logger has hooks for devices that support buffering to increase performance by batching physical writes. Log entries are not guaranteed to be written until the Lumberjack::Logger#flush method is called.
 
-You can use the <tt>:flush_seconds</tt> option on the logger to periodically flush the log. This is usually a good idea so you can more easily debug hung processes. Without periodic flushing, a process that hangs may never write anything to the log because the messages are sitting in a buffer. By turning on periodic flushing, the logged messages will be written which can greatly aid in debugging the problem.
+You can use the `:flush_seconds` option on the logger to periodically flush the log. This is usually a good idea so you can more easily debug hung processes. Without periodic flushing, a process that hangs may never write anything to the log because the messages are sitting in a buffer. By turning on periodic flushing, the logged messages will be written which can greatly aid in debugging the problem.
 
-The built in stream based logging devices use an internal buffer. The size of the buffer (in bytes) can be set with the <tt>:buffer_size</tt> options when initializing a logger. The default behavior is to not to buffer.
+The built in stream based logging devices use an internal buffer. The size of the buffer (in bytes) can be set with the `:buffer_size` options when initializing a logger. The default behavior is to not to buffer.
 
 ```ruby
   # Set buffer to flush after 8K has been written to the log.
   logger = Lumberjack::Logger.new("application.log", :buffer_size => 8192)
-  
+
   # Turn off buffering so entries are immediately written to disk.
   logger = Lumberjack::Logger.new("application.log", :buffer_size => 0)
 ```
@@ -139,17 +203,17 @@ To set up a logger to roll log files when they get to 100Mb, you could use this:
 ```ruby
   config.logger = Lumberjack::Logger.new(log_file_path, :max_size => 100.megabytes)
 ```
-  
+
 To change the log message format, you could use this code:
 
 ```ruby
   config.logger = Lumberjack::Logger.new(log_file_path, :template => ":time - :message")
 ```
 
-To change the log message format to output JSON, you could use this code (this example requires the multi-json gem):
-  
+To change the log message format to output JSON, you could use this code:
+
 ```ruby
-  config.logger = Lumberjack::Logger.new(log_file_path, :template => lambda{|e| MultiJson.dump(e)})
+  config.logger = Lumberjack::Logger.new(log_file_path, :template => lambda{|e| JSON.dump(time: e.time, level: e.severity_label, message: e.message)})
 ```
 
 To send log messages to syslog instead of to a file, you could use this (require the lumberjack_syslog_device gem):

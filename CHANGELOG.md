@@ -1,3 +1,17 @@
+## 2.0.0
+
+* Change Lumberjack::Logger to inherit from ::Logger
+* Add support for tags on log messages
+* Add global tag context for all loggers
+* Add per logger tags and tag contexts
+* Reimplement unit of work id as a tag on log entries
+* Add support for setting datetime format on log devices
+* Performance optimizations
+* Add Multi device to output to multiple devices
+* Add DateTimeFormatter, IdFormatter, ObjectFormatter, and StructuredFormatter
+* Add rack Context middleware for setting thread global context
+* End support for ruby versions < 2.3
+
 ## 1.0.13
 
 * Reduce amount of code executed inside a mutex lock when writing to the logger stream.

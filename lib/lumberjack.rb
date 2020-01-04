@@ -4,18 +4,21 @@ require 'rbconfig'
 require 'time'
 require 'thread'
 require 'securerandom'
+require 'logger'
 
 module Lumberjack
   LINE_SEPARATOR = (RbConfig::CONFIG['host_os'].match(/mswin/i) ? "\r\n" : "\n")
 
-  require File.expand_path("../lumberjack/severity.rb", __FILE__)
-  require File.expand_path("../lumberjack/log_entry.rb", __FILE__)
-  require File.expand_path("../lumberjack/formatter.rb", __FILE__)
-  require File.expand_path("../lumberjack/device.rb", __FILE__)
-  require File.expand_path("../lumberjack/logger.rb", __FILE__)
-  require File.expand_path("../lumberjack/template.rb", __FILE__)
-  require File.expand_path("../lumberjack/rack.rb", __FILE__)
-  
+  require_relative "lumberjack/severity.rb"
+  require_relative "lumberjack/context.rb"
+  require_relative "lumberjack/log_entry.rb"
+  require_relative "lumberjack/formatter.rb"
+  require_relative "lumberjack/device.rb"
+  require_relative "lumberjack/logger.rb"
+  require_relative "lumberjack/tags.rb"
+  require_relative "lumberjack/template.rb"
+  require_relative "lumberjack/rack.rb"
+
   class << self
     # Define a unit of work within a block. Within the block supplied to this
     # method, calling +unit_of_work_id+ will return the same value that can
@@ -27,19 +30,51 @@ module Lumberjack
     # For the common use case of treating a single web request as a unit of work, see the
     # Lumberjack::Rack::UnitOfWork class.
     def unit_of_work(id = nil)
-      save_val = Thread.current[:lumberjack_logger_unit_of_work_id]
       id ||= SecureRandom.hex(6)
-      Thread.current[:lumberjack_logger_unit_of_work_id] = id
-      begin
-        return yield
-      ensure
-        Thread.current[:lumberjack_logger_unit_of_work_id] = save_val
+      context do
+        context[:unit_of_work_id] = id
+        yield
       end
     end
-    
+
     # Get the UniqueIdentifier for the current unit of work.
     def unit_of_work_id
-      Thread.current[:lumberjack_logger_unit_of_work_id] 
+      context[:unit_of_work_id]
     end
+
+    # Contexts can be used to store tags that will be attached to all log entries in the block.
+    #
+    # If this method is called with a block, it will set a logging context for the scope of a block.
+    # If there is already a context in scope, a new one will be created that inherits
+    # all the tags of the parent context.
+    #
+    # Otherwise, it will return the current context. If one doesn't exist, it will return a new one
+    # but that context will not be in any scope.
+    def context
+      current_context = Thread.current[:lumberjack_context]
+      if block_given?
+        Thread.current[:lumberjack_context] = Context.new(current_context)
+        begin
+          yield
+        ensure
+          Thread.current[:lumberjack_context] = current_context
+        end
+      else
+        current_context || Context.new
+      end
+    end
+
+    # Return the tags from the current context or nil if there are no tags.
+    def context_tags
+      context = Thread.current[:lumberjack_context]
+      context.tags if context
+    end
+
+    # Set tags on the current context
+    def tag(tags)
+      context = Thread.current[:lumberjack_context]
+      context.tag(tags) if context
+    end
+
   end
 end

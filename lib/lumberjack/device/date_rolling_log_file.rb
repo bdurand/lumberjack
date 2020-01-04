@@ -11,8 +11,8 @@ module Lumberjack
     # roll period as buffered entries will always be written to the same file.
     class DateRollingLogFile < RollingLogFile
       # Create a new logging device to the specified file. The period to roll the file is specified
-      # with the <tt>:roll</tt> option which may contain a value of <tt>:daily</tt>, <tt>:weekly</tt>,
-      # or <tt>:monthly</tt>.
+      # with the :roll option which may contain a value of :daily, :weekly,
+      # or :monthly.
       def initialize(path, options = {})
         @manual = options[:manual]
         @file_date = Date.today
