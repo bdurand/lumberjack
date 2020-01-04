@@ -153,9 +153,9 @@ See `Lumberjack::Template` for a complete list of macros you can use in the temp
   Lumberjack::Logger.new("application.log", :template => template)
 ```
 
-### Buffered Performance
+### Buffered Logging
 
-The logger has hooks for devices that support buffering to increase performance by batching physical writes. Log entries are not guaranteed to be written until the Lumberjack::Logger#flush method is called.
+The logger has hooks for devices that support buffering to potentially increase performance by batching physical writes. Log entries are not guaranteed to be written until the Lumberjack::Logger#flush method is called. Buffering can improve performance if I/O is slow or there high overhead writing to the log device.
 
 You can use the `:flush_seconds` option on the logger to periodically flush the log. This is usually a good idea so you can more easily debug hung processes. Without periodic flushing, a process that hangs may never write anything to the log because the messages are sitting in a buffer. By turning on periodic flushing, the logged messages will be written which can greatly aid in debugging the problem.
 
@@ -174,6 +174,14 @@ The built in stream based logging devices use an internal buffer. The size of th
 The built in devices include two that can automatically roll log files based either on date or on file size. When a log file is rolled, it will be renamed with a suffix and a new file will be created to receive new log entries. This can keep your log files from growing to unusable sizes and removes the need to schedule an external process to roll the files.
 
 There is a similar feature in the standard library Logger class, but the implementation here is safe to use with multiple processes writing to the same log file.
+
+## Difference Standard Library Logger
+
+`Lumberjack::Logger` extends from the `Logger` class in the standard library. However, there are some difference with the logic of how messages are ultimately logged.
+
+The standard library Logger logic converts the log entries to strings and then sends the string to the device to be written to a stream. Lumberjack, on the other hand, sends structured data in the form of a `Lumberjack::LogEntry` to the device and lets the device worry about how to format it. The reason for this flip is to better support structured data logging. Devices (even ones that write to streams) can format the entire payload including non-string objects and tags however they need to.
+
+The logging methods (`debug`, 'info', 'warn', 'error', 'fatal') are overloaded with an additional argument for setting tags on the log entry.
 
 ## Examples
 
