@@ -132,21 +132,13 @@ module Lumberjack
     #   logger.add_entry(Logger::INFO, "Request completed")
     #   logger.add_entry(:warn, "Request took a long time")
     #   logger.add_entry(Logger::DEBUG){"Start processing with options #{options.inspect}"}
-    def add_entry(severity, message = nil, progname = nil, tags = nil)
+    def add_entry(severity, message, progname = nil, tags = nil)
       severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
 
       return true unless @device && severity && severity >= level
 
       time = Time.now
-      if message.nil?
-        if block_given?
-          message = yield
-        else
-          message = progname
-          progname = nil
-        end
-      end
-
+      message = message.call if message.is_a?(Proc)
       message = formatter.format(message)
       progname ||= self.progname
 
@@ -170,7 +162,15 @@ module Lumberjack
 
     # ::Logger compatible method to add a log entry.
     def add(severity, message = nil, progname = nil, &block)
-      add_entry(severity, message, progname, tags, &block)
+      if message.nil?
+        if block
+          message = block
+        else
+          message = progname
+          progname = nil
+        end
+      end
+      add_entry(severity, message, progname)
     end
 
     alias_method :log, :add
@@ -193,8 +193,8 @@ module Lumberjack
     end
 
     # Log a +FATAL+ message. The message can be passed in either the +message+ argument or in a block.
-    def fatal(message_or_progname = nil, tags = nil, &block)
-      add_entry(FATAL, nil, message_or_progname, tags, &block)
+    def fatal(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
+      call_add_entry(FATAL, message_or_progname_or_tags, progname_or_tags, &block)
     end
 
     # Return +true+ if +FATAL+ messages are being logged.
@@ -203,8 +203,8 @@ module Lumberjack
     end
 
     # Log an +ERROR+ message. The message can be passed in either the +message+ argument or in a block.
-    def error(message_or_progname = nil, tags = nil, &block)
-      add_entry(ERROR, nil, message_or_progname, tags, &block)
+    def error(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
+      call_add_entry(ERROR, message_or_progname_or_tags, progname_or_tags, &block)
     end
 
     # Return +true+ if +ERROR+ messages are being logged.
@@ -213,8 +213,8 @@ module Lumberjack
     end
 
     # Log a +WARN+ message. The message can be passed in either the +message+ argument or in a block.
-    def warn(message_or_progname = nil, tags = nil, &block)
-      add_entry(WARN, nil, message_or_progname, tags, &block)
+    def warn(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
+      call_add_entry(WARN, message_or_progname_or_tags, progname_or_tags, &block)
     end
 
     # Return +true+ if +WARN+ messages are being logged.
@@ -223,8 +223,8 @@ module Lumberjack
     end
 
     # Log an +INFO+ message. The message can be passed in either the +message+ argument or in a block.
-    def info(message_or_progname = nil, tags = nil, &block)
-      add_entry(INFO, nil, message_or_progname, tags, &block)
+    def info(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
+      call_add_entry(INFO, message_or_progname_or_tags, progname_or_tags, &block)
     end
 
     # Return +true+ if +INFO+ messages are being logged.
@@ -233,8 +233,8 @@ module Lumberjack
     end
 
     # Log a +DEBUG+ message. The message can be passed in either the +message+ argument or in a block.
-    def debug(message_or_progname = nil, tags = nil, &block)
-      add_entry(DEBUG, nil, message_or_progname, tags, &block)
+    def debug(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
+      call_add_entry(DEBUG, message_or_progname_or_tags, progname_or_tags, &block)
     end
 
     # Return +true+ if +DEBUG+ messages are being logged.
@@ -242,24 +242,14 @@ module Lumberjack
       level <= DEBUG
     end
 
-    # Log a +TRACE+ message. The message can be passed in either the +message+ argument or in a block.
-    def trace(message_or_progname = nil, tags = nil, &block)
-      add_entry(TRACE, nil, message_or_progname, tags, &block)
-    end
-
-    # Return +true+ if +TRACE+ messages are being logged.
-    def trace?
-      level <= TRACE
-    end
-
     # Log a message when the severity is not known. Unknown messages will always appear in the log.
     # The message can be passed in either the +message+ argument or in a block.
-    def unknown(message_or_progname = nil, tags = nil, &block)
-      add_entry(UNKNOWN, nil, message_or_progname, tags, &block)
+    def unknown(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
+      call_add_entry(UNKNOWN, message_or_progname_or_tags, progname_or_tags, &block)
     end
 
     def <<(msg)
-      add(UNKNOWN, nil, msg)
+      add_entry(UNKNOWN, msg)
     end
 
     # Silence the logger by setting a new log level inside a block. By default, only +ERROR+ or +FATAL+
@@ -320,6 +310,31 @@ module Lumberjack
     end
 
     private
+
+    # Dereference arguments to log calls so we can have methods with compatibility with ::Logger
+    def call_add_entry(severity, message_or_progname_or_tags, progname_or_tags, &block) #:nodoc:
+      message = nil
+      progname = nil
+      tags = nil
+      if block
+        message = block
+        if message_or_progname_or_tags.is_a?(Hash)
+          tags = message_or_progname_or_tags
+          progname = progname_or_tags
+        else
+          progname = message_or_progname_or_tags
+          tags = progname_or_tags if progname_or_tags.is_a?(Hash)
+        end
+      else
+        message = message_or_progname_or_tags
+        if progname_or_tags.is_a?(Hash)
+          tags = progname_or_tags
+        else
+          progname = progname_or_tags
+        end
+      end
+      add_entry(severity, message, progname, tags)
+    end
 
     # Set a local value for a thread tied to this object.
     def set_thread_local_value(name, value) #:nodoc:

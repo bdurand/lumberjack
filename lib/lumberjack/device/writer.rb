@@ -8,7 +8,7 @@ module Lumberjack
     # Subclasses can implement a +before_flush+ method if they have logic to execute before flushing the log.
     # If it is implemented, it will be called before every flush inside a mutex lock.
     class Writer < Device
-      DEFAULT_FIRST_LINE_TEMPLATE = "[:time :severity :progname(:pid) #:unit_of_work_id] :message"
+      DEFAULT_FIRST_LINE_TEMPLATE = "[:time :severity :progname(:pid) #:unit_of_work_id] :message :tags"
       DEFAULT_ADDITIONAL_LINES_TEMPLATE = "#{Lumberjack::LINE_SEPARATOR}> [#:unit_of_work_id] :message"
 
       # The size of the internal buffer. Defaults to 32K.
@@ -86,6 +86,8 @@ module Lumberjack
       def write(entry)
         string = (entry.is_a?(LogEntry) ? @template.call(entry) : entry)
         return if string.nil?
+        string = string.strip
+        return if string.length == 0
 
         unless string.encoding == Encoding::UTF_8
           string = string.encode("UTF-8", invalid: :replace, undef: :replace)

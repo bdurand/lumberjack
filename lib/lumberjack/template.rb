@@ -53,7 +53,7 @@ module Lumberjack
     def call(entry)
       return entry unless entry.is_a?(LogEntry)
 
-      first_line = entry.message.to_s.strip
+      first_line = entry.message.to_s
       additional_lines = nil
       if first_line.include?(Lumberjack::LINE_SEPARATOR)
         additional_lines = first_line.split(Lumberjack::LINE_SEPARATOR)
@@ -63,13 +63,15 @@ module Lumberjack
       formatted_time = @time_formatter.call(entry.time) if @template_include_time
       format_args = [formatted_time, entry.severity_label, entry.progname, entry.pid, first_line]
       tag_arguments = tag_args(entry.tags, @first_line_tags)
-      message = @first_line_template % (format_args + tag_arguments)
+      message = (@first_line_template % (format_args + tag_arguments))
+      message.rstrip! if message.end_with?(" ")
 
       if additional_lines && !additional_lines.empty?
         tag_arguments = tag_args(entry.tags, @additional_line_tags) unless @additional_line_tags == @first_line_tags
         additional_lines.each do |line|
           format_args[format_args.size - 1] = line
-          line_message = @additional_line_template % (format_args + tag_arguments)
+          line_message = (@additional_line_template % (format_args + tag_arguments)).rstrip
+          line_message.rstrip! if line_message.end_with?(" ")
           message << line_message
         end
       end

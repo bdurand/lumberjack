@@ -258,103 +258,157 @@ describe Lumberjack::Logger do
 
   describe "logging" do
     let(:output){ StringIO.new }
-    let(:device){ Lumberjack::Device::Writer.new(output, :buffer_size => 0) }
-    let(:logger){ Lumberjack::Logger.new(device, :level => Logger::INFO, :progname => "test") }
+    let(:device){ Lumberjack::Device::Writer.new(output, :buffer_size => 0, template: "[:time :severity :progname(:pid)] :message :tags") }
+    let(:logger){ Lumberjack::Logger.new(device, :level => Logger::INFO, :progname => "app") }
     let(:n){ Lumberjack::LINE_SEPARATOR }
 
-    it "should add entries with a ::Logger compaptible add method" do
-      time = Time.parse("2011-01-30T12:31:56.123")
-      allow(Time).to receive_messages(:now => time)
-      logger.add(Logger::INFO, "test")
-      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}")
-    end
-
-    it "should add entries with a numeric severity and a message" do
-      time = Time.parse("2011-01-30T12:31:56.123")
-      allow(Time).to receive_messages(:now => time)
-      logger.add_entry(Logger::INFO, "test")
-      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}")
-    end
-
-    it "should add entries with tags" do
-      time = Time.parse("2011-01-30T12:31:56.123")
-      allow(Time).to receive_messages(:now => time)
-      logger.add_entry(Logger::INFO, "test", "app", "unit_of_work_id" => "ABCD")
-      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$}) #ABCD] test#{n}")
-    end
-
-    it "should handle malformed tags" do
-      time = Time.parse("2011-01-30T12:31:56.123")
-      allow(Time).to receive_messages(:now => time)
-      logger.add_entry(Logger::INFO, "test", "app", "ABCD")
-      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$}) #] test#{n}")
-    end
-
-    it "should add entries with a severity label" do
-      time = Time.parse("2011-01-30T12:31:56.123")
-      allow(Time).to receive_messages(:now => time)
-      logger.add_entry(:info, "test")
-      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}")
-    end
-
-    it "should add entries with a custom progname and message" do
-      time = Time.parse("2011-01-30T12:31:56.123")
-      allow(Time).to receive_messages(:now => time)
-      logger.add_entry(Logger::INFO, "test", "app")
-      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$}) #] test#{n}")
-    end
-
-    it "should add entries with a local progname and message" do
-      time = Time.parse("2011-01-30T12:31:56.123")
-      allow(Time).to receive_messages(:now => time)
-      logger.set_progname("block") do
-        logger.add_entry(Logger::INFO, "test")
-      end
-      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO block(#{$$}) #] test#{n}")
-    end
-
-    it "should add entries with a progname but no message or block" do
-      time = Time.parse("2011-01-30T12:31:56.123")
-      allow(Time).to receive_messages(:now => time)
-      logger.set_progname("default") do
-        logger.add_entry(Logger::INFO, nil, "message")
-      end
-      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO default(#{$$}) #] message#{n}")
-    end
-
-    it "should add entries with a block" do
-      time = Time.parse("2011-01-30T12:31:56.123")
-      allow(Time).to receive_messages(:now => time)
-      logger.add_entry(Logger::INFO) { "test" }
-      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}")
-    end
-
-    it "should log entries (::Logger compatibility)" do
-      time = Time.parse("2011-01-30T12:31:56.123")
-      allow(Time).to receive_messages(:now => time)
-      logger.log(Logger::INFO, "test")
-      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}")
-    end
-
-    it "should append messages with unknown severity to the log" do
-      time = Time.parse("2011-01-30T12:31:56.123")
-      allow(Time).to receive_messages(:now => time)
-      logger << "test"
-      expect(output.string).to eq("[2011-01-30T12:31:56.123 UNKNOWN test(#{$$}) #] test#{n}")
-    end
-
-    it "should ouput entries to STDERR if they can't be written the the device" do
-      stderr = $stderr
-      $stderr = StringIO.new
-      begin
+    describe "add" do
+      it "should add entries with a numeric severity and a message" do
         time = Time.parse("2011-01-30T12:31:56.123")
         allow(Time).to receive_messages(:now => time)
-        expect(device).to receive(:write).and_raise(StandardError.new("Cannot write to device"))
-        logger.add_entry(Logger::INFO, "test")
-        expect($stderr.string).to include("[2011-01-30T12:31:56.123 INFO test(#{$$})] test")
-        expect($stderr.string).to include("StandardError: Cannot write to device")
-      ensure
-        $stderr = stderr
+        logger.add(Logger::INFO, "test")
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$})] test")
+      end
+
+      it "should add entries with a severity label" do
+        time = Time.parse("2011-01-30T12:31:56.123")
+        allow(Time).to receive_messages(:now => time)
+        logger.add(:info, "test")
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$})] test")
+      end
+
+      it "should add entries with a custom progname and message" do
+        time = Time.parse("2011-01-30T12:31:56.123")
+        allow(Time).to receive_messages(:now => time)
+        logger.add(Logger::INFO, "test", "spec")
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{$$})] test")
+      end
+
+      it "should add entries with a local progname and message" do
+        time = Time.parse("2011-01-30T12:31:56.123")
+        allow(Time).to receive_messages(:now => time)
+        logger.set_progname("block") do
+          logger.add(Logger::INFO, "test")
+        end
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO block(#{$$})] test")
+      end
+
+      it "should add entries with a progname but no message or block" do
+        time = Time.parse("2011-01-30T12:31:56.123")
+        allow(Time).to receive_messages(:now => time)
+        logger.set_progname("default") do
+          logger.add(Logger::INFO, nil, "message")
+        end
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO default(#{$$})] message")
+      end
+
+      it "should add entries with a block" do
+        time = Time.parse("2011-01-30T12:31:56.123")
+        allow(Time).to receive_messages(:now => time)
+        logger.add(Logger::INFO) { "test" }
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$})] test")
+      end
+
+      it "should log entries (::Logger compatibility)" do
+        time = Time.parse("2011-01-30T12:31:56.123")
+        allow(Time).to receive_messages(:now => time)
+        logger.log(Logger::INFO, "test")
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$})] test")
+      end
+
+      it "should append messages with unknown severity to the log" do
+        time = Time.parse("2011-01-30T12:31:56.123")
+        allow(Time).to receive_messages(:now => time)
+        logger << "test"
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 UNKNOWN app(#{$$})] test")
+      end
+    end
+
+    describe "add_entry" do
+      it "should add entries with tags" do
+        time = Time.parse("2011-01-30T12:31:56.123")
+        allow(Time).to receive_messages(:now => time)
+        logger.add_entry(Logger::INFO, "test", "spec", "tag" => "ABCD")
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{$$})] test [tag:\"ABCD\"]")
+      end
+
+      it "should handle malformed tags" do
+        time = Time.parse("2011-01-30T12:31:56.123")
+        allow(Time).to receive_messages(:now => time)
+        logger.add_entry(Logger::INFO, "test", "spec", "ABCD")
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{$$})] test")
+      end
+
+      it "should ouput entries to STDERR if they can't be written the the device" do
+        stderr = $stderr
+        $stderr = StringIO.new
+        begin
+          time = Time.parse("2011-01-30T12:31:56.123")
+          allow(Time).to receive_messages(:now => time)
+          expect(device).to receive(:write).and_raise(StandardError.new("Cannot write to device"))
+          logger.add_entry(Logger::INFO, "test")
+          expect($stderr.string).to include("[2011-01-30T12:31:56.123 INFO app(#{$$})] test")
+          expect($stderr.string).to include("StandardError: Cannot write to device")
+        ensure
+          $stderr = stderr
+        end
+      end
+    end
+
+    %w(fatal error warn info debug).each do |level|
+      describe level do
+        around :each do |example|
+          Timecop.freeze(time) do
+            example.call
+          end
+        end
+
+        before :each do
+          logger.level = level
+        end
+
+        let(:time) { Time.at(1296419516) }
+        let(:timestamp) { time.strftime("%Y-%m-%dT%H:%M:%S.%3N") }
+
+        it "should log a message string" do
+          logger.send(level, "test")
+          expect(output.string.chomp).to eq("[#{timestamp} #{level.upcase} app(#{$$})] test")
+        end
+
+        it "should log a message string with a progname" do
+          logger.send(level, "test", "spec")
+          expect(output.string.chomp).to eq("[#{timestamp} #{level.upcase} spec(#{$$})] test")
+        end
+
+        it "should log a message string with tags" do
+          logger.send(level, "test", tag: 1)
+          expect(output.string.chomp).to eq("[#{timestamp} #{level.upcase} app(#{$$})] test [tag:1]")
+        end
+
+        it "should log a message block" do
+          logger.send(level) { "test" }
+          expect(output.string.chomp).to eq("[#{timestamp} #{level.upcase} app(#{$$})] test")
+        end
+
+        it "should log a message block with a progname" do
+          logger.send(level, "spec") { "test" }
+          expect(output.string.chomp).to eq("[#{timestamp} #{level.upcase} spec(#{$$})] test")
+        end
+
+        it "should log a message block with tags" do
+          logger.send(level, tag: 1) { "test" }
+          expect(output.string.chomp).to eq("[#{timestamp} #{level.upcase} app(#{$$})] test [tag:1]")
+        end
+
+        it "should log a message block with a progname and tags" do
+          logger.send(level, "spec", tag: 1) { "test" }
+          expect(output.string.chomp).to eq("[#{timestamp} #{level.upcase} spec(#{$$})] test [tag:1]")
+        end
+
+        it "should log a message block with a progname and tags" do
+          logger.send(level, {tag: 1}, "spec") { "test" }
+          expect(output.string.chomp).to eq("[#{timestamp} #{level.upcase} spec(#{$$})] test [tag:1]")
+        end
       end
     end
 
