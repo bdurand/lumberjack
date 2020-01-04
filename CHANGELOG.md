@@ -1,4 +1,4 @@
-## 2.0.0
+## 1.1.0
 
 * Change Lumberjack::Logger to inherit from ::Logger
 * Add support for tags on log messages
