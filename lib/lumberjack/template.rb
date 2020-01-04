@@ -55,8 +55,8 @@ module Lumberjack
 
       first_line = entry.message.to_s.strip
       additional_lines = nil
-      if entry.message.include?(Lumberjack::LINE_SEPARATOR)
-        additional_lines = entry.message.strip.split(Lumberjack::LINE_SEPARATOR)
+      if first_line.include?(Lumberjack::LINE_SEPARATOR)
+        additional_lines = first_line.split(Lumberjack::LINE_SEPARATOR)
         first_line = additional_lines.shift
       end
 
