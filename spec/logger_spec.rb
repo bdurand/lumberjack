@@ -262,24 +262,38 @@ describe Lumberjack::Logger do
     let(:logger){ Lumberjack::Logger.new(device, :level => Logger::INFO, :progname => "test") }
     let(:n){ Lumberjack::LINE_SEPARATOR }
 
-    it "should add entries with a numeric severity and a message" do
+    it "should add entries with a ::Logger compaptible add method" do
       time = Time.parse("2011-01-30T12:31:56.123")
       allow(Time).to receive_messages(:now => time)
       logger.add(Logger::INFO, "test")
       expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}")
     end
 
+    it "should add entries with a numeric severity and a message" do
+      time = Time.parse("2011-01-30T12:31:56.123")
+      allow(Time).to receive_messages(:now => time)
+      logger.add_entry(Logger::INFO, "test")
+      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}")
+    end
+
+    it "should add entries with tags" do
+      time = Time.parse("2011-01-30T12:31:56.123")
+      allow(Time).to receive_messages(:now => time)
+      logger.add_entry(Logger::INFO, "test", "app", "unit_of_work_id" => "ABCD")
+      expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$}) #ABCD] test#{n}")
+    end
+
     it "should add entries with a severity label" do
       time = Time.parse("2011-01-30T12:31:56.123")
       allow(Time).to receive_messages(:now => time)
-      logger.add(:info, "test")
+      logger.add_entry(:info, "test")
       expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}")
     end
 
     it "should add entries with a custom progname and message" do
       time = Time.parse("2011-01-30T12:31:56.123")
       allow(Time).to receive_messages(:now => time)
-      logger.add(Logger::INFO, "test", "app")
+      logger.add_entry(Logger::INFO, "test", "app")
       expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$}) #] test#{n}")
     end
 
@@ -287,7 +301,7 @@ describe Lumberjack::Logger do
       time = Time.parse("2011-01-30T12:31:56.123")
       allow(Time).to receive_messages(:now => time)
       logger.set_progname("block") do
-        logger.add(Logger::INFO, "test")
+        logger.add_entry(Logger::INFO, "test")
       end
       expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO block(#{$$}) #] test#{n}")
     end
@@ -296,7 +310,7 @@ describe Lumberjack::Logger do
       time = Time.parse("2011-01-30T12:31:56.123")
       allow(Time).to receive_messages(:now => time)
       logger.set_progname("default") do
-        logger.add(Logger::INFO, nil, "message")
+        logger.add_entry(Logger::INFO, nil, "message")
       end
       expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO default(#{$$}) #] message#{n}")
     end
@@ -304,7 +318,7 @@ describe Lumberjack::Logger do
     it "should add entries with a block" do
       time = Time.parse("2011-01-30T12:31:56.123")
       allow(Time).to receive_messages(:now => time)
-      logger.add(Logger::INFO) { "test" }
+      logger.add_entry(Logger::INFO) { "test" }
       expect(output.string).to eq("[2011-01-30T12:31:56.123 INFO test(#{$$}) #] test#{n}")
     end
 
@@ -329,7 +343,7 @@ describe Lumberjack::Logger do
         time = Time.parse("2011-01-30T12:31:56.123")
         allow(Time).to receive_messages(:now => time)
         expect(device).to receive(:write).and_raise(StandardError.new("Cannot write to device"))
-        logger.add(Logger::INFO, "test")
+        logger.add_entry(Logger::INFO, "test")
         expect($stderr.string).to include("[2011-01-30T12:31:56.123 INFO test(#{$$})] test")
         expect($stderr.string).to include("StandardError: Cannot write to device")
       ensure
@@ -375,9 +389,9 @@ describe Lumberjack::Logger do
       let(:device){ Lumberjack::Device::Writer.new(output, :buffer_size => 0, :template => ":message") }
 
       it "should only add messages whose severity is greater or equal to the logger level" do
-        logger.add(Logger::DEBUG, "debug")
-        logger.add(Logger::INFO, "info")
-        logger.add(Logger::ERROR, "error")
+        logger.add_entry(Logger::DEBUG, "debug")
+        logger.add_entry(Logger::INFO, "info")
+        logger.add_entry(Logger::ERROR, "error")
         expect(output.string).to eq("info#{n}error#{n}")
       end
 
