@@ -1,3 +1,7 @@
+## 1.1.1
+
+* Replace Procs in tag values with the value of calling the Proc in log entries.
+
 ## 1.1.0
 
 * Change Lumberjack::Logger to inherit from ::Logger

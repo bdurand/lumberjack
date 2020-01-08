@@ -153,6 +153,7 @@ module Lumberjack
           tags = current_tags.merge(Tags.stringify_keys(tags))
         end
       end
+      tags = Tags.expand_runtime_values(tags)
 
       entry = LogEntry.new(time, severity, message, progname, $$, tags)
       write_to_device(entry)

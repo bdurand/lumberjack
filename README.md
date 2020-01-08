@@ -63,6 +63,16 @@ end
 logger.info("there") # Will not include the `thread_id` tag
 ```
 
+You can also set tags to `Proc` objects that will be evaluated when creating a log entry.
+
+```ruby
+logger.tag(thread_id: lambda { Thread.current.object_id })
+Thread.new do
+  logger.info("inside thread") # Will include the `thread_id` tag with id of the spawned thread
+end
+logger.info("outside thread") # Will include the `thread_id` tag with id of the main thread
+```
+
 Finally, you can specify a logging context with tags that apply within a block to all loggers.
 
 ```ruby

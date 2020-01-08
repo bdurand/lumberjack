@@ -353,6 +353,13 @@ describe Lumberjack::Logger do
           $stderr = stderr
         end
       end
+
+      it "should call Proc tag values" do
+        time = Time.parse("2011-01-30T12:31:56.123")
+        allow(Time).to receive_messages(:now => time)
+        logger.add_entry(Logger::INFO, "test", "spec", tag: lambda { "foo" })
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{$$})] test [tag:\"foo\"]")
+      end
     end
 
     %w(fatal error warn info debug).each do |level|
