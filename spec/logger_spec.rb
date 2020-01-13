@@ -329,7 +329,7 @@ describe Lumberjack::Logger do
         time = Time.parse("2011-01-30T12:31:56.123")
         allow(Time).to receive_messages(:now => time)
         logger.add_entry(Logger::INFO, "test", "spec", "tag" => "ABCD")
-        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{$$})] test [tag:\"ABCD\"]")
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{$$})] test [tag:ABCD]")
       end
 
       it "should handle malformed tags" do
@@ -358,7 +358,7 @@ describe Lumberjack::Logger do
         time = Time.parse("2011-01-30T12:31:56.123")
         allow(Time).to receive_messages(:now => time)
         logger.add_entry(Logger::INFO, "test", "spec", tag: lambda { "foo" })
-        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{$$})] test [tag:\"foo\"]")
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{$$})] test [tag:foo]")
       end
     end
 
@@ -430,11 +430,11 @@ describe Lumberjack::Logger do
         logger.error("error", count: 4, tag: "d")
         logger.fatal("fatal", count: 5, tag: "e", foo: "bar")
         lines = output.string.split(n)
-        expect(lines[0]).to eq 'debug - 1 - [tag:"a"]'
-        expect(lines[1]).to eq 'info - 2 - [tag:"b"]'
-        expect(lines[2]).to eq 'warn - 3 - [tag:"c"]'
-        expect(lines[3]).to eq 'error - 4 - [tag:"d"]'
-        expect(lines[4]).to eq 'fatal - 5 - [tag:"e"] [foo:"bar"]'
+        expect(lines[0]).to eq 'debug - 1 - [tag:a]'
+        expect(lines[1]).to eq 'info - 2 - [tag:b]'
+        expect(lines[2]).to eq 'warn - 3 - [tag:c]'
+        expect(lines[3]).to eq 'error - 4 - [tag:d]'
+        expect(lines[4]).to eq 'fatal - 5 - [tag:e] [foo:bar]'
       end
 
       it "should merge logger and context tags" do
@@ -447,9 +447,60 @@ describe Lumberjack::Logger do
           end
         end
         lines = output.string.split(n)
-        expect(lines[0]).to eq 'one - 1 - [foo:"bar"] [baz:"boo"] [tag:"b"]'
-        expect(lines[1]).to eq 'two - 2 - [foo:"other"] [baz:"boo"] [tag:"c"]'
-        expect(lines[2]).to eq 'three - 3 - [foo:"bar"] [baz:"thing"] [tag:"d"]'
+        expect(lines[0]).to eq 'one - 1 - [foo:bar] [baz:boo] [tag:b]'
+        expect(lines[1]).to eq 'two - 2 - [foo:other] [baz:boo] [tag:c]'
+        expect(lines[2]).to eq 'three - 3 - [foo:bar] [baz:thing] [tag:d]'
+      end
+
+      it "should apply a tag formatter to the tags" do
+        logger.tag_formatter.add(:foo, &:reverse).add(:count) { |val| val * 100 }
+        logger.info("message", count: 2, foo: "abc")
+        line = output.string.chomp
+        expect(line).to eq "message - 200 - [foo:cba]"
+      end
+    end
+
+    describe "tagged" do
+      let(:device){ Lumberjack::Device::Writer.new(output, :buffer_size => 0, template: ":message - :count - :tags") }
+
+      it "should add tags to the tag 'tagged'" do
+        logger.tagged("foo", "bar") do
+          logger.info("message", count: 1)
+        end
+        line = output.string.chomp
+        expect(line).to eq 'message - 1 - [tagged:["foo", "bar"]]'
+      end
+
+      it "should parse tags that include a colon" do
+        logger.tagged("count:10", "foo:bar") do
+          logger.info("message")
+        end
+        line = output.string.chomp
+        expect(line).to eq 'message - 10 - [foo:bar]'
+      end
+
+      it "should parse tags that include an equals" do
+        logger.tagged("count=10", "foo=bar") do
+          logger.info("message")
+        end
+        line = output.string.chomp
+        expect(line).to eq 'message - 10 - [foo:bar]'
+      end
+
+      it "should not parse tags that include a delimiter at the beginning" do
+        logger.tagged(":foo") do
+          logger.info("message")
+        end
+        line = output.string.chomp
+        expect(line).to eq 'message -  - [tagged:[":foo"]]'
+      end
+
+      it "should handle non-string tags" do
+        logger.tagged(15) do
+          logger.info("message")
+        end
+        line = output.string.chomp
+        expect(line).to eq 'message -  - [tagged:[15]]'
       end
     end
 

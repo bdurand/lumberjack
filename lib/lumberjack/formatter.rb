@@ -24,13 +24,12 @@ module Lumberjack
     def initialize
       @class_formatters = {}
       @module_formatters = {}
-      @_default_formatter = InspectFormatter.new
       structured_formatter = StructuredFormatter.new(self)
       add(String, :object)
       add(Numeric, :object)
       add(TrueClass, :object)
       add(FalseClass, :object)
-      add(Object, @_default_formatter)
+      add(Object, InspectFormatter.new)
       add(Exception, :exception)
       add(Enumerable, structured_formatter)
     end
@@ -56,14 +55,18 @@ module Lumberjack
     #   formatter.add(MyClass, :pretty_print).add(YourClass){|obj| obj.humanize}
     def add(klass, formatter = nil, &block)
       formatter ||= block
-      if formatter.is_a?(Symbol)
-        formatter_class_name = "#{formatter.to_s.gsub(/(^|_)([a-z])/){|m| $~[2].upcase}}Formatter"
-        formatter = Formatter.const_get(formatter_class_name).new
-      end
-      if klass.is_a?(Class)
-        @class_formatters[klass] = formatter
+      if formatter.nil?
+        remove(klass)
       else
-        @module_formatters[klass] = formatter
+        if formatter.is_a?(Symbol)
+          formatter_class_name = "#{formatter.to_s.gsub(/(^|_)([a-z])/){|m| $~[2].upcase}}Formatter"
+          formatter = Formatter.const_get(formatter_class_name).new
+        end
+        if klass.is_a?(Class)
+          @class_formatters[klass] = formatter
+        else
+          @module_formatters[klass] = formatter
+        end
       end
       self
     end
@@ -87,7 +90,12 @@ module Lumberjack
 
     # Format a message object as a string.
     def format(message)
-      formatter_for(message.class).call(message)
+      formatter = formatter_for(message.class)
+      if formatter && formatter.respond_to?(:call)
+        formatter.call(message)
+      else
+        message
+      end
     end
 
     # Compatibility with the Logger::Formatter signature. This method will just convert the message
@@ -113,7 +121,6 @@ module Lumberjack
 
         klass = klass.superclass
       end
-      @_default_formatter
     end
   end
 end

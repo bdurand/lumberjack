@@ -43,8 +43,9 @@ describe Lumberjack::Formatter do
   end
 
   it "should have a default formatter" do
-    formatter.remove(Object)
     expect(formatter.format(:test)).to eq(":test")
+    formatter.remove(Object)
+    expect(formatter.format(:test)).to eq(:test)
   end
 
 end

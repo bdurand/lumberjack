@@ -85,8 +85,10 @@ module Lumberjack
 
       tags_string = String.new
       tags.each do |name, value|
-        unless tag_vars.include?(name)
-          tags_string << "[#{name}:#{value.inspect}] "
+        unless value.nil? || tag_vars.include?(name)
+          value = value.to_s
+          value = value.gsub(Lumberjack::LINE_SEPARATOR, " ") if value.include?(Lumberjack::LINE_SEPARATOR)
+          tags_string << "[#{name}:#{value}] "
         end
       end
 

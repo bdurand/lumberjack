@@ -9,7 +9,7 @@ describe Lumberjack::Template do
   describe "format" do
     it "should format a log entry with a template string" do
       template = Lumberjack::Template.new(":message - :severity, :time, :progname@:pid (:unit_of_work_id) :tags")
-      expect(template.call(entry)).to eq("line 1 - INFO, 2011-01-15T14:23:45.123, app@12345 (ABCD) [foo:\"bar\"]#{Lumberjack::LINE_SEPARATOR}line 2#{Lumberjack::LINE_SEPARATOR}line 3")
+      expect(template.call(entry)).to eq("line 1 - INFO, 2011-01-15T14:23:45.123, app@12345 (ABCD) [foo:bar]#{Lumberjack::LINE_SEPARATOR}line 2#{Lumberjack::LINE_SEPARATOR}line 3")
     end
 
     it "should be able to specify a template for additional lines in a message" do
@@ -39,13 +39,19 @@ describe Lumberjack::Template do
     it "should format named tags in the template and not in the :tags placement" do
       template = Lumberjack::Template.new(":message - :foo - :tags")
       entry = Lumberjack::LogEntry.new(time, Logger::INFO, "here", "app", 12345, "foo" => "bar", "tag" => "a")
-      expect(template.call(entry)).to eq('here - bar - [tag:"a"]')
+      expect(template.call(entry)).to eq('here - bar - [tag:a]')
     end
 
     it "should put nothing in place of missing named tags" do
       template = Lumberjack::Template.new(":message - :foo - :tags")
       entry = Lumberjack::LogEntry.new(time, Logger::INFO, "here", "app", 12345, "tag" => "a")
-      expect(template.call(entry)).to eq('here -  - [tag:"a"]')
+      expect(template.call(entry)).to eq('here -  - [tag:a]')
+    end
+
+    it "should remove line separators in tags" do
+      template = Lumberjack::Template.new(":message - :foo - :tags")
+      entry = Lumberjack::LogEntry.new(time, Logger::INFO, "here", "app", 12345, "tag" => "a#{Lumberjack::LINE_SEPARATOR}b")
+      expect(template.call(entry)).to eq('here -  - [tag:a b]')
     end
   end
 end

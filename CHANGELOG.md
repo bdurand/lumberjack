@@ -1,3 +1,8 @@
+## 1.1.2
+
+* Compatibility with ActiveSupport::TaggedLogger `tagged` method.
+* Add `tag_formatter` to logger to specify formatting of tags for output.
+
 ## 1.1.1
 
 * Replace Procs in tag values with the value of calling the Proc in log entries.

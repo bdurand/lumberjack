@@ -85,6 +85,16 @@ logger.info("no requests") # Will not include the `request_id` tag
 
 Tag keys are always converted to strings. Tags are inherited so that message tags take precedence over block tags which take precedence over global tags.
 
+#### Compatibility with ActiveSupport::TaggedLogger
+
+`Lumberjack::Logger` version 1.1.2 or greater is compatible with `ActiveSupport::TaggedLogger`. This is so that other code that expect to have a logger that responds to the `tagged` method will work. Any tags added with the `tagged` method will be appended to an array in the the "tagged" tag. However, if a tagged value has a colon or equals sign in it, it will be parsed to a name value pair.
+
+```ruby
+logger.tagged("foo", "bar=1", "baz:2", "other") do
+  logger.info("here") # will include tags: {"tagged" => ["foo", "other"], "bar" => "1", "baz" => "2"}
+end
+```
+
 #### Templates
 
 The built in `Lumberjack::Device::Writer` class has built in support for including tags in the output using the `Lumberjack::Template` class.
@@ -117,33 +127,56 @@ If you'd like to send you log to a different kind of output, you just need to ex
 
 #### Formatters
 
-When a message is logged, it is first converted into a string. You can customize how it is converted by adding mappings to a Formatter.
+The message you send to the logger can be any object type and does not need to be a string. You can specify a `Lumberjack::Formatter` to instruct the logger how to format objects before outputting them to the device. You do this by mapping classes or modules to formatter code. This code can be either a block or an object that responds to the `call` method. The formatter will be called with the object logged as the message and the returned value will be what is sent to the device.
 
-There are several built in classes you can add as formatters
+```ruby
+  # Format all floating point number with three significant digits.
+  logger.formatter.add(Float) { |value| value.round(3) }
+
+  # Format all enumerable objects as a comma delimited string.
+  logger.formatter.add(Enumerable) { |value| value.join(", ") }
+```
+
+There are several built in classes you can add as formatters. You can use a symbol to reference built in formatters.
 
 ```ruby
   logger.formatter.add(Hash, :pretty_print)  # use the Formatter::PrettyPrintFormatter for all Hashes
   logger.formatter.add(Hash, Lumberjack::Formatter::PrettyPrintFormatter.new)  # alternative using a formatter instance
 ```
 
-* `Lumberjack::Formatter::ObjectFormatter` - no op conversion that returns the object itself.
-* `Lumberjack::Formatter::StringFormatter` - calls `to_s` on the object.
-* `Lumberjack::Formatter::InspectFormatter` - calls `inspect` on the object.
-* `Lumberjack::Formatter::ExceptionFormatter` - special formatter for exceptions which logs them as multi line statements with the message and backtrace.
-* `Lumberjack::Formatter::DateTimeFormatter` - special formatter for dates and times to format them using `strftime`.
-* `Lumberjack::Formatter::PrettyPrintFormatter` - returns the pretty print format of the object.
-* `Lumberjack::Formatter::IdFormatter` - returns a hash of the object with keys for the id attribute and class.
-* `Lumberjack::Formatter::StructuredFormatter` - crawls the object and applies the formatter recursively to Enumerable objects found in it (arrays, hashes, etc.).
+* `:object` - `Lumberjack::Formatter::ObjectFormatter` - no op conversion that returns the object itself.
+* `:string` - `Lumberjack::Formatter::StringFormatter` - calls `to_s` on the object.
+* `:inspect` - `Lumberjack::Formatter::InspectFormatter` - calls `inspect` on the object.
+* `:exception` - `Lumberjack::Formatter::ExceptionFormatter` - special formatter for exceptions which logs them as multi line statements with the message and backtrace.
+* `:date_time` - `Lumberjack::Formatter::DateTimeFormatter` - special formatter for dates and times to format them using `strftime`.
+* `:pretty_print` - `Lumberjack::Formatter::PrettyPrintFormatter` - returns the pretty print format of the object.
+* `:id` - `Lumberjack::Formatter::IdFormatter` - returns a hash of the object with keys for the id attribute and class.
+* `:structured` - `Lumberjack::Formatter::StructuredFormatter` - crawls the object and applies the formatter recursively to Enumerable objects found in it (arrays, hashes, etc.).
 
-You can also specify a block to use as a formatter:
+To define your own formatter, either provide a block or an object that responds to `call` with a single argument.
+
+The default formatter will pass through values for strings, numbers, and booleans, and use the `:inspect` formatter for all objects except for exceptions which will be formatted with the `:exception` formatter.
+
+#### Tag Formatters
+
+The `logger.formatter` will only apply to log messages. You can use `logger.tag_formatter` to register formatters for tags. You can register both default formatters that will apply to all tag values, as well as tag specifice formatters that will apply only to objects with a specific tag name.
+
+The fomatter values can be either a `Lumberjack::Formatter` or a block or an object that responds to `call`. If you supply a `Lumberjack::Formatter`, the tag value will be passed through the rules for that formatter. If you supply a block or other object, it will be called with the tag value.
 
 ```ruby
-  logger.formatter.add(MyClass){|obj| "#{obj.class}@#{obj.id}"}  # use a block to provide a custom format
+# These will all do the same thing formatting all tag values with `inspect`
+logger.tag_formatter.default(Lumberjack::Formatter.new.clear.add(Object, :inspect))
+logger.tag_formatter.default(Lumberjack::Formatter::InspectFormatter.new)
+logger.tag_formatter.default { |value| value.inspect }
+
+# This will register formatters only on specific tag names
+logger.tag_formatter.add(:thread) { |thread| "Thread(#{thread.name})" }
+logger.tag_formatter.add(:current_user, Lumberjack::Formatter::IdFormatter.new)
 ```
 
 #### Templates
 
-If you use the built in devices, you can also customize the Template used to format the LogEntry.
+If you use the built in `Lumberjack::Writer` derived devices, you can also customize the Template used to format the LogEntry.
 
 See `Lumberjack::Template` for a complete list of macros you can use in the template. You can also use a block that receives a `Lumberjack::LogEntry` as a template.
 

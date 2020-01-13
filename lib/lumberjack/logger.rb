@@ -38,6 +38,9 @@ module Lumberjack
 
     # The device being written to
     attr_reader :device
+    
+    # The TagFormatter used for formatting tags for output
+    attr_accessor :tag_formatter
 
     # Create a new logger to log to a Device.
     #
@@ -53,6 +56,7 @@ module Lumberjack
     # * :level - The logging level below which messages will be ignored.
     # * :formatter - The formatter to use for outputting messages to the log.
     # * :datetime_format - The format to use for log timestamps.
+    # * :tag_formatter - The TagFormatter to use for formatting tags.
     # * :progname - The name of the program that will be recorded with each log entry.
     # * :flush_seconds - The maximum number of seconds between flush calls.
     # * :roll - If the log device is a file path, it will be a Device::DateRollingLogFile if this is set.
@@ -67,6 +71,7 @@ module Lumberjack
 
       @device = open_device(device, options) if device
       @_formatter = (options[:formatter] || Formatter.new)
+      @tag_formatter = (options[:tag_formatter] || TagFormatter.new)
       time_format = (options[:datetime_format] || options[:time_format])
       self.datetime_format = time_format if time_format
       @last_flushed_at = Time.now
@@ -154,6 +159,7 @@ module Lumberjack
         end
       end
       tags = Tags.expand_runtime_values(tags)
+      tags = tag_formatter.format(tags) if tag_formatter
 
       entry = LogEntry.new(time, severity, message, progname, $$, tags)
       write_to_device(entry)
@@ -308,6 +314,24 @@ module Lumberjack
       scope_tags = thread_local_value(:lumberjack_logger_tags)
       tags.merge!(scope_tags) if scope_tags && !scope_tags.empty?
       tags
+    end
+
+    # Compatibility with ActiveSupport::TaggedLogging which only supports adding tags as strings.
+    # If a tag looks like "key:value"  or "key=value", it will be added as a key value pair.
+    # Otherwise it will be appended to a list named "tagged".
+    def tagged(*tags, &block)
+      tag_hash = {}
+      tag_delimiter = /[:=]/
+      tags.each do |tag|
+        if tag.is_a?(String) && tag.match(tag_delimiter) && !(tag.start_with?(":") || tag.start_with?("="))
+          name, value = tag.split(tag_delimiter, 2)
+          tag_hash[name.strip] = value.strip
+        else
+          generic_tags = (tag_hash["tagged"] || Array(@tags["tagged"]))
+          tag_hash["tagged"] = generic_tags + [tag]
+        end
+      end
+      tag(tag_hash, &block)
     end
 
     private

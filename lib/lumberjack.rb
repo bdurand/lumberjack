@@ -16,6 +16,7 @@ module Lumberjack
   require_relative "lumberjack/device.rb"
   require_relative "lumberjack/logger.rb"
   require_relative "lumberjack/tags.rb"
+  require_relative "lumberjack/tag_formatter.rb"
   require_relative "lumberjack/template.rb"
   require_relative "lumberjack/rack.rb"
 
