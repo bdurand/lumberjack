@@ -16,6 +16,17 @@ module Lumberjack
         super(formatter)
       end
       
+      def current_tags
+        Array(@tags["tagged"])
+      end
+
+      def tags_text
+        tags = current_tags
+        if tags.any?
+          tags.collect { |tag| "[#{tag}] " }.join
+        end
+      end
+      
       def __formatter
         @formatter
       end
