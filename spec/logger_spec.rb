@@ -471,30 +471,6 @@ describe Lumberjack::Logger do
         expect(line).to eq 'message - 1 - [tagged:["foo", "bar"]]'
       end
 
-      it "should parse tags that include a colon" do
-        logger.tagged("count:10", "foo:bar") do
-          logger.info("message")
-        end
-        line = output.string.chomp
-        expect(line).to eq 'message - 10 - [foo:bar]'
-      end
-
-      it "should parse tags that include an equals" do
-        logger.tagged("count=10", "foo=bar") do
-          logger.info("message")
-        end
-        line = output.string.chomp
-        expect(line).to eq 'message - 10 - [foo:bar]'
-      end
-
-      it "should not parse tags that include a delimiter at the beginning" do
-        logger.tagged(":foo") do
-          logger.info("message")
-        end
-        line = output.string.chomp
-        expect(line).to eq 'message -  - [tagged:[":foo"]]'
-      end
-
       it "should handle non-string tags" do
         logger.tagged(15) do
           logger.info("message")

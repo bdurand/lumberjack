@@ -10,9 +10,11 @@ module Lumberjack
   LINE_SEPARATOR = (RbConfig::CONFIG['host_os'].match(/mswin/i) ? "\r\n" : "\n")
 
   require_relative "lumberjack/severity.rb"
+  require_relative "lumberjack/formatter.rb"
+  require_relative "lumberjack/tagged_logger_support.rb"
+
   require_relative "lumberjack/context.rb"
   require_relative "lumberjack/log_entry.rb"
-  require_relative "lumberjack/formatter.rb"
   require_relative "lumberjack/device.rb"
   require_relative "lumberjack/logger.rb"
   require_relative "lumberjack/tags.rb"

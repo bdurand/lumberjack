@@ -26,6 +26,7 @@ module Lumberjack
   # using a Formatter associated with the logger.
   class Logger
     include Severity
+    include TaggedLoggerSupport
 
     # The time that the device was last flushed.
     attr_reader :last_flushed_at
@@ -70,7 +71,7 @@ module Lumberjack
       max_flush_seconds = options.delete(:flush_seconds).to_f
 
       @device = open_device(device, options) if device
-      @_formatter = (options[:formatter] || Formatter.new)
+      self.formatter = (options[:formatter] || Formatter.new)
       @tag_formatter = (options[:tag_formatter] || TagFormatter.new)
       time_format = (options[:datetime_format] || options[:time_format])
       self.datetime_format = time_format if time_format
@@ -115,12 +116,13 @@ module Lumberjack
 
     # Set the Lumberjack::Formatter used to format objects for logging as messages.
     def formatter=(value)
-      @_formatter = value
+      @_formatter = (value.is_a?(TaggedLoggerSupport::Formatter) ? value.__formatter : value)
     end
 
     # Get the Lumberjack::Formatter used to format objects for logging as messages.
     def formatter
-      @_formatter
+      # Wrap in an object that supports ActiveSupport::TaggedLogger
+      TaggedLoggerSupport::Formatter.new(logger: self, formatter: @_formatter)
     end
 
     # Add a message to the log with a given severity. The message can be either
@@ -314,24 +316,6 @@ module Lumberjack
       scope_tags = thread_local_value(:lumberjack_logger_tags)
       tags.merge!(scope_tags) if scope_tags && !scope_tags.empty?
       tags
-    end
-
-    # Compatibility with ActiveSupport::TaggedLogging which only supports adding tags as strings.
-    # If a tag looks like "key:value"  or "key=value", it will be added as a key value pair.
-    # Otherwise it will be appended to a list named "tagged".
-    def tagged(*tags, &block)
-      tag_hash = {}
-      tag_delimiter = /[:=]/
-      tags.each do |tag|
-        if tag.is_a?(String) && tag.match(tag_delimiter) && !(tag.start_with?(":") || tag.start_with?("="))
-          name, value = tag.split(tag_delimiter, 2)
-          tag_hash[name.strip] = value.strip
-        else
-          generic_tags = (tag_hash["tagged"] || Array(@tags["tagged"]))
-          tag_hash["tagged"] = generic_tags + [tag]
-        end
-      end
-      tag(tag_hash, &block)
     end
 
     private

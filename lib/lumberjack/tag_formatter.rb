@@ -19,6 +19,7 @@ module Lumberjack
     # or an object that responds to `call` or a block.
     def default(formatter = nil, &block)
       formatter ||= block
+      formatter = dereference_formatter(formatter)
       @default_formatter = formatter
       self
     end
@@ -34,6 +35,7 @@ module Lumberjack
     # applied.
     def add(names, formatter = nil, &block)
       formatter ||= block
+      formatter = dereference_formatter(formatter)
       if formatter.nil?
         remove(key)
       else
@@ -77,5 +79,12 @@ module Lumberjack
         formatted
       end
     end
+    
+    private
+    
+    def dereference_formatter(formatter)
+      formatter.is_a?(TaggedLoggerSupport::Formatter) ? formatter.__formatter : formatter
+    end
+    
   end
 end
