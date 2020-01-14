@@ -39,7 +39,7 @@ module Lumberjack
 
     # The device being written to
     attr_reader :device
-    
+
     # The TagFormatter used for formatting tags for output
     attr_accessor :tag_formatter
 
@@ -121,7 +121,7 @@ module Lumberjack
 
     # Get the Lumberjack::Formatter used to format objects for logging as messages.
     def formatter
-      # Wrap in an object that supports ActiveSupport::TaggedLogger
+      # Wrap in an object that supports ActiveSupport::TaggedLogger API
       TaggedLoggerSupport::Formatter.new(logger: self, formatter: @_formatter)
     end
 

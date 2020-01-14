@@ -17,7 +17,12 @@ module Lumberjack
       end
       
       def current_tags
-        Array(@tags["tagged"])
+        tags = @logger.instance_variable_get(:@tags)
+        if tags.is_a?(Hash)
+          Array(tags["tagged"])
+        else
+          []
+        end
       end
 
       def tags_text
@@ -38,7 +43,7 @@ module Lumberjack
     def tagged(*tags, &block)
       tag_hash = {}
       tags.each do |tag|
-        tagged_values = (tag_hash["tagged"] || Array(@tags["tagged"]))
+        tagged_values = Array(tag_hash["tagged"] || self.tags["tagged"])
         tag_hash["tagged"] = tagged_values + [tag]
       end
       tag(tag_hash, &block)
@@ -50,7 +55,7 @@ module Lumberjack
 
     def pop_tags(size = 1)
       tagged_values = Array(@tags["tagged"])
-      tagged_values = (tagged_values.size < size ? tagged_values[0, tagged_values.size - size] : nil)
+      tagged_values = (tagged_values.size > size ? tagged_values[0, tagged_values.size - size] : nil)
       tag("tagged" => tagged_values)
     end
 
