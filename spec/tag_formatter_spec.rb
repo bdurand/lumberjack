@@ -22,8 +22,10 @@ describe Lumberjack::TagFormatter do
 
     tag_formatter.remove(:foo).add(["baz", "count"]) { |val| "#{val}!"}
     expect(tag_formatter.format(tags)).to eq({"foo" => "bar", "baz" => "boo!", "count" => "1!"})
-  end
 
+    tag_formatter.remove(:foo).add("foo", :inspect)
+    expect(tag_formatter.format(tags)).to eq({"foo" => '"bar"', "baz" => "boo!", "count" => "1!"})
+  end
 
   it "should be able to clear all formatters" do
     tag_formatter = Lumberjack::TagFormatter.new.default(&:to_s).add(:foo, &:reverse)
@@ -31,7 +33,6 @@ describe Lumberjack::TagFormatter do
     tag_formatter.clear
     expect(tag_formatter.format(tags)).to eq tags
   end
-
 
   it "should return the tags themselves if not formatting is necessary" do
     tag_formatter = Lumberjack::TagFormatter.new.add(:other, &:reverse)

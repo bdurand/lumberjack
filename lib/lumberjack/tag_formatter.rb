@@ -83,7 +83,14 @@ module Lumberjack
     private
     
     def dereference_formatter(formatter)
-      formatter.is_a?(TaggedLoggerSupport::Formatter) ? formatter.__formatter : formatter
+      if formatter.is_a?(TaggedLoggerSupport::Formatter)
+        formatter.__formatter
+      elsif formatter.is_a?(Symbol)
+        formatter_class_name = "#{formatter.to_s.gsub(/(^|_)([a-z])/){|m| $~[2].upcase}}Formatter"
+        Formatter.const_get(formatter_class_name).new
+      else
+        formatter
+      end
     end
     
   end
