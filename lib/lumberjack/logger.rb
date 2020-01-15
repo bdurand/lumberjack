@@ -272,6 +272,9 @@ module Lumberjack
     #   end
     def silence(temporary_level = ERROR, &block)
       if silencer
+        unless temporary_level.is_a?(Integer)
+          temporary_level = Severity::label_to_level(temporary_level)
+        end
         push_thread_local_value(:lumberjack_logger_level, temporary_level, &block)
       else
         yield

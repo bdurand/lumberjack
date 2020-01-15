@@ -4,6 +4,7 @@
 * Add `tag_formatter` to logger to specify formatting of tags for output.
 * Allow adding and removing classes by name to formatters.
 * Allow adding and removing multiple classes in a single call to a formatter.
+* Allow using symbols and strings as log level for silencing a logger.
 
 ## 1.1.1
 

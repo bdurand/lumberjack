@@ -120,6 +120,20 @@ describe Lumberjack::Logger do
       expect(output.string.split).to eq(["one", "woof", "four"])
     end
 
+    it "should be able to customize the level of silence in a block with a symbol" do
+      output = StringIO.new
+      logger = Lumberjack::Logger.new(output, :buffer_size => 0, :level => Logger::INFO, :template => ":message")
+      logger.info("one")
+      logger.silence(:fatal) do
+        expect(logger.level).to eq(Logger::FATAL)
+        logger.info("two")
+        logger.error("three")
+        logger.fatal("woof")
+      end
+      logger.info("four")
+      expect(output.string.split).to eq(["one", "woof", "four"])
+    end
+
     it "should not be able to silence the logger if silencing is disabled" do
       output = StringIO.new
       logger = Lumberjack::Logger.new(output, :buffer_size => 0, :level => Logger::INFO, :template => ":message")
