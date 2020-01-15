@@ -48,4 +48,17 @@ describe Lumberjack::Formatter do
     expect(formatter.format(:test)).to eq(:test)
   end
 
+  describe "clear" do
+    it "should clear all mappings" do
+      expect(formatter.format(:test)).to eq(":test")
+      formatter.clear
+      expect(formatter.format(:test)).to eq(:test)
+    end
+  end
+
+  describe "empty" do
+    it "should be able to get an empty formatter" do
+      expect(Lumberjack::Formatter.empty.format(:test)).to eq(:test)
+    end
+  end
 end

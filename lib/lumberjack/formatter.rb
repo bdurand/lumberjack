@@ -21,6 +21,15 @@ module Lumberjack
     require_relative "formatter/string_formatter.rb"
     require_relative "formatter/structured_formatter.rb"
 
+    class << self
+      # Returns a new empty formatter with no mapping. For historical reasons, a formatter
+      # is initialized with mappings to help output objects as strings. This will return one
+      # without the default mappings.
+      def empty
+        new.clear
+      end
+    end
+    
     def initialize
       @class_formatters = {}
       @module_formatters = {}
