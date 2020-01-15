@@ -34,10 +34,7 @@ module Lumberjack
       @class_formatters = {}
       @module_formatters = {}
       structured_formatter = StructuredFormatter.new(self)
-      add(String, :object)
-      add(Numeric, :object)
-      add(TrueClass, :object)
-      add(FalseClass, :object)
+      add([String, Numeric, TrueClass, FalseClass], :object)
       add(Object, InspectFormatter.new)
       add(Exception, :exception)
       add(Enumerable, structured_formatter)
@@ -48,6 +45,12 @@ module Lumberjack
     # formatters, or as a block to the method call.
     #
     # The predefined formatters are: :inspect, :string, :exception, and :pretty_print.
+    #
+    # You can add multiple classes at once by passing an array of classes.
+    #
+    # You can also pass class names as strings instead of the classes themselves. This can
+    # help avoid loading dependency issues. This applies only to classes; modules cannot be
+    # passed in as strings.
     #
     # === Examples
     #
@@ -71,21 +74,34 @@ module Lumberjack
           formatter_class_name = "#{formatter.to_s.gsub(/(^|_)([a-z])/){|m| $~[2].upcase}}Formatter"
           formatter = Formatter.const_get(formatter_class_name).new
         end
-        if klass.is_a?(Class)
-          @class_formatters[klass] = formatter
-        else
-          @module_formatters[klass] = formatter
+        
+        Array(klass).each do |k|
+          if k.class == Module
+            @module_formatters[k] = formatter
+          else
+            k = k.name if k.is_a?(Class)
+            @class_formatters[k] = formatter
+          end
         end
       end
       self
     end
 
     # Remove the formatter associated with a class. Remove statements can be chained together.
+    #
+    # You can remove multiple classes at once by passing an array of classes.
+    #
+    # You can also pass class names as strings instead of the classes themselves. This can
+    # help avoid loading dependency issues. This applies only to classes; modules cannot be
+    # passed in as strings.
     def remove(klass)
-      if klass.is_a?(Class)
-        @class_formatters.delete(klass)
-      else
-        @module_formatters.delete(klass)
+      Array(klass).each do |k|
+        if k.class == Module
+          @module_formatters.delete(k)
+        else
+          k = k.name if k.is_a?(Class)
+          @class_formatters.delete(k)
+        end
       end
       self
     end
@@ -119,7 +135,7 @@ module Lumberjack
     def formatter_for(klass) #:nodoc:
       check_modules = true
       while klass != nil do
-        formatter = @class_formatters[klass]
+        formatter = @class_formatters[klass.name]
         return formatter if formatter
 
         if check_modules

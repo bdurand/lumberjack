@@ -15,6 +15,17 @@ describe Lumberjack::Formatter do
     expect(formatter.format(10)).to eq("number: 10")
   end
 
+  it "should be able to add a formatter object for a class name" do
+    formatter.add("Numeric", lambda{|obj| "number: #{obj}"})
+    expect(formatter.format(10)).to eq("number: 10")
+  end
+
+  it "should be able to add a formatter object for multiple classes" do
+    formatter.add([Numeric, NilClass], &:to_i)
+    expect(formatter.format(10.1)).to eq(10)
+    expect(formatter.format(nil)).to eq(0)
+  end
+
   it "should be able to add a formatter object for a module" do
     formatter.add(Enumerable, lambda{|obj| "list: #{obj.inspect}"})
     expect(formatter.format([1, 2])).to eq("list: [1, 2]")
@@ -27,6 +38,16 @@ describe Lumberjack::Formatter do
 
   it "should be able to remove a formatter for a class" do
     formatter.remove(String)
+    expect(formatter.format("abc")).to eq("\"abc\"")
+  end
+
+  it "should be able to remove a formatter for a class" do
+    formatter.remove("String")
+    expect(formatter.format("abc")).to eq("\"abc\"")
+  end
+
+  it "should be able to remove multiple formatters" do
+    formatter.remove([String, Numeric])
     expect(formatter.format("abc")).to eq("\"abc\"")
   end
 
