@@ -2,6 +2,8 @@
 
 * Compatibility with ActiveSupport::TaggedLogger `tagged` method.
 * Add `tag_formatter` to logger to specify formatting of tags for output.
+* Allow adding and removing classes by name to formatters.
+* Allow adding and removing multiple classes in a single call to a formatter.
 
 ## 1.1.1
 
@@ -20,6 +22,7 @@
 * Add DateTimeFormatter, IdFormatter, ObjectFormatter, and StructuredFormatter
 * Add rack Context middleware for setting thread global context
 * End support for ruby versions < 2.3
+* Add support for modules in formatters
 
 ## 1.0.13
 
