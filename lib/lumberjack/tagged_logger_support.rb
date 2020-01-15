@@ -15,7 +15,7 @@ module Lumberjack
         @formatter = formatter
         super(formatter)
       end
-      
+
       def current_tags
         tags = @logger.instance_variable_get(:@tags)
         if tags.is_a?(Hash)
@@ -31,18 +31,18 @@ module Lumberjack
           tags.collect { |tag| "[#{tag}] " }.join
         end
       end
-      
+
       def __formatter
         @formatter
       end
     end
-    
+
     # Compatibility with ActiveSupport::TaggedLogging which only supports adding tags as strings.
     # If a tag looks like "key:value"  or "key=value", it will be added as a key value pair.
     # Otherwise it will be appended to a list named "tagged".
     def tagged(*tags, &block)
       tag_hash = {}
-      tags.each do |tag|
+      tags.flatten.each do |tag|
         tagged_values = Array(tag_hash["tagged"] || self.tags["tagged"])
         tag_hash["tagged"] = tagged_values + [tag]
       end
