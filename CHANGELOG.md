@@ -1,6 +1,6 @@
-## 1.1.2
+## 1.2.0
 
-* Compatibility with ActiveSupport::TaggedLogger `tagged` method.
+* Enable compatibility with ActiveSupport::TaggedLogger by calling `tagged_logger!` on a logger.
 * Add `tag_formatter` to logger to specify formatting of tags for output.
 * Allow adding and removing classes by name to formatters.
 * Allow adding and removing multiple classes in a single call to a formatter.
@@ -8,6 +8,8 @@
 * Ensure flusher thread gets stopped when logger is closed.
 * Add writer for logger device attribute.
 * Handle passing an array of devices to a multi device.
+* Helper method to get a tag with a specified name.
+* Add strip formatter to strip whitespace from strings.
 
 ## 1.1.1
 

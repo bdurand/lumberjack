@@ -146,6 +146,7 @@ There are several built in classes you can add as formatters. You can use a symb
 
 * `:object` - `Lumberjack::Formatter::ObjectFormatter` - no op conversion that returns the object itself.
 * `:string` - `Lumberjack::Formatter::StringFormatter` - calls `to_s` on the object.
+* `:strip` - `Lumberjack::Formatter::StripFormatter` - calls `to_s.strip` on the object.
 * `:inspect` - `Lumberjack::Formatter::InspectFormatter` - calls `inspect` on the object.
 * `:exception` - `Lumberjack::Formatter::ExceptionFormatter` - special formatter for exceptions which logs them as multi line statements with the message and backtrace.
 * `:date_time` - `Lumberjack::Formatter::DateTimeFormatter` - special formatter for dates and times to format them using `strftime`.

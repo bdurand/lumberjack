@@ -49,6 +49,11 @@ module Lumberjack
         @tags = { UNIT_OF_WORK_ID => value }
       end
     end
+    
+    # Return the tag with the specified name.
+    def tag(name)
+      tags[name.to_s] if tags
+    end
 
     private
 

@@ -3,7 +3,7 @@ require "spec_helper"
 describe Lumberjack::TaggedLoggerSupport do
   let(:output){ StringIO.new }
   let(:device){ Lumberjack::Device::Writer.new(output, :buffer_size => 0, template: ":message - :count - :tags") }
-  let(:logger){ Lumberjack::Logger.new(device) }
+  let(:logger){ Lumberjack::Logger.new(device).tagged_logger! }
 
   describe "logger" do
     describe "tagged" do
@@ -112,9 +112,12 @@ describe Lumberjack::TaggedLoggerSupport do
 
     describe "tag_text" do
       it "should return empty if there are no tags" do
+        expect(formatter.tags_text).to eq nil
       end
-      
+
       it "should return a string of tags" do
+        formatter.push_tags("foo", "bar", "baz")
+        expect(formatter.tags_text).to eq "[foo] [bar] [baz] "
       end
     end
   end

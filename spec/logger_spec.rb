@@ -478,26 +478,6 @@ describe Lumberjack::Logger do
       end
     end
 
-    describe "tagged" do
-      let(:device){ Lumberjack::Device::Writer.new(output, :buffer_size => 0, template: ":message - :count - :tags") }
-
-      it "should add tags to the tag 'tagged'" do
-        logger.tagged("foo", "bar") do
-          logger.info("message", count: 1)
-        end
-        line = output.string.chomp
-        expect(line).to eq 'message - 1 - [tagged:["foo", "bar"]]'
-      end
-
-      it "should handle non-string tags" do
-        logger.tagged(15) do
-          logger.info("message")
-        end
-        line = output.string.chomp
-        expect(line).to eq 'message -  - [tagged:[15]]'
-      end
-    end
-
     describe "log helper methods" do
       let(:device){ Lumberjack::Device::Writer.new(output, :buffer_size => 0, :template => ":message") }
 

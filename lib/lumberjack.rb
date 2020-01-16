@@ -11,7 +11,6 @@ module Lumberjack
 
   require_relative "lumberjack/severity.rb"
   require_relative "lumberjack/formatter.rb"
-  require_relative "lumberjack/tagged_logger_support.rb"
 
   require_relative "lumberjack/context.rb"
   require_relative "lumberjack/log_entry.rb"
@@ -19,6 +18,7 @@ module Lumberjack
   require_relative "lumberjack/logger.rb"
   require_relative "lumberjack/tags.rb"
   require_relative "lumberjack/tag_formatter.rb"
+  require_relative "lumberjack/tagged_logger_support.rb"
   require_relative "lumberjack/template.rb"
   require_relative "lumberjack/rack.rb"
 

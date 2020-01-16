@@ -26,7 +26,6 @@ module Lumberjack
   # using a Formatter associated with the logger.
   class Logger
     include Severity
-    include TaggedLoggerSupport
 
     # The time that the device was last flushed.
     attr_reader :last_flushed_at
@@ -122,8 +121,24 @@ module Lumberjack
 
     # Get the Lumberjack::Formatter used to format objects for logging as messages.
     def formatter
-      # Wrap in an object that supports ActiveSupport::TaggedLogger API
-      TaggedLoggerSupport::Formatter.new(logger: self, formatter: @_formatter)
+      if respond_to?(:tagged)
+        # Wrap in an object that supports ActiveSupport::TaggedLogger API
+        TaggedLoggerSupport::Formatter.new(logger: self, formatter: @_formatter)
+      else
+        @_formatter
+      end
+    end
+    
+    # Enable this logger to function like an ActiveSupport::TaggedLogger. This will make the logger
+    # API compatible with ActiveSupport::TaggedLogger and is provided as a means of compatibility
+    # with other libraries that assume they can call the `tagged` method on a logger to add tags.
+    #
+    # The tags added with this method are just strings so they are stored in the logger tags
+    # in an array under the "tagged" tag. So calling `logger.tagged("foo", "bar")` will result
+    # in tags `{"tagged" => ["foo", "bar"]}`.
+    def tagged_logger!
+      self.extend(TaggedLoggerSupport)
+      self
     end
 
     # Add a message to the log with a given severity. The message can be either

@@ -19,6 +19,7 @@ module Lumberjack
     require_relative "formatter/object_formatter.rb"
     require_relative "formatter/pretty_print_formatter.rb"
     require_relative "formatter/string_formatter.rb"
+    require_relative "formatter/strip_formatter.rb"
     require_relative "formatter/structured_formatter.rb"
 
     class << self
