@@ -257,16 +257,20 @@ describe Lumberjack::Logger do
       logger = Lumberjack::Logger.new(output, :level => Logger::INFO, :template => ":message", :buffer_size => 32767)
       logger.info("message 1")
       expect(output.string).to eq("")
+      expect(logger.closed?).to eq false
       logger.close
       expect(output.string.split(Lumberjack::LINE_SEPARATOR)).to eq(["message 1"])
       expect(output).to be_closed
+      expect(logger.closed?).to eq true
     end
 
     it "should reopen the devices" do
       output = StringIO.new
       logger = Lumberjack::Logger.new(output, :level => Logger::INFO, :template => ":message", :buffer_size => 32767)
+      logger.close
       expect(logger.device).to receive(:reopen).and_call_original
       logger.reopen
+      expect(logger.closed?).to eq false
     end
   end
 

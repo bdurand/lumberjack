@@ -38,7 +38,7 @@ module Lumberjack
     attr_writer :progname
 
     # The device being written to
-    attr_reader :device
+    attr_accessor :device
 
     # The TagFormatter used for formatting tags for output
     attr_accessor :tag_formatter
@@ -78,19 +78,20 @@ module Lumberjack
       @last_flushed_at = Time.now
       @silencer = true
       @tags = {}
+      @closed = false
 
       create_flusher_thread(max_flush_seconds) if max_flush_seconds > 0
     end
 
     # Get the timestamp format on the device if it has one.
     def datetime_format
-      @device.datetime_format if @device.respond_to?(:datetime_format)
+      device.datetime_format if device.respond_to?(:datetime_format)
     end
 
     # Set the timestamp format on the device if it is supported.
     def datetime_format=(format)
-      if @device.respond_to?(:datetime_format=)
-        @device.datetime_format = format
+      if device.respond_to?(:datetime_format=)
+        device.datetime_format = format
       end
     end
 
@@ -142,7 +143,7 @@ module Lumberjack
     def add_entry(severity, message, progname = nil, tags = nil)
       severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
 
-      return true unless @device && severity && severity >= level
+      return true unless device && severity && severity >= level
 
       time = Time.now
       message = message.call if message.is_a?(Proc)
@@ -194,10 +195,16 @@ module Lumberjack
     # Close the logging device.
     def close
       flush
-      @device.close if @device.respond_to?(:close)
+      device.close if device.respond_to?(:close)
+      @closed = true
+    end
+    
+    def closed?
+      @closed
     end
 
     def reopen(logdev = nil)
+      @closed = false
       device.reopen(logdev) if device.respond_to?(:reopen)
     end
 
@@ -404,7 +411,7 @@ module Lumberjack
 
     def write_to_device(entry) #:nodoc:
       begin
-        @device.write(entry)
+        device.write(entry)
       rescue => e
         $stderr.puts("#{e.class.name}: #{e.message}#{' at ' + e.backtrace.first if e.backtrace}")
         $stderr.puts(entry.to_s)
@@ -417,7 +424,7 @@ module Lumberjack
         begin
           logger = self
           Thread.new do
-            loop do
+            while !closed?
               begin
                 sleep(flush_seconds)
                 logger.flush if Time.now - logger.last_flushed_at >= flush_seconds

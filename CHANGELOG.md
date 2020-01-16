@@ -5,6 +5,9 @@
 * Allow adding and removing classes by name to formatters.
 * Allow adding and removing multiple classes in a single call to a formatter.
 * Allow using symbols and strings as log level for silencing a logger.
+* Ensure flusher thread gets stopped when logger is closed.
+* Add writer for logger device attribute.
+* Handle passing an array of devices to a multi device.
 
 ## 1.1.1
 
