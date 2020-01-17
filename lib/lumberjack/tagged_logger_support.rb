@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "delegate"
+require "forwardable"
 
 module Lumberjack
   # Methods to make Lumberjack::Logger API compatible with ActiveSupport::TaggedLogger.
