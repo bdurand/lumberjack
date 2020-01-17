@@ -10,7 +10,7 @@ module Lumberjack
         @formatter = formatter
       end
 
-      def call(obj)        
+      def call(obj)
         if obj.is_a?(Hash)
           hash = {}
           references ||= Set.new
@@ -18,7 +18,7 @@ module Lumberjack
             hash[name.to_s] = call(value)
           end
           hash
-        elsif obj.is_a?(Enumerable)
+        elsif obj.is_a?(Enumerable) && obj.respond_to?(:size) && obj.size != Float::INFINITY
           obj.collect { |element| call(element) }
         elsif @formatter
           @formatter.format(obj)
