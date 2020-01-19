@@ -11,10 +11,13 @@ module Lumberjack
   # * :message
   #
   # Any other words prefixed with a colon will be substituted with the value of the tag with that name.
+  # If your tag name contains characters other than alpha numerics and the underscore, you must surround it
+  # with curly brackets: `:{http.request-id}`.
   class Template
     TEMPLATE_ARGUMENT_ORDER = %w(:time :severity :progname :pid :message :tags).freeze
     MILLISECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%3N"
     MICROSECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%6N"
+    PLACEHOLDER_PATTERN = /:(([a-z0-9_]+)|({[^}]+}))/i.freeze
 
     # Create a new template from the markup. The +first_line+ argument is used to format only the first
     # line of a message. Additional lines will be added to the message unformatted. If you wish to format
@@ -102,12 +105,13 @@ module Lumberjack
     # Compile the template string into a value that can be used with sprintf.
     def compile(template) #:nodoc:
       tag_vars = []
-      template = template.gsub(/:[a-z0-9_]+/) do |match|
-        position = TEMPLATE_ARGUMENT_ORDER.index(match)
+      template = template.gsub(PLACEHOLDER_PATTERN) do |match|
+        var_name = match.sub("{", "").sub("}", "")
+        position = TEMPLATE_ARGUMENT_ORDER.index(var_name)
         if position
           "%#{position + 1}$s"
         else
-          tag_vars << match[1, match.length]
+          tag_vars << var_name[1, var_name.length]
           "%#{TEMPLATE_ARGUMENT_ORDER.size + tag_vars.size}$s"
         end
       end

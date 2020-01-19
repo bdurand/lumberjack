@@ -10,6 +10,7 @@
 * Handle passing an array of devices to a multi device.
 * Helper method to get a tag with a specified name.
 * Add strip formatter to strip whitespace from strings.
+* Support non-alpha numeric characters in template variables.
 
 ## 1.1.1
 

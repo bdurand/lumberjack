@@ -53,5 +53,11 @@ describe Lumberjack::Template do
       entry = Lumberjack::LogEntry.new(time, Logger::INFO, "here", "app", 12345, "tag" => "a#{Lumberjack::LINE_SEPARATOR}b")
       expect(template.call(entry)).to eq('here -  - [tag:a b]')
     end
+
+    it "should handle tags with special characters by surrounding with brackets" do
+      template = Lumberjack::Template.new(":message - :{foo.bar} - :{@baz!} - :tags")
+      entry = Lumberjack::LogEntry.new(time, Logger::INFO, "here", "app", 12345, "foo.bar" => "test", "@baz!" => 1, "tag" => "a")
+      expect(template.call(entry)).to eq('here - test - 1 - [tag:a]')
+    end
   end
 end
