@@ -10,6 +10,10 @@ module Lumberjack
 
       attr_accessor :backtrace_cleaner
 
+      def initialize(backtrace_cleaner = nil)
+        self.backtrace_cleaner = backtrace_cleaner
+      end
+
       def call(exception)
         message = "#{exception.class.name}: #{exception.message}"
         trace = exception.backtrace
