@@ -9,12 +9,12 @@ module Lumberjack
   # tag_formatter.add(["password", "email"]) { |value| "***" }
   # tag_formatter.add("finished_at", Lumberjack::Formatter::DateTimeFormatter.new("%Y-%m-%dT%H:%m:%S%z"))
   class TagFormatter
-    
+
     def initialize
       @formatters = {}
       @default_formatter = nil
     end
-    
+
     # Add a default formatter applied to all tag values. This can either be a Lumberjack::Formatter
     # or an object that responds to `call` or a block.
     def default(formatter = nil, &block)
@@ -23,13 +23,13 @@ module Lumberjack
       @default_formatter = formatter
       self
     end
-    
+
     # Remove the default formatter.
     def remove_default
       @default_formatter = nil
       self
     end
-    
+
     # Add a formatter for specific tag names. This can either be a Lumberjack::Formatter
     # or an object that responds to `call` or a block. The default formatter will not be
     # applied.
@@ -45,7 +45,7 @@ module Lumberjack
       end
       self
     end
-    
+
     # Remove formatters for specific tag names. The default formatter will still be applied.
     def remove(names)
       Array(names).each do |name|
@@ -53,16 +53,17 @@ module Lumberjack
       end
       self
     end
-    
+
     # Remove all formatters.
     def clear
       @default_formatter = nil
       @formatters.clear
       self
     end
-    
+
     # Format a hash of tags using the formatters
     def format(tags)
+      return nil if tags.nil?
       if @default_formatter.nil? && (@formatters.empty? || (@formatters.keys & tags.keys).empty?)
         tags
       else
@@ -79,9 +80,9 @@ module Lumberjack
         formatted
       end
     end
-    
+
     private
-    
+
     def dereference_formatter(formatter)
       if formatter.is_a?(TaggedLoggerSupport::Formatter)
         formatter.__formatter
@@ -92,6 +93,6 @@ module Lumberjack
         formatter
       end
     end
-    
+
   end
 end
