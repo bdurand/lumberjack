@@ -11,6 +11,7 @@
 * Helper method to get a tag with a specified name.
 * Add strip formatter to strip whitespace from strings.
 * Support non-alpha numeric characters in template variables.
+* Add backtrace cleaner to ExceptionFormatter.
 
 ## 1.1.1
 
