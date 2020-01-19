@@ -128,7 +128,7 @@ module Lumberjack
         @_formatter
       end
     end
-    
+
     # Enable this logger to function like an ActiveSupport::TaggedLogger. This will make the logger
     # API compatible with ActiveSupport::TaggedLogger and is provided as a means of compatibility
     # with other libraries that assume they can call the `tagged` method on a logger to add tags.
@@ -213,7 +213,7 @@ module Lumberjack
       device.close if device.respond_to?(:close)
       @closed = true
     end
-    
+
     def closed?
       @closed
     end
