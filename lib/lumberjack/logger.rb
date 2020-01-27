@@ -156,32 +156,37 @@ module Lumberjack
     #   logger.add_entry(:warn, "Request took a long time")
     #   logger.add_entry(Logger::DEBUG){"Start processing with options #{options.inspect}"}
     def add_entry(severity, message, progname = nil, tags = nil)
-      severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
+      begin        
+        severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
+        return true unless device && severity && severity >= level
+        
+        return true if Thread.current[:lumberjack_logging]
+        Thread.current[:lumberjack_logging] = true
 
-      return true unless device && severity && severity >= level
+        time = Time.now
+        message = message.call if message.is_a?(Proc)
+        message = formatter.format(message)
+        progname ||= self.progname
 
-      time = Time.now
-      message = message.call if message.is_a?(Proc)
-      message = formatter.format(message)
-      progname ||= self.progname
-
-      current_tags = self.tags
-      tags = nil unless tags.is_a?(Hash)
-      if current_tags.empty?
-        tags = Tags.stringify_keys(tags) unless tags.nil?
-      else
-        if tags.nil?
-          tags = current_tags.dup
+        current_tags = self.tags
+        tags = nil unless tags.is_a?(Hash)
+        if current_tags.empty?
+          tags = Tags.stringify_keys(tags) unless tags.nil?
         else
-          tags = current_tags.merge(Tags.stringify_keys(tags))
+          if tags.nil?
+            tags = current_tags.dup
+          else
+            tags = current_tags.merge(Tags.stringify_keys(tags))
+          end
         end
+        tags = Tags.expand_runtime_values(tags)
+        tags = tag_formatter.format(tags) if tag_formatter
+
+        entry = LogEntry.new(time, severity, message, progname, $$, tags)
+        write_to_device(entry)
+      ensure
+        Thread.current[:lumberjack_logging] = nil
       end
-      tags = Tags.expand_runtime_values(tags)
-      tags = tag_formatter.format(tags) if tag_formatter
-
-      entry = LogEntry.new(time, severity, message, progname, $$, tags)
-      write_to_device(entry)
-
       true
     end
 

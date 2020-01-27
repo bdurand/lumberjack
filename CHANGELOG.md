@@ -1,3 +1,7 @@
+## 1.2.1
+
+* Prevent infinite loops where logging a statement triggers the logger.
+
 ## 1.2.0
 
 * Enable compatibility with ActiveSupport::TaggedLogger by calling `tagged_logger!` on a logger.
