@@ -1,7 +1,7 @@
 PATH
   remote: ..
   specs:
-    lumberjack (1.2.0)
+    lumberjack (1.2.1)
 
 GEM
   remote: https://rubygems.org/
@@ -41,4 +41,4 @@ DEPENDENCIES
   timecop
 
 BUNDLED WITH
-   1.17.2
+   1.17.3
