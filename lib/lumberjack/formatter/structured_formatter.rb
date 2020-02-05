@@ -17,22 +17,25 @@ module Lumberjack
       private
 
       def call_with_references(obj, references)
-        references << obj
         if obj.is_a?(Hash)
           hash = {}
+          references << obj.object_id
           obj.each do |name, value|
-            next if references.include?(value)
+            next if references.include?(value.object_id)
             references << value
             hash[name.to_s] = call_with_references(value, references)
           end
+          references.delete(obj.object_id)
           hash
         elsif obj.is_a?(Enumerable) && obj.respond_to?(:size) && obj.size != Float::INFINITY
           array = []
+          references << obj.object_id
           obj.each do |value|
-            next if references.include?(value)
+            next if references.include?(value.object_id)
             references << value
             array << call_with_references(value, references)
           end
+          references.delete(obj.object_id)
           array
         elsif @formatter
           @formatter.format(obj)

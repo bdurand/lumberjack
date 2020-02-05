@@ -1,3 +1,7 @@
+## 1.2.3
+
+* Fix structured formatter so no-recursive, duplicate references are allowed.
+
 ## 1.2.2
 
 * Prevent infinite loops in the structured formatter where objects have backreferences to each other.
