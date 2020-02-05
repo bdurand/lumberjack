@@ -1,3 +1,7 @@
+## 1.2.2
+
+* Prevent infinite loops in the structured formatter where objects have backreferences to each other.
+
 ## 1.2.1
 
 * Prevent infinite loops where logging a statement triggers the logger.

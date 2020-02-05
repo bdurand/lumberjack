@@ -11,15 +11,29 @@ module Lumberjack
       end
 
       def call(obj)
+        call_with_references(obj, Set.new)
+      end
+
+      private
+
+      def call_with_references(obj, references)
+        references << obj
         if obj.is_a?(Hash)
           hash = {}
-          references ||= Set.new
           obj.each do |name, value|
-            hash[name.to_s] = call(value)
+            next if references.include?(value)
+            references << value
+            hash[name.to_s] = call_with_references(value, references)
           end
           hash
         elsif obj.is_a?(Enumerable) && obj.respond_to?(:size) && obj.size != Float::INFINITY
-          obj.collect { |element| call(element) }
+          array = []
+          obj.each do |value|
+            next if references.include?(value)
+            references << value
+            array << call_with_references(value, references)
+          end
+          array
         elsif @formatter
           @formatter.format(obj)
         else
