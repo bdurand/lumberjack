@@ -1,4 +1,5 @@
 require "spec_helper"
+require "active_support"
 
 describe Lumberjack::TaggedLoggerSupport do
   let(:output){ StringIO.new }
@@ -6,6 +7,11 @@ describe Lumberjack::TaggedLoggerSupport do
   let(:logger){ Lumberjack::Logger.new(device).tagged_logger! }
 
   describe "logger" do
+    it 'should not stack level too deep' do
+      tagged_logger = ActiveSupport::TaggedLogging.new(logger)
+      tagged_logger.tagged("foo") { }
+    end
+
     describe "tagged" do
       it "should add tags to the tag 'tagged'" do
         logger.tagged("foo", "bar") do
