@@ -3,6 +3,11 @@ require 'stringio'
 require 'fileutils'
 require 'timecop'
 
+begin
+  require 'active_support/all'
+rescue LoadError => e
+end
+
 RSpec.configure do |config|
   config.expect_with :rspec do |c|
     c.syntax = [:should, :expect]
