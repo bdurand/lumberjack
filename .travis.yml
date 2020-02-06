@@ -20,11 +20,17 @@ matrix:
   - rvm: "2.5"
     gemfile: Gemfile
 
+  - rvm: "2.5"
+    gemfile: gemfiles/activesupport-5.gemfile
+
   - rvm: "2.4"
     gemfile: Gemfile
 
   - rvm: "2.3"
     gemfile: Gemfile
+
+  - rvm: "2.3"
+    gemfile: gemfiles/activesupport-4.gemfile
 
   - rvm: "jruby"
     gemfile: Gemfile

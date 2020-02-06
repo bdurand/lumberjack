@@ -85,13 +85,13 @@ logger.info("no requests") # Will not include the `request_id` tag
 
 Tag keys are always converted to strings. Tags are inherited so that message tags take precedence over block tags which take precedence over global tags.
 
-#### Compatibility with ActiveSupport::TaggedLogger
+#### Compatibility with ActiveSupport::TaggedLogging
 
-`Lumberjack::Logger` version 1.1.2 or greater is compatible with `ActiveSupport::TaggedLogger`. This is so that other code that expect to have a logger that responds to the `tagged` method will work. Any tags added with the `tagged` method will be appended to an array in the the "tagged" tag. However, if a tagged value has a colon or equals sign in it, it will be parsed to a name value pair.
+`Lumberjack::Logger` version 1.1.2 or greater is compatible with `ActiveSupport::TaggedLogging`. This is so that other code that expect to have a logger that responds to the `tagged` method will work. Any tags added with the `tagged` method will be appended to an array in the the "tagged" tag.
 
 ```ruby
-logger.tagged("foo", "bar=1", "baz:2", "other") do
-  logger.info("here") # will include tags: {"tagged" => ["foo", "other"], "bar" => "1", "baz" => "2"}
+logger.tagged("foo", "bar=1", "other") do
+  logger.info("here") # will include tags: {"tagged" => ["foo", "bar=1", "other"]}
 end
 ```
 

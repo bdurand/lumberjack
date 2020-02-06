@@ -1,3 +1,7 @@
+## 1.2.4
+
+* Enhance ActiveSupport::TaggedLogging support so code that Lumberjack loggers can be wrapped with a tagged logger.
+
 ## 1.2.3
 
 * Fix structured formatter so no-recursive, duplicate references are allowed.
