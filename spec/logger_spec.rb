@@ -387,6 +387,21 @@ describe Lumberjack::Logger do
       end
     end
 
+    describe "level helpers" do
+      it "should set the level using bang methods" do
+        logger.fatal!
+        expect(logger.level).to eq Logger::FATAL
+        logger.error!
+        expect(logger.level).to eq Logger::ERROR
+        logger.warn!
+        expect(logger.level).to eq Logger::WARN
+        logger.info!
+        expect(logger.level).to eq Logger::INFO
+        logger.debug!
+        expect(logger.level).to eq Logger::DEBUG
+      end
+    end
+
     %w(fatal error warn info debug).each do |level|
       describe level do
         around :each do |example|

@@ -237,6 +237,11 @@ module Lumberjack
     def fatal?
       level <= FATAL
     end
+    
+    # Set the log level to fatal.
+    def fatal!
+      self.level = FATAL
+    end
 
     # Log an +ERROR+ message. The message can be passed in either the +message+ argument or in a block.
     def error(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
@@ -246,6 +251,11 @@ module Lumberjack
     # Return +true+ if +ERROR+ messages are being logged.
     def error?
       level <= ERROR
+    end
+    
+    # Set the log level to error.
+    def error!
+      self.level = ERROR
     end
 
     # Log a +WARN+ message. The message can be passed in either the +message+ argument or in a block.
@@ -257,6 +267,11 @@ module Lumberjack
     def warn?
       level <= WARN
     end
+    
+    # Set the log level to warn.
+    def warn!
+      self.level = WARN
+    end
 
     # Log an +INFO+ message. The message can be passed in either the +message+ argument or in a block.
     def info(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
@@ -267,6 +282,11 @@ module Lumberjack
     def info?
       level <= INFO
     end
+    
+    # Set the log level to info.
+    def info!
+      self.level = INFO
+    end
 
     # Log a +DEBUG+ message. The message can be passed in either the +message+ argument or in a block.
     def debug(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
@@ -276,6 +296,11 @@ module Lumberjack
     # Return +true+ if +DEBUG+ messages are being logged.
     def debug?
       level <= DEBUG
+    end
+    
+    # Set the log level to debug.
+    def debug!
+      self.level = DEBUG
     end
 
     # Log a message when the severity is not known. Unknown messages will always appear in the log.

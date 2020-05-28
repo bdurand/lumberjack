@@ -1,6 +1,7 @@
 ## 1.2.5
 
 * Fix logic with recursive reference guard in StructuredFormatter so it only suppresses Enumerable references.
+* Add support for bang methods (error!) for setting the log level.
 
 ## 1.2.4
 
