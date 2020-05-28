@@ -4,3 +4,5 @@ rdoc
 *.rbc
 .ruby-version
 .tm_properties
+Gemfile.lock
+gemfiles/*.gemfile.lock
