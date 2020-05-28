@@ -6,6 +6,9 @@ module Lumberjack
   class Formatter
     # Dereference arrays and hashes and recursively call formatters on each element.
     class StructuredFormatter
+      class RecusiveReferenceError < StandardError
+      end
+
       def initialize(formatter = nil)
         @formatter = formatter
       end
@@ -18,29 +21,41 @@ module Lumberjack
 
       def call_with_references(obj, references)
         if obj.is_a?(Hash)
-          hash = {}
-          references << obj.object_id
-          obj.each do |name, value|
-            next if references.include?(value.object_id)
-            references << value
-            hash[name.to_s] = call_with_references(value, references)
+          with_object_reference(obj, references) do
+            hash = {}
+            obj.each do |name, value|
+              value = call_with_references(value, references)
+              hash[name.to_s] = value unless value.is_a?(RecusiveReferenceError)
+            end
+            hash
           end
-          references.delete(obj.object_id)
-          hash
         elsif obj.is_a?(Enumerable) && obj.respond_to?(:size) && obj.size != Float::INFINITY
-          array = []
-          references << obj.object_id
-          obj.each do |value|
-            next if references.include?(value.object_id)
-            references << value
-            array << call_with_references(value, references)
+          with_object_reference(obj, references) do
+            array = []
+            obj.each do |value|
+              value = call_with_references(value, references)
+              array << value unless value.is_a?(RecusiveReferenceError)
+            end
+            array
           end
-          references.delete(obj.object_id)
-          array
         elsif @formatter
           @formatter.format(obj)
         else
           obj
+        end
+      end
+
+      def with_object_reference(obj, references)
+        if obj.is_a?(Enumerable)
+          return RecusiveReferenceError.new if references.include?(obj.object_id)
+          references << obj.object_id
+          begin
+            yield
+          ensure
+            references.delete(obj.object_id)
+          end
+        else
+          yield
         end
       end
     end

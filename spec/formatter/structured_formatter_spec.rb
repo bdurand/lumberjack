@@ -15,14 +15,14 @@ describe Lumberjack::Formatter::StructuredFormatter do
     formatter = Lumberjack::Formatter.new.clear
     formatter.add(Enumerable, Lumberjack::Formatter::StructuredFormatter.new(formatter))
     formatter.add(Object, :object)
-    object = { name: "object", children: [] }
+    object = { name: "object", children: [], v1: true, v2: true }
     object[:parent] = object
     child_1 = { name: "child_1", parent: object }
     child_2 = { name: "child_2", parent: child_1 }
     object[:children] << child_1
     object[:children] << child_2
     formatted = formatter.format(object)
-    expect(formatted).to eq({ "name" => "object", "children" => [{ "name" => "child_1" }, { "name" => "child_2", "parent" => { "name" => "child_1" } }] })
+    expect(formatted).to eq({ "name" => "object", "children" => [{ "name" => "child_1" }, { "name" => "child_2", "parent" => { "name" => "child_1" } }], "v1" => true, "v2" => true })
   end
 
   it "should be able to include an object multiple times if not-recursive" do

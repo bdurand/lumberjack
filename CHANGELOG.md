@@ -1,3 +1,7 @@
+## 1.2.5
+
+* Fix logic with recursive reference guard in StructuredFormatter so it only suppresses Enumerable references.
+
 ## 1.2.4
 
 * Enhance ActiveSupport::TaggedLogging support so code that Lumberjack loggers can be wrapped with a tagged logger.
