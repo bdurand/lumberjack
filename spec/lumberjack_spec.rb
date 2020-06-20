@@ -16,6 +16,14 @@ describe Lumberjack do
       expect(context).to_not eq(Lumberjack.context)
     end
 
+    it "should determine if it is inside a context block" do
+      expect(Lumberjack.context?).to eq false
+      Lumberjack.context do
+        expect(Lumberjack.context?).to eq true
+      end
+      expect(Lumberjack.context?).to eq false
+    end
+
     it "should inherit parent context tags in sub blocks" do
       Lumberjack.context do
         Lumberjack.tag(foo: "bar")

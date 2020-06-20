@@ -1,3 +1,8 @@
+## 1.2.6
+
+* Fix Logger#tag so it only ads to the current block's logger tags instead of the global tags if called inside a `Logger#tag` block.
+* Add Logger#remove_tag
+
 ## 1.2.5
 
 * Fix logic with recursive reference guard in StructuredFormatter so it only suppresses Enumerable references.

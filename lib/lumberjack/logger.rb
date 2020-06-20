@@ -156,10 +156,10 @@ module Lumberjack
     #   logger.add_entry(:warn, "Request took a long time")
     #   logger.add_entry(Logger::DEBUG){"Start processing with options #{options.inspect}"}
     def add_entry(severity, message, progname = nil, tags = nil)
-      begin        
+      begin
         severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
         return true unless device && severity && severity >= level
-        
+
         return true if Thread.current[:lumberjack_logging]
         Thread.current[:lumberjack_logging] = true
 
@@ -237,7 +237,7 @@ module Lumberjack
     def fatal?
       level <= FATAL
     end
-    
+
     # Set the log level to fatal.
     def fatal!
       self.level = FATAL
@@ -252,7 +252,7 @@ module Lumberjack
     def error?
       level <= ERROR
     end
-    
+
     # Set the log level to error.
     def error!
       self.level = ERROR
@@ -267,7 +267,7 @@ module Lumberjack
     def warn?
       level <= WARN
     end
-    
+
     # Set the log level to warn.
     def warn!
       self.level = WARN
@@ -282,7 +282,7 @@ module Lumberjack
     def info?
       level <= INFO
     end
-    
+
     # Set the log level to info.
     def info!
       self.level = INFO
@@ -297,7 +297,7 @@ module Lumberjack
     def debug?
       level <= DEBUG
     end
-    
+
     # Set the log level to debug.
     def debug!
       self.level = DEBUG
@@ -349,15 +349,33 @@ module Lumberjack
     end
 
     # Set a hash of tags on logger. If a block is given, the tags will only be set
-    # for the duration of the block.
+    # for the duration of the block. If this method is called inside such a block,
+    # the tags will only be defined on the tags in that block. When the parent block
+    # exits, all the tags will be reverted. If there is no block, then the tags will
+    # be defined as global and apply to all log statements.
     def tag(tags, &block)
       tags = Tags.stringify_keys(tags)
+      thread_tags = thread_local_value(:lumberjack_logger_tags)
       if block
-        thread_tags = thread_local_value(:lumberjack_logger_tags)
-        value = (thread_tags ? thread_tags.merge(tags) : tags)
-        push_thread_local_value(:lumberjack_logger_tags, value, &block)
+        merged_tags = (thread_tags ? thread_tags.merge(tags) : tags)
+        push_thread_local_value(:lumberjack_logger_tags, merged_tags, &block)
+      elsif thread_tags
+        thread_tags.merge!(tags)
       else
         @tags.merge!(tags)
+      end
+      nil
+    end
+
+    # Remove a tag from the current tag context. If this is called inside a block to a
+    # call to `tag`, the tags will only be removed for the duration of that block. Otherwise
+    # they will be removed from the global tags.
+    def remove_tag(*tag_names)
+      thread_tags = thread_local_value(:lumberjack_logger_tags)
+      if thread_tags
+        tag_names.each { |name| thread_tags.delete(name.to_s) }
+      else
+        tag_names.each { |name| @tags.delete(name.to_s) }
       end
     end
 
@@ -474,7 +492,7 @@ module Lumberjack
                 sleep(flush_seconds)
                 logger.flush if Time.now - logger.last_flushed_at >= flush_seconds
               rescue => e
-                STDERR.puts("Error flushing log: #{e.inspect}")
+                $stderr.puts("Error flushing log: #{e.inspect}")
               end
             end
           end

@@ -67,6 +67,11 @@ module Lumberjack
         current_context || Context.new
       end
     end
+    
+    # Return true if inside a context block.
+    def context?
+      !!Thread.current[:lumberjack_context]
+    end
 
     # Return the tags from the current context or nil if there are no tags.
     def context_tags
