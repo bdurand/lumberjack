@@ -6,15 +6,15 @@ describe Lumberjack::Device::RollingLogFile do
     Lumberjack::Device::SizeRollingLogFile #needed by jruby
     create_tmp_dir
   end
-  
+
   after :all do
     delete_tmp_dir
   end
-  
+
   before :each do
     delete_tmp_files
   end
-  
+
   let(:entry){ Lumberjack::LogEntry.new(Time.now, 1, "New log entry", nil, $$, nil) }
 
   it "should check for rolling the log file on flush" do
@@ -24,7 +24,7 @@ describe Lumberjack::Device::RollingLogFile do
     device.flush
     device.close
   end
-  
+
   it "should roll the file by archiving the existing file and opening a new stream and calling after_roll" do
     log_file = File.join(tmp_dir, "test_2.log")
     device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :buffer_size => 32767, :min_roll_check => 0)
@@ -38,7 +38,7 @@ describe Lumberjack::Device::RollingLogFile do
     expect(File.read("#{log_file}.rolled")).to eq("New log entry#{Lumberjack::LINE_SEPARATOR}")
     expect(File.read(log_file)).to eq("Another log entry#{Lumberjack::LINE_SEPARATOR}")
   end
-  
+
   it "should reopen the file if the stream inode doesn't match the file path inode" do
     log_file = File.join(tmp_dir, "test_3.log")
     device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :min_roll_check => 0)
@@ -52,7 +52,7 @@ describe Lumberjack::Device::RollingLogFile do
     expect(File.read("#{log_file}.rolled")).to eq("New log entry#{Lumberjack::LINE_SEPARATOR}")
     expect(File.read(log_file)).to eq("Another log entry#{Lumberjack::LINE_SEPARATOR}")
   end
-  
+
   it "should roll the file properly with multiple thread and processes using it" do
     log_file = File.join(tmp_dir, "test_4.log")
     process_count = 8
@@ -61,7 +61,7 @@ describe Lumberjack::Device::RollingLogFile do
     max_size = 128
     severity = Logger::INFO
     message = "This is a test message that is written to the log file to indicate what the state of the application is."
-    
+
     logger_test = lambda do
       device = Lumberjack::Device::SizeRollingLogFile.new(log_file, :max_size => max_size, :template => ":message", :buffer_size => 32767, :min_roll_check => 0)
       threads = []
@@ -77,7 +77,7 @@ describe Lumberjack::Device::RollingLogFile do
       threads.each{|thread| thread.value}
       device.close
     end
-    
+
     # Process.fork is unavailable on jruby so we need to use the java threads instead.
     if RUBY_PLATFORM.match(/java/)
       outer_threads = []
@@ -91,7 +91,7 @@ describe Lumberjack::Device::RollingLogFile do
       end
       Process.waitall
     end
-    
+
     line_count = 0
     file_count = 0
     Dir.glob("#{log_file}*").each do |file|
@@ -102,10 +102,10 @@ describe Lumberjack::Device::RollingLogFile do
         expect(line).to eq(message)
       end
     end
-    
+
     expect(file_count).to be > 3
   end
-  
+
   it "should only keep a specified number of archived log files" do
     log_file = File.join(tmp_dir, "test_5.log")
     device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :keep => 2, :buffer_size => 32767, :min_roll_check => 0)

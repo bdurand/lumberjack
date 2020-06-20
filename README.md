@@ -59,8 +59,10 @@ You can specify tags that will only be applied to the logger in a block as well.
 ```ruby
 logger.tag(thread_id: Thread.current.object_id) do
   logger.info("here") # Will include the `thread_id` tag
+  logger.tag(count: 15)
+  logger.info("with count") # Will include the `count` tag
 end
-logger.info("there") # Will not include the `thread_id` tag
+logger.info("there") # Will not include the `thread_id` or `count` tag
 ```
 
 You can also set tags to `Proc` objects that will be evaluated when creating a log entry.

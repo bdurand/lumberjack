@@ -492,6 +492,31 @@ describe Lumberjack::Logger do
         expect(lines[2]).to eq 'three - 3 - [foo:bar] [baz:thing] [tag:d]'
       end
 
+      it "should add and remove tags only in a tag block" do
+        logger.tag(baz: "boo", count: 1) do
+          logger.info("one")
+          logger.tag(foo: "bar", count: 2)
+          logger.info("two")
+        end
+        logger.info("three")
+
+        lines = output.string.split(n)
+        expect(lines[0]).to eq 'one - 1 - [baz:boo]'
+        expect(lines[1]).to eq 'two - 2 - [baz:boo] [foo:bar]'
+        expect(lines[2]).to eq 'three -  -'
+      end
+
+      it "should add and remove tags in the global scope if there is no block" do
+        logger.tag(count: 1, foo: "bar")
+        logger.info("one")
+        logger.remove_tag(:foo)
+        logger.info("two")
+
+        lines = output.string.split(n)
+        expect(lines[0]).to eq 'one - 1 - [foo:bar]'
+        expect(lines[1]).to eq 'two - 1 -'
+      end
+
       it "should apply a tag formatter to the tags" do
         logger.tag_formatter.add(:foo, &:reverse).add(:count) { |val| val * 100 }
         logger.info("message", count: 2, foo: "abc")
