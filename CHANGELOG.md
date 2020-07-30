@@ -1,3 +1,7 @@
+## 1.2.7
+
+* Allow passing frozen hashes to `Logger.tag`. Tags passed to this method are now duplicated so the logger maintains it's own copy of the hash.
+
 ## 1.2.6
 
 * Fix Logger#tag so it only ads to the current block's logger tags instead of the global tags if called inside a `Logger#tag` block.

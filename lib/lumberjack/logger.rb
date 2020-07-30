@@ -357,7 +357,7 @@ module Lumberjack
       tags = Tags.stringify_keys(tags)
       thread_tags = thread_local_value(:lumberjack_logger_tags)
       if block
-        merged_tags = (thread_tags ? thread_tags.merge(tags) : tags)
+        merged_tags = (thread_tags ? thread_tags.merge(tags) : tags.dup)
         push_thread_local_value(:lumberjack_logger_tags, merged_tags, &block)
       elsif thread_tags
         thread_tags.merge!(tags)

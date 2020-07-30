@@ -523,6 +523,13 @@ describe Lumberjack::Logger do
         line = output.string.chomp
         expect(line).to eq "message - 200 - [foo:cba]"
       end
+
+      it "should work with a frozen hash" do
+        logger.tag({foo: "bar"}.freeze)
+        logger.tag(other: 1) do
+          expect(logger.tags).to eq("foo" => "bar", "other" => 1)
+        end
+      end
     end
 
     describe "log helper methods" do
