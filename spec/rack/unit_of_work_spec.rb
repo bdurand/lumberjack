@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Lumberjack::Rack::UnitOfWork do
  
   it "should create a unit of work in a middleware stack" do

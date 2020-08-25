@@ -1,4 +1,3 @@
-require 'spec_helper'
 require 'pathname'
 
 describe Lumberjack::Logger do

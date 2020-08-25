@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Lumberjack::Device::Null do
 
   it "should not generate any output" do

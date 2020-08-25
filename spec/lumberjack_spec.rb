@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Lumberjack do
 
   describe "context" do

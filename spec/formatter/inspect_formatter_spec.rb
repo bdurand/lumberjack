@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Lumberjack::Formatter::InspectFormatter do
 
   it "should format objects as string by calling their inspect method" do
