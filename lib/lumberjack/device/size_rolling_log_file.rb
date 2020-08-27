@@ -51,7 +51,7 @@ module Lumberjack
       def next_archive_number # :nodoc:
         max = 0
         Dir.glob("#{path}.*").each do |filename|
-          if /\.\d+$/.match?(filename)
+          if /\.\d+\z/ =~ filename
             suffix = filename.split(".").last.to_i
             max = suffix if suffix > max
           end

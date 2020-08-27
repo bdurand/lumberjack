@@ -78,7 +78,7 @@ describe Lumberjack::Device::RollingLogFile do
     end
 
     # Process.fork is unavailable on jruby so we need to use the java threads instead.
-    if RUBY_PLATFORM.match?(/java/)
+    if RUBY_PLATFORM =~ /java/
       outer_threads = []
       process_count.times do
         outer_threads << Thread.new(&logger_test)

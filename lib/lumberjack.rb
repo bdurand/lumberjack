@@ -6,9 +6,7 @@ require "securerandom"
 require "logger"
 
 module Lumberjack
-  # rubocop:disable Performance/RegexpMatch
   LINE_SEPARATOR = (RbConfig::CONFIG["host_os"] =~ /mswin/i ? "\r\n" : "\n")
-  # rubocop:enable Performance/RegexpMatch
 
   require_relative "lumberjack/severity"
   require_relative "lumberjack/formatter"
