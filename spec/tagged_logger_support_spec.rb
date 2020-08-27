@@ -1,9 +1,9 @@
 require "spec_helper"
 
 describe Lumberjack::TaggedLoggerSupport do
-  let(:output){ StringIO.new }
-  let(:device){ Lumberjack::Device::Writer.new(output, :buffer_size => 0, template: ":message - :count - :tags") }
-  let(:logger){ Lumberjack::Logger.new(device).tagged_logger! }
+  let(:output) { StringIO.new }
+  let(:device) { Lumberjack::Device::Writer.new(output, buffer_size: 0, template: ":message - :count - :tags") }
+  let(:logger) { Lumberjack::Logger.new(device).tagged_logger! }
 
   describe "logger" do
     describe "tagged" do
@@ -20,7 +20,7 @@ describe Lumberjack::TaggedLoggerSupport do
           logger.info("message")
         end
         line = output.string.chomp
-        expect(line).to eq 'message -  - [tagged:[15]]'
+        expect(line).to eq "message -  - [tagged:[15]]"
       end
 
       it "should be nestable" do

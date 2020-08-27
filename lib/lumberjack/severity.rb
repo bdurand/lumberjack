@@ -11,7 +11,7 @@ module Lumberjack
     FATAL = ::Logger::Severity::FATAL
     UNKNOWN = ::Logger::Severity::UNKNOWN
 
-    SEVERITY_LABELS = %w(DEBUG INFO WARN ERROR FATAL UNKNOWN).freeze
+    SEVERITY_LABELS = %w[DEBUG INFO WARN ERROR FATAL UNKNOWN].freeze
 
     class << self
       def level_to_label(severity)
@@ -22,6 +22,5 @@ module Lumberjack
         SEVERITY_LABELS.index(label.to_s.upcase) || UNKNOWN
       end
     end
-
   end
 end

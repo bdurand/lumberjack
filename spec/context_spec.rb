@@ -1,7 +1,6 @@
 require "spec_helper"
 
 describe Lumberjack::Context do
-
   it "should have tags" do
     context = Lumberjack::Context.new
     expect(context.tags).to eq({})
@@ -20,5 +19,4 @@ describe Lumberjack::Context do
     expect(context.tags).to eq({"foo" => "other", "baz" => "boo", "stuff" => "nonsense"})
     expect(parent.tags).to eq({"foo" => "bar", "baz" => "boo"})
   end
-
 end

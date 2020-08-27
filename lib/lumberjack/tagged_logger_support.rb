@@ -6,7 +6,6 @@ require "forwardable"
 module Lumberjack
   # Methods to make Lumberjack::Logger API compatible with ActiveSupport::TaggedLogger.
   module TaggedLoggerSupport
-
     class Formatter < DelegateClass(Lumberjack::Formatter)
       extend Forwardable
       def_delegators :@logger, :tagged, :push_tags, :pop_tags, :clear_tags!

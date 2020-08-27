@@ -14,7 +14,7 @@ module Lumberjack
   # If your tag name contains characters other than alpha numerics and the underscore, you must surround it
   # with curly brackets: `:{http.request-id}`.
   class Template
-    TEMPLATE_ARGUMENT_ORDER = %w(:time :severity :progname :pid :message :tags).freeze
+    TEMPLATE_ARGUMENT_ORDER = %w[:time :severity :progname :pid :message :tags].freeze
     MILLISECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%3N"
     MICROSECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%6N"
     PLACEHOLDER_PATTERN = /:(([a-z0-9_]+)|({[^}]+}))/i.freeze
@@ -86,7 +86,7 @@ module Lumberjack
     def tag_args(tags, tag_vars)
       return [nil] * (tag_vars.size + 1) if tags.nil? || tags.size == 0
 
-      tags_string = String.new
+      tags_string = ""
       tags.each do |name, value|
         unless value.nil? || tag_vars.include?(name)
           value = value.to_s

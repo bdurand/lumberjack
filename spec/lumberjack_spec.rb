@@ -1,7 +1,6 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe Lumberjack do
-
   describe "context" do
     it "should create a context with tags for a block" do
       Lumberjack.context do
@@ -48,6 +47,14 @@ describe Lumberjack do
         expect(Lumberjack.context_tags).to eq("foo" => "bar")
       end
     end
+
+    it "should be specify the context" do
+      context = Lumberjack::Context.new
+      context.tag(fog: "bar")
+      Lumberjack.use_context(context) do
+        expect(Lumberjack.context_tags).to eq("fog" => "bar")
+      end
+    end
   end
 
   describe "unit of work" do
@@ -77,5 +84,4 @@ describe Lumberjack do
       expect(Lumberjack.unit_of_work_id).to eq(nil)
     end
   end
-
 end

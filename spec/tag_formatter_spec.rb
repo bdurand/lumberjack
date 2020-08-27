@@ -1,7 +1,6 @@
 require "spec_helper"
 
 describe Lumberjack::TagFormatter do
-
   let(:tags) { {"foo" => "bar", "baz" => "boo", "count" => 1} }
 
   it "should do nothing by default" do
@@ -15,12 +14,12 @@ describe Lumberjack::TagFormatter do
     expect(tag_formatter.format(tags)).to eq({"foo" => '"bar"', "baz" => '"boo"', "count" => 1})
   end
 
-  it "should be able to add tag name specific formatters"  do
+  it "should be able to add tag name specific formatters" do
     formatter = Lumberjack::Formatter.new.clear.add(String, :inspect)
     tag_formatter = Lumberjack::TagFormatter.new.add(:foo, formatter)
     expect(tag_formatter.format(tags)).to eq({"foo" => '"bar"', "baz" => "boo", "count" => 1})
 
-    tag_formatter.remove(:foo).add(["baz", "count"]) { |val| "#{val}!"}
+    tag_formatter.remove(:foo).add(["baz", "count"]) { |val| "#{val}!" }
     expect(tag_formatter.format(tags)).to eq({"foo" => "bar", "baz" => "boo!", "count" => "1!"})
 
     tag_formatter.remove(:foo).add("foo", :inspect)
@@ -38,5 +37,4 @@ describe Lumberjack::TagFormatter do
     tag_formatter = Lumberjack::TagFormatter.new.add(:other, &:reverse)
     expect(tag_formatter.format(tags).object_id).to eq tags.object_id
   end
-
 end

@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
-require 'spec_helper'
+require "spec_helper"
 
 describe Lumberjack::Device::LogFile do
-
   before :all do
     create_tmp_dir
   end
@@ -17,11 +15,11 @@ describe Lumberjack::Device::LogFile do
 
   it "should append to a file" do
     log_file = File.join(tmp_dir, "a#{rand(1000000000)}.log")
-    File.open(log_file, 'w') do |f|
+    File.open(log_file, "w") do |f|
       f.puts("Existing contents")
     end
 
-    device = Lumberjack::Device::LogFile.new(log_file, :template => ":message")
+    device = Lumberjack::Device::LogFile.new(log_file, template: ":message")
     device.write(Lumberjack::LogEntry.new(Time.now, 1, "New log entry", nil, $$, nil))
     device.close
 
@@ -30,7 +28,7 @@ describe Lumberjack::Device::LogFile do
 
   it "properly handles messages with broken UTF-8 characters" do
     log_file = File.join(tmp_dir, "a#{rand(1000000000)}.log")
-    device = Lumberjack::Device::LogFile.new(log_file, :keep => 2, :buffer_size => 32767)
+    device = Lumberjack::Device::LogFile.new(log_file, keep: 2, buffer_size: 32767)
 
     message = [0xC4, 0x90, 0xE1, 0xBB].pack("c*").force_encoding "ASCII-8BIT"
     entry = Lumberjack::LogEntry.new(Time.now, 1, message, nil, $$, nil)
@@ -47,7 +45,7 @@ describe Lumberjack::Device::LogFile do
 
   it "should reopen the file" do
     log_file = File.join(tmp_dir, "a#{rand(1000000000)}.log")
-    device = Lumberjack::Device::LogFile.new(log_file, :template => ":message")
+    device = Lumberjack::Device::LogFile.new(log_file, template: ":message")
     device.write(Lumberjack::LogEntry.new(Time.now, 1, "message 1", nil, $$, nil))
     device.close
     device.reopen

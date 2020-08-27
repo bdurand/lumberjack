@@ -1,7 +1,6 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe Lumberjack::LogEntry do
-
   it "should have a time" do
     t = Time.now
     entry = Lumberjack::LogEntry.new(t, Logger::INFO, "test", "app", 1500, "unit_of_work_id" => "ABCD")
@@ -64,11 +63,10 @@ describe Lumberjack::LogEntry do
     entry.unit_of_work_id = "1234"
     expect(entry.unit_of_work_id).to eq("1234")
   end
-  
+
   it "should be converted to a string" do
     t = Time.parse("2011-01-29T12:15:32.001")
     entry = Lumberjack::LogEntry.new(t, Logger::INFO, "test", "app", 1500, "unit_of_work_id" => "ABCD")
     expect(entry.to_s).to eq('[2011-01-29T12:15:32.001 INFO app(1500) unit_of_work_id:"ABCD"] test')
   end
-
 end

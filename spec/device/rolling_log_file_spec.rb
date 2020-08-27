@@ -1,9 +1,8 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe Lumberjack::Device::RollingLogFile do
-
   before :all do
-    Lumberjack::Device::SizeRollingLogFile #needed by jruby
+    Lumberjack::Device::SizeRollingLogFile # needed by jruby
     create_tmp_dir
   end
 
@@ -15,10 +14,10 @@ describe Lumberjack::Device::RollingLogFile do
     delete_tmp_files
   end
 
-  let(:entry){ Lumberjack::LogEntry.new(Time.now, 1, "New log entry", nil, $$, nil) }
+  let(:entry) { Lumberjack::LogEntry.new(Time.now, 1, "New log entry", nil, $$, nil) }
 
   it "should check for rolling the log file on flush" do
-    device = Lumberjack::Device::RollingLogFile.new(File.join(tmp_dir, "test.log"), :buffer_size => 32767, :min_roll_check => 0)
+    device = Lumberjack::Device::RollingLogFile.new(File.join(tmp_dir, "test.log"), buffer_size: 32767, min_roll_check: 0)
     device.write(entry)
     expect(device).to receive(:roll_file?).twice.and_return(false)
     device.flush
@@ -27,10 +26,10 @@ describe Lumberjack::Device::RollingLogFile do
 
   it "should roll the file by archiving the existing file and opening a new stream and calling after_roll" do
     log_file = File.join(tmp_dir, "test_2.log")
-    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :buffer_size => 32767, :min_roll_check => 0)
+    device = Lumberjack::Device::RollingLogFile.new(log_file, template: ":message", buffer_size: 32767, min_roll_check: 0)
     expect(device).to receive(:roll_file?).and_return(false, true)
     expect(device).to receive(:after_roll)
-    allow(device).to receive_messages(:archive_file_suffix => "rolled")
+    allow(device).to receive_messages(archive_file_suffix: "rolled")
     device.write(entry)
     device.flush
     device.write(Lumberjack::LogEntry.new(Time.now, 1, "Another log entry", nil, $$, nil))
@@ -41,8 +40,8 @@ describe Lumberjack::Device::RollingLogFile do
 
   it "should reopen the file if the stream inode doesn't match the file path inode" do
     log_file = File.join(tmp_dir, "test_3.log")
-    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :min_roll_check => 0)
-    allow(device).to receive_messages(:roll_file? => false)
+    device = Lumberjack::Device::RollingLogFile.new(log_file, template: ":message", min_roll_check: 0)
+    allow(device).to receive_messages(roll_file?: false)
     device.write(entry)
     device.flush
     File.rename(log_file, "#{log_file}.rolled")
@@ -63,7 +62,7 @@ describe Lumberjack::Device::RollingLogFile do
     message = "This is a test message that is written to the log file to indicate what the state of the application is."
 
     logger_test = lambda do
-      device = Lumberjack::Device::SizeRollingLogFile.new(log_file, :max_size => max_size, :template => ":message", :buffer_size => 32767, :min_roll_check => 0)
+      device = Lumberjack::Device::SizeRollingLogFile.new(log_file, max_size: max_size, template: ":message", buffer_size: 32767, min_roll_check: 0)
       threads = []
       thread_count.times do
         threads << Thread.new do
@@ -74,17 +73,17 @@ describe Lumberjack::Device::RollingLogFile do
           device.flush
         end
       end
-      threads.each{|thread| thread.value}
+      threads.each { |thread| thread.value }
       device.close
     end
 
     # Process.fork is unavailable on jruby so we need to use the java threads instead.
-    if RUBY_PLATFORM.match(/java/)
+    if RUBY_PLATFORM =~ /java/
       outer_threads = []
       process_count.times do
         outer_threads << Thread.new(&logger_test)
       end
-      outer_threads.each{|thread| thread.value}
+      outer_threads.each { |thread| thread.value }
     else
       process_count.times do
         Process.fork(&logger_test)
@@ -108,7 +107,7 @@ describe Lumberjack::Device::RollingLogFile do
 
   it "should only keep a specified number of archived log files" do
     log_file = File.join(tmp_dir, "test_5.log")
-    device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :keep => 2, :buffer_size => 32767, :min_roll_check => 0)
+    device = Lumberjack::Device::RollingLogFile.new(log_file, template: ":message", keep: 2, buffer_size: 32767, min_roll_check: 0)
     expect(device).to receive(:roll_file?).and_return(false, true, true, true)
     expect(device).to receive(:archive_file_suffix).and_return("delete", "another", "keep")
     t = Time.now
@@ -130,9 +129,9 @@ describe Lumberjack::Device::RollingLogFile do
     let(:log_file) { File.join(tmp_dir, "test_6.log") }
 
     let(:device) do
-      device = Lumberjack::Device::RollingLogFile.new(log_file, :template => ":message", :keep => 2, :buffer_size => 32767, :min_roll_check => 0)
+      device = Lumberjack::Device::RollingLogFile.new(log_file, template: ":message", keep: 2, buffer_size: 32767, min_roll_check: 0)
       allow(device).to receive(:roll_file?).and_return(true)
-      allow(device).to receive_messages(:archive_file_suffix => "rolled")
+      allow(device).to receive_messages(archive_file_suffix: "rolled")
       device
     end
 
@@ -147,5 +146,4 @@ describe Lumberjack::Device::RollingLogFile do
       expect(encoding.name).to eq "ASCII-8BIT"
     end
   end
-
 end

@@ -1,7 +1,6 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe Lumberjack::Severity do
-
   it "should convert a level to a label" do
     expect(Lumberjack::Severity.level_to_label(Logger::DEBUG)).to eq("DEBUG")
     expect(Lumberjack::Severity.level_to_label(Logger::INFO)).to eq("INFO")
@@ -19,5 +18,4 @@ describe Lumberjack::Severity do
     expect(Lumberjack::Severity.label_to_level("FATAL")).to eq(Logger::FATAL)
     expect(Lumberjack::Severity.label_to_level("???")).to eq(Logger::UNKNOWN)
   end
-
 end

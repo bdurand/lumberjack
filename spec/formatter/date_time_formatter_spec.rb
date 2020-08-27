@@ -1,7 +1,6 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe Lumberjack::Formatter::DateTimeFormatter do
-
   it "should format a time object" do
     time = Time.now
     formatter = Lumberjack::Formatter::DateTimeFormatter.new("%Y-%m-%d %H:%M")
@@ -30,5 +29,4 @@ describe Lumberjack::Formatter::DateTimeFormatter do
     formatter = Lumberjack::Formatter::DateTimeFormatter.new
     expect(formatter.call(time)).to eq time.iso8601
   end
-
 end

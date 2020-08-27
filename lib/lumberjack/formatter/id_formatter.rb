@@ -9,11 +9,11 @@ module Lumberjack
       def initialize(id_attribute = :id)
         @id_attribute = id_attribute
       end
-      
+
       def call(obj)
         if obj.respond_to?(@id_attribute)
           id = obj.send(@id_attribute)
-          { "class" => obj.class.name, "id" => id }
+          {"class" => obj.class.name, "id" => id}
         else
           obj.to_s
         end

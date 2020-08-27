@@ -1,8 +1,7 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe Lumberjack::Formatter do
-
-  let(:formatter){ Lumberjack::Formatter.new }
+  let(:formatter) { Lumberjack::Formatter.new }
 
   it "should have a default set of formatters" do
     expect(formatter.format("abc")).to eq("abc")
@@ -11,12 +10,12 @@ describe Lumberjack::Formatter do
   end
 
   it "should be able to add a formatter object for a class" do
-    formatter.add(Numeric, lambda{|obj| "number: #{obj}"})
+    formatter.add(Numeric, lambda { |obj| "number: #{obj}" })
     expect(formatter.format(10)).to eq("number: 10")
   end
 
   it "should be able to add a formatter object for a class name" do
-    formatter.add("Numeric", lambda{|obj| "number: #{obj}"})
+    formatter.add("Numeric", lambda { |obj| "number: #{obj}" })
     expect(formatter.format(10)).to eq("number: 10")
   end
 
@@ -27,12 +26,12 @@ describe Lumberjack::Formatter do
   end
 
   it "should be able to add a formatter object for a module" do
-    formatter.add(Enumerable, lambda{|obj| "list: #{obj.inspect}"})
+    formatter.add(Enumerable, lambda { |obj| "list: #{obj.inspect}" })
     expect(formatter.format([1, 2])).to eq("list: [1, 2]")
   end
 
   it "should be able to add a formatter block for a class" do
-    formatter.add(Numeric){|obj| "number: #{obj}"}
+    formatter.add(Numeric) { |obj| "number: #{obj}" }
     expect(formatter.format(10)).to eq("number: 10")
   end
 
@@ -57,8 +56,8 @@ describe Lumberjack::Formatter do
   end
 
   it "should format an object based on the class hierarchy" do
-    formatter.add(Numeric){|obj| "number: #{obj}"}
-    formatter.add(Integer){|obj| "fixed number: #{obj}"}
+    formatter.add(Numeric) { |obj| "number: #{obj}" }
+    formatter.add(Integer) { |obj| "fixed number: #{obj}" }
     expect(formatter.format(10)).to eq("fixed number: 10")
     expect(formatter.format(10.1)).to eq("number: 10.1")
   end

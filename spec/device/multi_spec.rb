@@ -1,12 +1,11 @@
 require "spec_helper"
 
 describe Lumberjack::Device::Multi do
-
   let(:output_1) { StringIO.new }
   let(:output_2) { StringIO.new }
   let(:device_1) { Lumberjack::Device::Writer.new(output_1, template: ":message") }
   let(:device_2) { Lumberjack::Device::Writer.new(output_2, template: ":severity - :message") }
-  let(:device) { Lumberjack::Device::Multi.new(device_1, device_2)}
+  let(:device) { Lumberjack::Device::Multi.new(device_1, device_2) }
 
   let(:entry) { Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 100, {}) }
 
@@ -40,5 +39,4 @@ describe Lumberjack::Device::Multi do
     expect(device_1.datetime_format).to eq "%Y-%m-%d"
     expect(device_2.datetime_format).to eq "%Y-%m-%d"
   end
-
 end

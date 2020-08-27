@@ -1,3 +1,7 @@
+## 1.2.8
+
+* Add `Logger#untag` to remove previously set logging tags from a block.
+
 ## 1.2.7
 
 * Allow passing frozen hashes to `Logger.tag`. Tags passed to this method are now duplicated so the logger maintains it's own copy of the hash.

@@ -7,35 +7,35 @@ module Lumberjack
       def initialize(*devices)
         @devices = devices.flatten
       end
-      
+
       def write(entry)
         @devices.each do |device|
           device.write(entry)
         end
       end
-      
+
       def flush
         @devices.each do |device|
           device.flush
         end
       end
-      
+
       def close
         @devices.each do |device|
           device.close
         end
       end
-      
+
       def reopen(logdev = nil)
         @devices.each do |device|
           device.reopen(logdev = nil)
         end
       end
-      
+
       def datetime_format
         @devices.detect(&:datetime_format).datetime_format
       end
-      
+
       def datetime_format=(format)
         @devices.each do |device|
           device.datetime_format = format

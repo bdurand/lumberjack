@@ -1,12 +1,11 @@
-require 'spec_helper'
-require 'pathname'
+require "spec_helper"
+require "pathname"
 
 describe Lumberjack::Logger do
-
   describe "compatibility" do
     it "should implement the same public API as the ::Logger class" do
-      logger = ::Logger.new(STDOUT)
-      lumberjack = Lumberjack::Logger.new(STDOUT)
+      logger = ::Logger.new($stdout)
+      lumberjack = Lumberjack::Logger.new($stdout)
       (logger.public_methods - Object.public_methods).each do |method_name|
         logger_method = logger.method(method_name)
         lumberjack_method = lumberjack.method(method_name)
@@ -18,7 +17,6 @@ describe Lumberjack::Logger do
   end
 
   describe "initialization" do
-
     before :all do
       create_tmp_dir
     end
@@ -55,12 +53,12 @@ describe Lumberjack::Logger do
     end
 
     it "should set the level with a numeric" do
-      logger = Lumberjack::Logger.new(:null, :level => Logger::WARN)
+      logger = Lumberjack::Logger.new(:null, level: Logger::WARN)
       expect(logger.level).to eq(Logger::WARN)
     end
 
     it "should set the level with a level" do
-      logger = Lumberjack::Logger.new(:null, :level => :warn)
+      logger = Lumberjack::Logger.new(:null, level: :warn)
       expect(logger.level).to eq(Logger::WARN)
     end
 
@@ -69,14 +67,14 @@ describe Lumberjack::Logger do
       expect(logger.level).to eq(Logger::INFO)
     end
 
-    it "should set the progname"do
-      logger = Lumberjack::Logger.new(:null, :progname => "app")
+    it "should set the progname" do
+      logger = Lumberjack::Logger.new(:null, progname: "app")
       expect(logger.progname).to eq("app")
     end
 
     it "should create a thread to flush the device" do
       expect(Thread).to receive(:new)
-      logger = Lumberjack::Logger.new(:null, :flush_seconds => 10)
+      logger = Lumberjack::Logger.new(:null, flush_seconds: 10)
     end
   end
 
@@ -95,7 +93,7 @@ describe Lumberjack::Logger do
 
     it "should be able to silence the log in a block" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :buffer_size => 0, :level => Logger::INFO, :template => ":message")
+      logger = Lumberjack::Logger.new(output, buffer_size: 0, level: Logger::INFO, template: ":message")
       logger.info("one")
       logger.silence do
         expect(logger.level).to eq(Logger::ERROR)
@@ -108,7 +106,7 @@ describe Lumberjack::Logger do
 
     it "should be able to customize the level of silence in a block" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :buffer_size => 0, :level => Logger::INFO, :template => ":message")
+      logger = Lumberjack::Logger.new(output, buffer_size: 0, level: Logger::INFO, template: ":message")
       logger.info("one")
       logger.silence(Logger::FATAL) do
         expect(logger.level).to eq(Logger::FATAL)
@@ -122,7 +120,7 @@ describe Lumberjack::Logger do
 
     it "should be able to customize the level of silence in a block with a symbol" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :buffer_size => 0, :level => Logger::INFO, :template => ":message")
+      logger = Lumberjack::Logger.new(output, buffer_size: 0, level: Logger::INFO, template: ":message")
       logger.info("one")
       logger.silence(:fatal) do
         expect(logger.level).to eq(Logger::FATAL)
@@ -136,7 +134,7 @@ describe Lumberjack::Logger do
 
     it "should not be able to silence the logger if silencing is disabled" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :buffer_size => 0, :level => Logger::INFO, :template => ":message")
+      logger = Lumberjack::Logger.new(output, buffer_size: 0, level: Logger::INFO, template: ":message")
       logger.silencer = false
       logger.info("one")
       logger.silence do
@@ -163,7 +161,7 @@ describe Lumberjack::Logger do
 
     it "should only affect the current thread when silencing the logger" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :buffer_size => 0, :level => Logger::INFO, :template => ":message")
+      logger = Lumberjack::Logger.new(output, buffer_size: 0, level: Logger::INFO, template: ":message")
       # status is used to make sure the two threads are executing at the same time
       status = 0
       begin
@@ -171,10 +169,16 @@ describe Lumberjack::Logger do
           logger.silence do
             logger.info("inner")
             status = 1
-            loop{ sleep(0.001); break if status == 2}
+            loop do
+              sleep(0.001)
+              break if status == 2
+            end
           end
         end
-        loop{ sleep(0.001); break if status == 1}
+        loop do
+          sleep(0.001)
+          break if status == 1
+        end
         logger.info("outer")
         status = 2
         logger.close
@@ -187,7 +191,7 @@ describe Lumberjack::Logger do
 
     it "should only affect the current thread when changing the progname in a block" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :progname => "thread1", :buffer_size => 0, :level => Logger::INFO, :template => ":progname :message")
+      logger = Lumberjack::Logger.new(output, progname: "thread1", buffer_size: 0, level: Logger::INFO, template: ":progname :message")
       # status is used to make sure the two threads are executing at the same time
       status = 0
       begin
@@ -195,10 +199,16 @@ describe Lumberjack::Logger do
           logger.set_progname("thread2") do
             logger.info("inner")
             status = 1
-            loop{ sleep(0.001); break if status == 2}
+            loop do
+              sleep(0.001)
+              break if status == 2
+            end
           end
         end
-        loop{ sleep(0.001); break if status == 1}
+        loop do
+          sleep(0.001)
+          break if status == 1
+        end
         logger.info("outer")
         status = 2
         logger.close
@@ -213,7 +223,7 @@ describe Lumberjack::Logger do
   describe "datetime_format" do
     it "should be able to set the datetime format for timestamps on the log device" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :template => ":time :message", datetime_format: "%Y-%m-%d")
+      logger = Lumberjack::Logger.new(output, template: ":time :message", datetime_format: "%Y-%m-%d")
       expect(logger.datetime_format).to eq "%Y-%m-%d"
       Timecop.freeze do
         logger.info("one")
@@ -221,7 +231,7 @@ describe Lumberjack::Logger do
         expect(logger.datetime_format).to eq "%m-%d-%Y"
         logger.info("two")
         logger.flush
-        expect(output.string).to eq "#{Time.now.strftime('%Y-%m-%d')} one\n#{Time.now.strftime('%m-%d-%Y')} two\n"
+        expect(output.string).to eq "#{Time.now.strftime("%Y-%m-%d")} one\n#{Time.now.strftime("%m-%d-%Y")} two\n"
       end
     end
   end
@@ -229,7 +239,7 @@ describe Lumberjack::Logger do
   describe "flushing" do
     it "should autoflush the buffer if it hasn't been flushed in a specified number of seconds" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :flush_seconds => 0.1, :level => Logger::INFO, :template => ":message", :buffer_size => 32767)
+      logger = Lumberjack::Logger.new(output, flush_seconds: 0.1, level: Logger::INFO, template: ":message", buffer_size: 32767)
       logger.info("message 1")
       logger.info("message 2")
       expect(output.string).to eq("")
@@ -243,7 +253,7 @@ describe Lumberjack::Logger do
 
     it "should write the log entries to the device on flush and update the last flushed time" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :level => Logger::INFO, :template => ":message", :buffer_size => 32767)
+      logger = Lumberjack::Logger.new(output, level: Logger::INFO, template: ":message", buffer_size: 32767)
       logger.info("message 1")
       expect(output.string).to eq("")
       last_flushed_at = logger.last_flushed_at
@@ -254,7 +264,7 @@ describe Lumberjack::Logger do
 
     it "should flush the buffer and close the devices" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :level => Logger::INFO, :template => ":message", :buffer_size => 32767)
+      logger = Lumberjack::Logger.new(output, level: Logger::INFO, template: ":message", buffer_size: 32767)
       logger.info("message 1")
       expect(output.string).to eq("")
       expect(logger.closed?).to eq false
@@ -266,7 +276,7 @@ describe Lumberjack::Logger do
 
     it "should reopen the devices" do
       output = StringIO.new
-      logger = Lumberjack::Logger.new(output, :level => Logger::INFO, :template => ":message", :buffer_size => 32767)
+      logger = Lumberjack::Logger.new(output, level: Logger::INFO, template: ":message", buffer_size: 32767)
       logger.close
       expect(logger.device).to receive(:reopen).and_call_original
       logger.reopen
@@ -275,36 +285,36 @@ describe Lumberjack::Logger do
   end
 
   describe "logging" do
-    let(:output){ StringIO.new }
-    let(:device){ Lumberjack::Device::Writer.new(output, :buffer_size => 0, template: "[:time :severity :progname(:pid)] :message :tags") }
-    let(:logger){ Lumberjack::Logger.new(device, :level => Logger::INFO, :progname => "app") }
-    let(:n){ Lumberjack::LINE_SEPARATOR }
+    let(:output) { StringIO.new }
+    let(:device) { Lumberjack::Device::Writer.new(output, buffer_size: 0, template: "[:time :severity :progname(:pid)] :message :tags") }
+    let(:logger) { Lumberjack::Logger.new(device, level: Logger::INFO, progname: "app") }
+    let(:n) { Lumberjack::LINE_SEPARATOR }
 
     describe "add" do
       it "should add entries with a numeric severity and a message" do
         time = Time.parse("2011-01-30T12:31:56.123")
-        allow(Time).to receive_messages(:now => time)
+        allow(Time).to receive_messages(now: time)
         logger.add(Logger::INFO, "test")
         expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$})] test")
       end
 
       it "should add entries with a severity label" do
         time = Time.parse("2011-01-30T12:31:56.123")
-        allow(Time).to receive_messages(:now => time)
+        allow(Time).to receive_messages(now: time)
         logger.add(:info, "test")
         expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$})] test")
       end
 
       it "should add entries with a custom progname and message" do
         time = Time.parse("2011-01-30T12:31:56.123")
-        allow(Time).to receive_messages(:now => time)
+        allow(Time).to receive_messages(now: time)
         logger.add(Logger::INFO, "test", "spec")
         expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{$$})] test")
       end
 
       it "should add entries with a local progname and message" do
         time = Time.parse("2011-01-30T12:31:56.123")
-        allow(Time).to receive_messages(:now => time)
+        allow(Time).to receive_messages(now: time)
         logger.set_progname("block") do
           logger.add(Logger::INFO, "test")
         end
@@ -313,7 +323,7 @@ describe Lumberjack::Logger do
 
       it "should add entries with a progname but no message or block" do
         time = Time.parse("2011-01-30T12:31:56.123")
-        allow(Time).to receive_messages(:now => time)
+        allow(Time).to receive_messages(now: time)
         logger.set_progname("default") do
           logger.add(Logger::INFO, nil, "message")
         end
@@ -322,21 +332,21 @@ describe Lumberjack::Logger do
 
       it "should add entries with a block" do
         time = Time.parse("2011-01-30T12:31:56.123")
-        allow(Time).to receive_messages(:now => time)
+        allow(Time).to receive_messages(now: time)
         logger.add(Logger::INFO) { "test" }
         expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$})] test")
       end
 
       it "should log entries (::Logger compatibility)" do
         time = Time.parse("2011-01-30T12:31:56.123")
-        allow(Time).to receive_messages(:now => time)
+        allow(Time).to receive_messages(now: time)
         logger.log(Logger::INFO, "test")
         expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO app(#{$$})] test")
       end
 
       it "should append messages with unknown severity to the log" do
         time = Time.parse("2011-01-30T12:31:56.123")
-        allow(Time).to receive_messages(:now => time)
+        allow(Time).to receive_messages(now: time)
         logger << "test"
         expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 UNKNOWN app(#{$$})] test")
       end
@@ -345,14 +355,14 @@ describe Lumberjack::Logger do
     describe "add_entry" do
       it "should add entries with tags" do
         time = Time.parse("2011-01-30T12:31:56.123")
-        allow(Time).to receive_messages(:now => time)
+        allow(Time).to receive_messages(now: time)
         logger.add_entry(Logger::INFO, "test", "spec", "tag" => "ABCD")
         expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{$$})] test [tag:ABCD]")
       end
 
       it "should handle malformed tags" do
         time = Time.parse("2011-01-30T12:31:56.123")
-        allow(Time).to receive_messages(:now => time)
+        allow(Time).to receive_messages(now: time)
         logger.add_entry(Logger::INFO, "test", "spec", "ABCD")
         expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{$$})] test")
       end
@@ -362,7 +372,7 @@ describe Lumberjack::Logger do
         $stderr = StringIO.new
         begin
           time = Time.parse("2011-01-30T12:31:56.123")
-          allow(Time).to receive_messages(:now => time)
+          allow(Time).to receive_messages(now: time)
           expect(device).to receive(:write).and_raise(StandardError.new("Cannot write to device"))
           logger.add_entry(Logger::INFO, "test")
           expect($stderr.string).to include("[2011-01-30T12:31:56.123 INFO app(#{$$})] test")
@@ -374,15 +384,19 @@ describe Lumberjack::Logger do
 
       it "should call Proc tag values" do
         time = Time.parse("2011-01-30T12:31:56.123")
-        allow(Time).to receive_messages(:now => time)
+        allow(Time).to receive_messages(now: time)
         logger.add_entry(Logger::INFO, "test", "spec", tag: lambda { "foo" })
         expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{$$})] test [tag:foo]")
       end
 
       it "should not get into infinite loops by logging entries while logging entries" do
         time = Time.parse("2011-01-30T12:31:56.123")
-        allow(Time).to receive_messages(:now => time)
-        logger.add_entry(Logger::INFO, "test", "spec", tag: lambda { logger.warn("inner logging"); "foo" })
+        allow(Time).to receive_messages(now: time)
+        tag_proc = lambda do
+          logger.warn("inner logging")
+          "foo"
+        end
+        logger.add_entry(Logger::INFO, "test", "spec", tag: tag_proc)
         expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{$$})] test [tag:foo]")
       end
     end
@@ -402,7 +416,7 @@ describe Lumberjack::Logger do
       end
     end
 
-    %w(fatal error warn info debug).each do |level|
+    %w[fatal error warn info debug].each do |level|
       describe level do
         around :each do |example|
           Timecop.freeze(time) do
@@ -460,7 +474,7 @@ describe Lumberjack::Logger do
     end
 
     describe "tags" do
-      let(:device){ Lumberjack::Device::Writer.new(output, :buffer_size => 0, template: ":message - :count - :tags") }
+      let(:device) { Lumberjack::Device::Writer.new(output, buffer_size: 0, template: ":message - :count - :tags") }
 
       it "should be able to add tags to the logs" do
         logger.level = :debug
@@ -470,11 +484,11 @@ describe Lumberjack::Logger do
         logger.error("error", count: 4, tag: "d")
         logger.fatal("fatal", count: 5, tag: "e", foo: "bar")
         lines = output.string.split(n)
-        expect(lines[0]).to eq 'debug - 1 - [tag:a]'
-        expect(lines[1]).to eq 'info - 2 - [tag:b]'
-        expect(lines[2]).to eq 'warn - 3 - [tag:c]'
-        expect(lines[3]).to eq 'error - 4 - [tag:d]'
-        expect(lines[4]).to eq 'fatal - 5 - [tag:e] [foo:bar]'
+        expect(lines[0]).to eq "debug - 1 - [tag:a]"
+        expect(lines[1]).to eq "info - 2 - [tag:b]"
+        expect(lines[2]).to eq "warn - 3 - [tag:c]"
+        expect(lines[3]).to eq "error - 4 - [tag:d]"
+        expect(lines[4]).to eq "fatal - 5 - [tag:e] [foo:bar]"
       end
 
       it "should merge logger and context tags" do
@@ -487,9 +501,9 @@ describe Lumberjack::Logger do
           end
         end
         lines = output.string.split(n)
-        expect(lines[0]).to eq 'one - 1 - [foo:bar] [baz:boo] [tag:b]'
-        expect(lines[1]).to eq 'two - 2 - [foo:other] [baz:boo] [tag:c]'
-        expect(lines[2]).to eq 'three - 3 - [foo:bar] [baz:thing] [tag:d]'
+        expect(lines[0]).to eq "one - 1 - [foo:bar] [baz:boo] [tag:b]"
+        expect(lines[1]).to eq "two - 2 - [foo:other] [baz:boo] [tag:c]"
+        expect(lines[2]).to eq "three - 3 - [foo:bar] [baz:thing] [tag:d]"
       end
 
       it "should add and remove tags only in a tag block" do
@@ -501,9 +515,9 @@ describe Lumberjack::Logger do
         logger.info("three")
 
         lines = output.string.split(n)
-        expect(lines[0]).to eq 'one - 1 - [baz:boo]'
-        expect(lines[1]).to eq 'two - 2 - [baz:boo] [foo:bar]'
-        expect(lines[2]).to eq 'three -  -'
+        expect(lines[0]).to eq "one - 1 - [baz:boo]"
+        expect(lines[1]).to eq "two - 2 - [baz:boo] [foo:bar]"
+        expect(lines[2]).to eq "three -  -"
       end
 
       it "should add and remove tags in the global scope if there is no block" do
@@ -513,8 +527,8 @@ describe Lumberjack::Logger do
         logger.info("two")
 
         lines = output.string.split(n)
-        expect(lines[0]).to eq 'one - 1 - [foo:bar]'
-        expect(lines[1]).to eq 'two - 1 -'
+        expect(lines[0]).to eq "one - 1 - [foo:bar]"
+        expect(lines[1]).to eq "two - 1 -"
       end
 
       it "should apply a tag formatter to the tags" do
@@ -532,8 +546,62 @@ describe Lumberjack::Logger do
       end
     end
 
+    describe "untag" do
+      it "should remove tags from the Lumberjack::Context" do
+        Lumberjack.context do
+          Lumberjack.tag(foo: "bar")
+          expect(logger.tags).to eq({"foo" => "bar"})
+          logger.untag do
+            expect(logger.tags).to eq({})
+          end
+          expect(logger.tags).to eq({"foo" => "bar"})
+        end
+      end
+
+      it "should remove global tags from the logger" do
+        logger.tag(foo: "bar")
+        begin
+          expect(logger.tags).to eq({"foo" => "bar"})
+          logger.untag do
+            expect(logger.tags).to eq({})
+          end
+          expect(logger.tags).to eq({"foo" => "bar"})
+        ensure
+          logger.remove_tag(:foo)
+        end
+      end
+
+      it "should remove scoped tags from teh logger" do
+        logger.tag(foo: "bar") do
+          expect(logger.tags).to eq({"foo" => "bar"})
+          logger.untag do
+            expect(logger.tags).to eq({})
+          end
+          expect(logger.tags).to eq({"foo" => "bar"})
+        end
+      end
+
+      it "should allow adding tags inside the block" do
+        logger.tag(foo: "bar") do
+          expect(logger.tags).to eq({"foo" => "bar"})
+          logger.untag do
+            logger.tag(stuff: "other") do
+              expect(logger.tags).to eq({"stuff" => "other"})
+              logger.untag do
+                expect(logger.tags).to eq({})
+                logger.tag(thing: 1)
+                expect(logger.tags).to eq({"thing" => 1})
+              end
+              expect(logger.tags).to eq({"stuff" => "other"})
+            end
+          end
+          expect(logger.tags).to eq({"foo" => "bar"})
+        end
+      end
+    end
+
     describe "log helper methods" do
-      let(:device){ Lumberjack::Device::Writer.new(output, :buffer_size => 0, :template => ":message") }
+      let(:device) { Lumberjack::Device::Writer.new(output, buffer_size: 0, template: ":message") }
 
       it "should only add messages whose severity is greater or equal to the logger level" do
         logger.add_entry(Logger::DEBUG, "debug")
@@ -639,5 +707,4 @@ describe Lumberjack::Logger do
       end
     end
   end
-
 end

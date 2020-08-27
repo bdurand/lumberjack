@@ -1,0 +1,62 @@
+name: Continuous Integration
+on:
+  push:
+    branches:
+      - master
+      - actions-*
+    tags:
+      - v*
+  pull_request:
+env:
+  BUNDLE_CLEAN: "true"
+  BUNDLE_PATH: vendor/bundle
+  BUNDLE_JOBS: 3
+  BUNDLE_RETRY: 3
+jobs:
+  specs:
+    name: ${{ matrix.job }} ruby-${{ matrix.ruby }} ${{ matrix.appraisal }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [ 2.3, 2.4, 2.5, 2.6, 2.7, "jruby" ]
+        job: [ rspec ]
+        include:
+          - ruby: 2.3
+            appraisal: activesupport_4
+            job: rspec
+          - ruby: 2.5
+            appraisal: activesupport_5
+            job: rspec
+          - ruby: 2.6
+            appraisal: activesupport
+            job: rspec
+          - ruby: 2.6
+            appraisal: logger
+            job: rspec
+          - ruby: 2.7
+            job: standardrb
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+      - name: remove standardrb
+        if: matrix.appraisal == 'activesupport_4'
+        run: sed -i 's/gem "standard"/# gem "standard"/' Gemfile
+      - name: inject appraisal ${{ matrix.appraisal }}
+        if:   matrix.appraisal && matrix.appraisal != ''
+        run: | # inject a specific appraisal Gemfile
+          bundle update
+          bundle exec appraisal generate
+          bundle config set gemfile "gemfiles/${{ matrix.appraisal }}.gemfile"
+      - name: install dependencies
+        run:  bundle install
+      - name: specs
+        if:   matrix.job == 'rspec'
+        run:  bundle exec rake spec
+      - name: standardrb
+        if:   matrix.job == 'standardrb'
+        run:  bundle exec standardrb

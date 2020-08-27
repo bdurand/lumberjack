@@ -1,0 +1,12 @@
+# Dependabot update strategy
+version: 2
+updates:
+  - package-ecosystem: bundler
+    directory: "/"
+    schedule:
+      interval: daily
+    allow:
+      # Automatically keep all runtime dependencies updated
+      - dependency-name: "*"
+        dependency-type: "production"
+    versioning-strategy: lockfile-only

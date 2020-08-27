@@ -9,7 +9,6 @@ module Lumberjack
   # tag_formatter.add(["password", "email"]) { |value| "***" }
   # tag_formatter.add("finished_at", Lumberjack::Formatter::DateTimeFormatter.new("%Y-%m-%dT%H:%m:%S%z"))
   class TagFormatter
-
     def initialize
       @formatters = {}
       @default_formatter = nil
@@ -87,12 +86,11 @@ module Lumberjack
       if formatter.is_a?(TaggedLoggerSupport::Formatter)
         formatter.__formatter
       elsif formatter.is_a?(Symbol)
-        formatter_class_name = "#{formatter.to_s.gsub(/(^|_)([a-z])/){|m| $~[2].upcase}}Formatter"
+        formatter_class_name = "#{formatter.to_s.gsub(/(^|_)([a-z])/) { |m| $~[2].upcase }}Formatter"
         Formatter.const_get(formatter_class_name).new
       else
         formatter
       end
     end
-
   end
 end
