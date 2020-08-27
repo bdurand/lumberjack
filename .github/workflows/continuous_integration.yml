@@ -12,6 +12,7 @@ env:
   BUNDLE_PATH: vendor/bundle
   BUNDLE_JOBS: 3
   BUNDLE_RETRY: 3
+  BUNDLE_WITHOUT: standardrb yarn
 jobs:
   specs:
     name: ${{ matrix.job }} ruby-${{ matrix.ruby }} ${{ matrix.appraisal }}
@@ -36,6 +37,8 @@ jobs:
             job: rspec
           - ruby: 2.7
             job: standardrb
+            env:
+              BUNDLE_WITHOUT: "yarn"
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -50,10 +53,10 @@ jobs:
           bundle exec appraisal generate
           bundle config set gemfile "gemfiles/${{ matrix.apprasial }}.gemfile"
       - name: install dependencies
-        run:  bundle install
+        run:  bundle install {{ matrix.bundle_without }}
       - name: specs
         if:   matrix.job == 'rspec'
         run:  bundle exec rake spec
       - name: standardrb
         if:   matrix.job == 'standardrb'
-        run:  bundle exec rake standard
+        run:  bundle exec standardrb
