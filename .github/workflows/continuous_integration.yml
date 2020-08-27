@@ -46,12 +46,11 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
-      - name: inject appraisal ${{ matrix.apprasial }}
+      - name: inject appraisal ${{ matrix.appraisal }}
         if:   matrix.appraisal && matrix.appraisal != ''
         run: | # inject a specific appraisal Gemfile
-          bundle update
           bundle exec appraisal generate
-          bundle config set gemfile "gemfiles/${{ matrix.apprasial }}.gemfile"
+          bundle config set gemfile "gemfiles/${{ matrix.appraisal }}.gemfile"
       - name: install dependencies
         run:  bundle install
       - name: specs
