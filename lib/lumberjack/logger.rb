@@ -397,13 +397,13 @@ module Lumberjack
     def untagged(&block)
       Lumberjack.use_context(nil) do
         scope_tags = thread_local_value(:lumberjack_logger_tags)
-       untagged = thread_local_value(:lumberjack_logger_untagged)
+        untagged = thread_local_value(:lumberjack_logger_untagged)
         begin
           set_thread_local_value(:lumberjack_logger_untagged, true)
           set_thread_local_value(:lumberjack_logger_tags, nil)
           tag({}, &block)
         ensure
-          set_thread_local_value(:lumberjack_logger_untagged,untagged)
+          set_thread_local_value(:lumberjack_logger_untagged, untagged)
           set_thread_local_value(:lumberjack_logger_tags, scope_tags)
         end
       end
