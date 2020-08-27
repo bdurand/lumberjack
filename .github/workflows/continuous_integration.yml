@@ -49,6 +49,7 @@ jobs:
       - name: inject appraisal ${{ matrix.appraisal }}
         if:   matrix.appraisal && matrix.appraisal != ''
         run: | # inject a specific appraisal Gemfile
+          bundle install
           bundle exec appraisal generate
           bundle config set gemfile "gemfiles/${{ matrix.appraisal }}.gemfile"
       - name: install dependencies
