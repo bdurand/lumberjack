@@ -12,7 +12,7 @@ env:
   BUNDLE_PATH: vendor/bundle
   BUNDLE_JOBS: 3
   BUNDLE_RETRY: 3
-  BUNDLE_WITHOUT: standardrb yarn
+  BUNDLE_WITHOUT: standard yard
 jobs:
   specs:
     name: ${{ matrix.job }} ruby-${{ matrix.ruby }} ${{ matrix.appraisal }}
@@ -38,7 +38,7 @@ jobs:
           - ruby: 2.7
             job: standardrb
             env:
-              BUNDLE_WITHOUT: "yarn"
+              BUNDLE_WITHOUT: "yard"
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -47,7 +47,7 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
       - name: inject appraisal ${{ matrix.apprasial }}
-        if:   matrix.apprasial
+        if:   matrix.appraisal && matrix.appraisal != ''
         run: | # inject a specific appraisal Gemfile
           bundle update
           bundle exec appraisal generate
