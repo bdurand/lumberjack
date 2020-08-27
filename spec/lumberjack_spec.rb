@@ -48,6 +48,14 @@ describe Lumberjack do
         expect(Lumberjack.context_tags).to eq("foo" => "bar")
       end
     end
+
+    it "should be specify the context" do
+      context = Lumberjack::Context.new
+      context.tag(fog: "bar")
+      Lumberjack.use_context(context) do
+        expect(Lumberjack.context_tags).to eq("fog" => "bar")
+      end
+    end
   end
 
   describe "unit of work" do

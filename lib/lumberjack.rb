@@ -54,17 +54,23 @@ module Lumberjack
     #
     # Otherwise, it will return the current context. If one doesn't exist, it will return a new one
     # but that context will not be in any scope.
-    def context
+    def context(&block)
       current_context = Thread.current[:lumberjack_context]
-      if block_given?
-        Thread.current[:lumberjack_context] = Context.new(current_context)
-        begin
-          yield
-        ensure
-          Thread.current[:lumberjack_context] = current_context
-        end
+      if block
+        use_context(Context.new(current_context), &block)
       else
         current_context || Context.new
+      end
+    end
+    
+    # Set the context to use within a block.
+    def use_context(context, &block)
+      current_context = Thread.current[:lumberjack_context]
+      begin
+        Thread.current[:lumberjack_context] = (context || Context.new)
+        yield
+      ensure
+        Thread.current[:lumberjack_context] = current_context
       end
     end
     

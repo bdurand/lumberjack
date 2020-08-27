@@ -532,6 +532,60 @@ describe Lumberjack::Logger do
       end
     end
 
+    describe "untag" do
+      it "should remove tags from the Lumberjack::Context" do
+        Lumberjack.context do
+          Lumberjack.tag(foo: "bar")
+          expect(logger.tags).to eq({"foo" => "bar"})
+          logger.untag do
+            expect(logger.tags).to eq({})
+          end
+          expect(logger.tags).to eq({"foo" => "bar"})
+        end
+      end
+
+      it "should remove global tags from the logger" do
+        logger.tag(foo: "bar")
+        begin
+          expect(logger.tags).to eq({"foo" => "bar"})
+          logger.untag do
+            expect(logger.tags).to eq({})
+          end
+          expect(logger.tags).to eq({"foo" => "bar"})
+        ensure
+          logger.remove_tag(:foo)
+        end
+      end
+
+      it "should remove scoped tags from teh logger" do
+        logger.tag(foo: "bar") do
+          expect(logger.tags).to eq({"foo" => "bar"})
+          logger.untag do
+            expect(logger.tags).to eq({})
+          end
+          expect(logger.tags).to eq({"foo" => "bar"})
+        end
+      end
+
+      it "should allow adding tags inside the block" do
+        logger.tag(foo: "bar") do
+          expect(logger.tags).to eq({"foo" => "bar"})
+          logger.untag do
+            logger.tag(stuff: "other") do
+              expect(logger.tags).to eq({"stuff" => "other"})
+              logger.untag do
+                expect(logger.tags).to eq({})
+                logger.tag(thing: 1)
+                expect(logger.tags).to eq({"thing" => 1})
+              end
+              expect(logger.tags).to eq({"stuff" => "other"})
+            end
+          end
+          expect(logger.tags).to eq({"foo" => "bar"})
+        end
+      end
+    end
+
     describe "log helper methods" do
       let(:device){ Lumberjack::Device::Writer.new(output, :buffer_size => 0, :template => ":message") }
 

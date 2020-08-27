@@ -380,15 +380,33 @@ module Lumberjack
     end
 
     # Return all tags in scope on the logger including global tags set on the Lumberjack
-    # context, tags set on the logger, and tags set on the current block for the logger
+    # context, tags set on the logger, and tags set on the current block for the logger.
     def tags
       tags = {}
       context_tags = Lumberjack.context_tags
       tags.merge!(context_tags) if context_tags && !context_tags.empty?
-      tags.merge!(@tags) if !@tags.empty?
+      tags.merge!(@tags) if !@tags.empty? && !thread_local_value(:lumberjack_logger_untagged)
       scope_tags = thread_local_value(:lumberjack_logger_tags)
       tags.merge!(scope_tags) if scope_tags && !scope_tags.empty?
       tags
+    end
+    
+    # Remove all tags on the current logger and logging context within a block.
+    # You can still set new block scoped tags within the untagged block and provide
+    # tags on individual log methods.
+    def untag(&block)
+      Lumberjack.use_context(nil) do
+        scope_tags = thread_local_value(:lumberjack_logger_tags)
+        untagged = thread_local_value(:lumberjack_logger_untagged)
+        begin
+          set_thread_local_value(:lumberjack_logger_untagged, true)
+          set_thread_local_value(:lumberjack_logger_tags, nil)
+          tag({}, &block)
+        ensure
+          set_thread_local_value(:lumberjack_logger_untagged, untagged)
+          set_thread_local_value(:lumberjack_logger_tags, scope_tags)
+        end
+      end
     end
 
     private
