@@ -44,8 +44,8 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
       - name: remove standardrb
-        if: matrix.appraisal != 'activesupport_4'
-        run: sed -i 's/gem "standard"/# gem "standard"' Gemfile
+        if: matrix.appraisal == 'activesupport_4'
+        run: sed -i 's/gem "standard"/# gem "standard"/' Gemfile
       - name: inject appraisal ${{ matrix.appraisal }}
         if:   matrix.appraisal && matrix.appraisal != ''
         run: | # inject a specific appraisal Gemfile
