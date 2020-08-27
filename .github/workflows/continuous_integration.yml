@@ -53,7 +53,7 @@ jobs:
           bundle exec appraisal generate
           bundle config set gemfile "gemfiles/${{ matrix.apprasial }}.gemfile"
       - name: install dependencies
-        run:  bundle install {{ matrix.bundle_without }}
+        run:  bundle install
       - name: specs
         if:   matrix.job == 'rspec'
         run:  bundle exec rake spec
