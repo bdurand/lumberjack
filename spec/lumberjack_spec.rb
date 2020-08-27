@@ -1,7 +1,6 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe Lumberjack do
-
   describe "context" do
     it "should create a context with tags for a block" do
       Lumberjack.context do
@@ -85,5 +84,4 @@ describe Lumberjack do
       expect(Lumberjack.unit_of_work_id).to eq(nil)
     end
   end
-
 end

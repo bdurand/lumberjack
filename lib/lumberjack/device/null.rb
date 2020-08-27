@@ -7,7 +7,7 @@ module Lumberjack
     class Null < Device
       def initialize(*args)
       end
-      
+
       def write(entry)
       end
     end

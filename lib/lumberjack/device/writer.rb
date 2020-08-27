@@ -71,7 +71,7 @@ module Lumberjack
           @template = template
         else
           additional_lines = (options[:additional_lines] || DEFAULT_ADDITIONAL_LINES_TEMPLATE)
-          @template = Template.new(template, :additional_lines => additional_lines, :time_format => options[:time_format])
+          @template = Template.new(template, additional_lines: additional_lines, time_format: options[:time_format])
         end
       end
 
@@ -133,14 +133,10 @@ module Lumberjack
       protected
 
       # Set the underlying stream.
-      def stream=(stream)
-        @stream = stream
-      end
+      attr_writer :stream
 
       # Get the underlying stream.
-      def stream
-        @stream
-      end
+      attr_reader :stream
 
       private
 
@@ -149,10 +145,10 @@ module Lumberjack
         lines = lines.first if lines.is_a?(Array) && lines.size == 1
 
         out = nil
-        if lines.is_a?(Array)
-          out = "#{lines.join(Lumberjack::LINE_SEPARATOR)}#{Lumberjack::LINE_SEPARATOR}"
+        out = if lines.is_a?(Array)
+          "#{lines.join(Lumberjack::LINE_SEPARATOR)}#{Lumberjack::LINE_SEPARATOR}"
         else
-          out = "#{lines}#{Lumberjack::LINE_SEPARATOR}"
+          "#{lines}#{Lumberjack::LINE_SEPARATOR}"
         end
 
         begin
@@ -170,9 +166,13 @@ module Lumberjack
               end
             end
           end
-          stream.flush rescue nil
+          begin
+            stream.flush
+          rescue
+            nil
+          end
         rescue => e
-          $stderr.write("#{e.class.name}: #{e.message}#{' at ' + e.backtrace.first if e.backtrace}")
+          $stderr.write("#{e.class.name}: #{e.message}#{" at " + e.backtrace.first if e.backtrace}")
           $stderr.write(out)
           $stderr.flush
         end

@@ -1,27 +1,26 @@
 # frozen_string_literals: true
 
-require 'rbconfig'
-require 'time'
-require 'thread'
-require 'securerandom'
-require 'logger'
+require "rbconfig"
+require "time"
+require "securerandom"
+require "logger"
 
 module Lumberjack
-  LINE_SEPARATOR = (RbConfig::CONFIG['host_os'].match(/mswin/i) ? "\r\n" : "\n")
+  LINE_SEPARATOR = (/mswin/i.match?(RbConfig::CONFIG["host_os"]) ? "\r\n" : "\n")
 
-  require_relative "lumberjack/severity.rb"
-  require_relative "lumberjack/formatter.rb"
+  require_relative "lumberjack/severity"
+  require_relative "lumberjack/formatter"
 
-  require_relative "lumberjack/context.rb"
-  require_relative "lumberjack/log_entry.rb"
-  require_relative "lumberjack/device.rb"
-  require_relative "lumberjack/logger.rb"
-  require_relative "lumberjack/tags.rb"
-  require_relative "lumberjack/tag_formatter.rb"
-  require_relative "lumberjack/tagged_logger_support.rb"
-  require_relative "lumberjack/tagged_logging.rb"
-  require_relative "lumberjack/template.rb"
-  require_relative "lumberjack/rack.rb"
+  require_relative "lumberjack/context"
+  require_relative "lumberjack/log_entry"
+  require_relative "lumberjack/device"
+  require_relative "lumberjack/logger"
+  require_relative "lumberjack/tags"
+  require_relative "lumberjack/tag_formatter"
+  require_relative "lumberjack/tagged_logger_support"
+  require_relative "lumberjack/tagged_logging"
+  require_relative "lumberjack/template"
+  require_relative "lumberjack/rack"
 
   class << self
     # Define a unit of work within a block. Within the block supplied to this
@@ -62,7 +61,7 @@ module Lumberjack
         current_context || Context.new
       end
     end
-    
+
     # Set the context to use within a block.
     def use_context(context, &block)
       current_context = Thread.current[:lumberjack_context]
@@ -73,7 +72,7 @@ module Lumberjack
         Thread.current[:lumberjack_context] = current_context
       end
     end
-    
+
     # Return true if inside a context block.
     def context?
       !!Thread.current[:lumberjack_context]
@@ -82,14 +81,13 @@ module Lumberjack
     # Return the tags from the current context or nil if there are no tags.
     def context_tags
       context = Thread.current[:lumberjack_context]
-      context.tags if context
+      context&.tags
     end
 
     # Set tags on the current context
     def tag(tags)
       context = Thread.current[:lumberjack_context]
-      context.tag(tags) if context
+      context&.tag(tags)
     end
-
   end
 end

@@ -27,7 +27,7 @@ module Lumberjack
         if hash.all? { |key, value| key.is_a?(String) && !value.is_a?(Proc) }
           return hash
         end
-        
+
         copy = {}
         hash.each do |key, value|
           if value.is_a?(Proc) && (value.arity == 0 || value.arity == -1)

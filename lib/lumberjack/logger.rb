@@ -63,7 +63,7 @@ module Lumberjack
     # * :max_size - If the log device is a file path, it will be a Device::SizeRollingLogFile if this is set.
     #
     # All other options are passed to the device constuctor.
-    def initialize(device = STDOUT, options = {})
+    def initialize(device = $stdout, options = {})
       options = options.dup
       self.level = options.delete(:level) || INFO
       self.progname = options.delete(:progname)
@@ -100,19 +100,19 @@ module Lumberjack
       thread_local_value(:lumberjack_logger_level) || @level
     end
 
-    alias_method :sev_threshold, :level
+    alias sev_threshold level
 
     # Set the log level using either an integer level like Logger::INFO or a label like
     # :info or "info"
     def level=(value)
-      if value.is_a?(Integer)
-        @level = value
+      @level = if value.is_a?(Integer)
+        value
       else
-        @level = Severity::label_to_level(value)
+        Severity.label_to_level(value)
       end
     end
 
-    alias_method :sev_threshold=, :level=
+    alias sev_threshold= level=
 
     # Set the Lumberjack::Formatter used to format objects for logging as messages.
     def formatter=(value)
@@ -137,7 +137,7 @@ module Lumberjack
     # in an array under the "tagged" tag. So calling `logger.tagged("foo", "bar")` will result
     # in tags `{"tagged" => ["foo", "bar"]}`.
     def tagged_logger!
-      self.extend(TaggedLoggerSupport)
+      extend(TaggedLoggerSupport)
       self
     end
 
@@ -173,10 +173,10 @@ module Lumberjack
         if current_tags.empty?
           tags = Tags.stringify_keys(tags) unless tags.nil?
         else
-          if tags.nil?
-            tags = current_tags.dup
+          tags = if tags.nil?
+            current_tags.dup
           else
-            tags = current_tags.merge(Tags.stringify_keys(tags))
+            current_tags.merge(Tags.stringify_keys(tags))
           end
         end
         tags = Tags.expand_runtime_values(tags)
@@ -203,7 +203,7 @@ module Lumberjack
       add_entry(severity, message, progname)
     end
 
-    alias_method :log, :add
+    alias log add
 
     # Flush the logging device. Messages are not guaranteed to be written until this method is called.
     def flush
@@ -325,7 +325,7 @@ module Lumberjack
     def silence(temporary_level = ERROR, &block)
       if silencer
         unless temporary_level.is_a?(Integer)
-          temporary_level = Severity::label_to_level(temporary_level)
+          temporary_level = Severity.label_to_level(temporary_level)
         end
         push_thread_local_value(:lumberjack_logger_level, temporary_level, &block)
       else
@@ -390,7 +390,7 @@ module Lumberjack
       tags.merge!(scope_tags) if scope_tags && !scope_tags.empty?
       tags
     end
-    
+
     # Remove all tags on the current logger and logging context within a block.
     # You can still set new block scoped tags within the untagged block and provide
     # tags on individual log methods.
@@ -491,12 +491,12 @@ module Lumberjack
     end
 
     def write_to_device(entry) #:nodoc:
-      begin
-        device.write(entry)
-      rescue => e
-        $stderr.puts("#{e.class.name}: #{e.message}#{' at ' + e.backtrace.first if e.backtrace}")
-        $stderr.puts(entry.to_s)
-      end
+      device.write(entry)
+    rescue => e
+      # rubocop:disable Style/StderrPuts
+      $stderr.puts("#{e.class.name}: #{e.message}#{" at " + e.backtrace.first if e.backtrace}")
+      $stderr.puts(entry.to_s)
+      # rubocop:enable Style/StderrPuts
     end
 
     # Create a thread that will periodically call flush.
@@ -505,12 +505,12 @@ module Lumberjack
         begin
           logger = self
           Thread.new do
-            while !closed?
+            until closed?
               begin
                 sleep(flush_seconds)
                 logger.flush if Time.now - logger.last_flushed_at >= flush_seconds
               rescue => e
-                $stderr.puts("Error flushing log: #{e.inspect}")
+                warn("Error flushing log: #{e.inspect}")
               end
             end
           end

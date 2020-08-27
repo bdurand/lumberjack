@@ -7,7 +7,6 @@ module Lumberjack
     # passed to this object and the returned array is what will be logged. You can
     # use this to clean out superfluous lines.
     class ExceptionFormatter
-
       attr_accessor :backtrace_cleaner
 
       def initialize(backtrace_cleaner = nil)
@@ -33,7 +32,6 @@ module Lumberjack
           trace
         end
       end
-
     end
   end
 end

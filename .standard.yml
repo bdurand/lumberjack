@@ -1,0 +1,12 @@
+# I really just have issues with the automatic "semantic blocks"
+
+ruby_version: 2.3
+
+format: progress
+
+ignore:
+  - '**/*':
+    - Standard/SemanticBlocks
+  - 'spec/**/*':
+    - Lint/UselessAssignment
+    - Lint/Void

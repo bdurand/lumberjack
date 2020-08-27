@@ -1,13 +1,13 @@
 # ActiveSupport is only available on some Appraisal runs.
 begin
-  require 'active_support/all'
+  require "active_support/all"
 rescue LoadError => e
 end
 
 require File.expand_path("../../lib/lumberjack.rb", __FILE__)
-require 'stringio'
-require 'fileutils'
-require 'timecop'
+require "stringio"
+require "fileutils"
+require "timecop"
 
 RSpec.configure do |config|
   config.expect_with :rspec do |c|

@@ -27,7 +27,7 @@ if defined?(ActiveSupport::TaggedLogging)
       logger = ::Logger.new(output)
       tagged_logger = ActiveSupport::TaggedLogging.new(logger)
       tagged_logger.tagged("foo", "bar") { tagged_logger.info("test") }
-      expect(output.string.chomp).to eq '[foo] [bar] test'
+      expect(output.string.chomp).to eq "[foo] [bar] test"
     end
   end
 end

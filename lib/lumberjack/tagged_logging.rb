@@ -10,7 +10,7 @@ module Lumberjack
         base.singleton_class.send(:prepend, ClassMethods)
       end
     end
-    
+
     module ClassMethods
       def new(logger)
         if logger.is_a?(Lumberjack::Logger)

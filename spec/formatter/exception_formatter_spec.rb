@@ -1,7 +1,6 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe Lumberjack::Formatter::ExceptionFormatter do
-
   it "should convert an exception without a backtrace to a string" do
     e = ArgumentError.new("not expected")
     formatter = Lumberjack::Formatter::ExceptionFormatter.new
@@ -13,7 +12,7 @@ describe Lumberjack::Formatter::ExceptionFormatter do
       raise ArgumentError.new("not expected")
     rescue => e
       formatter = Lumberjack::Formatter::ExceptionFormatter.new
-      expect(formatter.call(e)).to eq("ArgumentError: not expected#{Lumberjack::LINE_SEPARATOR}  #{e.backtrace.join(Lumberjack::LINE_SEPARATOR + '  ')}")
+      expect(formatter.call(e)).to eq("ArgumentError: not expected#{Lumberjack::LINE_SEPARATOR}  #{e.backtrace.join(Lumberjack::LINE_SEPARATOR + "  ")}")
     end
   end
 
@@ -26,5 +25,4 @@ describe Lumberjack::Formatter::ExceptionFormatter do
       expect(formatter.call(e)).to eq("ArgumentError: not expected#{Lumberjack::LINE_SEPARATOR}  redacted: #{e.backtrace.size}")
     end
   end
-
 end

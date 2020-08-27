@@ -1,6 +1,6 @@
 # frozen_string_literals: true
 
-require 'date'
+require "date"
 
 module Lumberjack
   class Device
@@ -16,7 +16,7 @@ module Lumberjack
       def initialize(path, options = {})
         @manual = options[:manual]
         @file_date = Date.today
-        if options[:roll] && options[:roll].to_s.match(/(daily)|(weekly)|(monthly)/i)
+        if options[:roll]&.to_s&.match(/(daily)|(weekly)|(monthly)/i)
           @roll_period = $~[0].downcase.to_sym
           options.delete(:roll)
         else
@@ -28,11 +28,11 @@ module Lumberjack
       def archive_file_suffix
         case @roll_period
         when :weekly
-          "#{@file_date.strftime('week-of-%Y-%m-%d')}"
+          @file_date.strftime("week-of-%Y-%m-%d").to_s
         when :monthly
-          "#{@file_date.strftime('%Y-%m')}"
+          @file_date.strftime("%Y-%m").to_s
         else
-          "#{@file_date.strftime('%Y-%m-%d')}"
+          @file_date.strftime("%Y-%m-%d").to_s
         end
       end
 
@@ -54,9 +54,9 @@ module Lumberjack
           end
         end
       end
-      
+
       protected
-      
+
       def after_roll
         @file_date = Date.today
       end

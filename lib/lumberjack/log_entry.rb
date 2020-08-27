@@ -17,10 +17,10 @@ module Lumberjack
       @progname = progname
       @pid = pid
       # backward compatibility with 1.0 API where the last argument was the unit of work id
-      if tags.nil? || tags.is_a?(Hash)
-        @tags = tags
+      @tags = if tags.nil? || tags.is_a?(Hash)
+        tags
       else
-        @tags = { UNIT_OF_WORK_ID => tags }
+        {UNIT_OF_WORK_ID => tags}
       end
     end
 
@@ -29,7 +29,7 @@ module Lumberjack
     end
 
     def to_s
-      "[#{time.strftime(TIME_FORMAT)}.#{(time.usec / 1000.0).round.to_s.rjust(3, '0')} #{severity_label} #{progname}(#{pid})#{tags_to_s}] #{message}"
+      "[#{time.strftime(TIME_FORMAT)}.#{(time.usec / 1000.0).round.to_s.rjust(3, "0")} #{severity_label} #{progname}(#{pid})#{tags_to_s}] #{message}"
     end
 
     def inspect
@@ -46,10 +46,10 @@ module Lumberjack
       if tags
         tags[UNIT_OF_WORK_ID] = value
       else
-        @tags = { UNIT_OF_WORK_ID => value }
+        @tags = {UNIT_OF_WORK_ID => value}
       end
     end
-    
+
     # Return the tag with the specified name.
     def tag(name)
       tags[name.to_s] if tags
@@ -58,10 +58,8 @@ module Lumberjack
     private
 
     def tags_to_s
-      tags_string = String.new
-      if tags
-        tags.each { |name, value| tags_string << " #{name}:#{value.inspect}" }
-      end
+      tags_string = ""
+      tags&.each { |name, value| tags_string << " #{name}:#{value.inspect}" }
       tags_string
     end
   end

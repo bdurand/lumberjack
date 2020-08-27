@@ -12,15 +12,15 @@ module Lumberjack
   #
   # Enumerable objects (including Hash and Array) will call the formatter recursively for each element.
   class Formatter
-    require_relative "formatter/date_time_formatter.rb"
-    require_relative "formatter/exception_formatter.rb"
-    require_relative "formatter/id_formatter.rb"
-    require_relative "formatter/inspect_formatter.rb"
-    require_relative "formatter/object_formatter.rb"
-    require_relative "formatter/pretty_print_formatter.rb"
-    require_relative "formatter/string_formatter.rb"
-    require_relative "formatter/strip_formatter.rb"
-    require_relative "formatter/structured_formatter.rb"
+    require_relative "formatter/date_time_formatter"
+    require_relative "formatter/exception_formatter"
+    require_relative "formatter/id_formatter"
+    require_relative "formatter/inspect_formatter"
+    require_relative "formatter/object_formatter"
+    require_relative "formatter/pretty_print_formatter"
+    require_relative "formatter/string_formatter"
+    require_relative "formatter/strip_formatter"
+    require_relative "formatter/structured_formatter"
 
     class << self
       # Returns a new empty formatter with no mapping. For historical reasons, a formatter
@@ -30,7 +30,7 @@ module Lumberjack
         new.clear
       end
     end
-    
+
     def initialize
       @class_formatters = {}
       @module_formatters = {}
@@ -72,10 +72,10 @@ module Lumberjack
         remove(klass)
       else
         if formatter.is_a?(Symbol)
-          formatter_class_name = "#{formatter.to_s.gsub(/(^|_)([a-z])/){|m| $~[2].upcase}}Formatter"
+          formatter_class_name = "#{formatter.to_s.gsub(/(^|_)([a-z])/) { |m| $~[2].upcase }}Formatter"
           formatter = Formatter.const_get(formatter_class_name).new
         end
-        
+
         Array(klass).each do |k|
           if k.class == Module
             @module_formatters[k] = formatter
@@ -106,7 +106,7 @@ module Lumberjack
       end
       self
     end
-    
+
     # Remove all formatters including the default formatter. Can be chained to add method calls.
     def clear
       @class_formatters.clear
@@ -117,7 +117,7 @@ module Lumberjack
     # Format a message object as a string.
     def format(message)
       formatter = formatter_for(message.class)
-      if formatter && formatter.respond_to?(:call)
+      if formatter&.respond_to?(:call)
         formatter.call(message)
       else
         message
@@ -135,7 +135,7 @@ module Lumberjack
     # Find the formatter for a class by looking it up using the class hierarchy.
     def formatter_for(klass) #:nodoc:
       check_modules = true
-      while klass != nil do
+      until klass.nil?
         formatter = @class_formatters[klass.name]
         return formatter if formatter
 

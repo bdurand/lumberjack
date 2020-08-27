@@ -1,7 +1,6 @@
 require "spec_helper"
 
 describe Lumberjack::Tags do
-
   describe "stringify_keys" do
     it "transforms hash keys to strings" do
       hash = {foo: 1, bar: 2}
@@ -39,5 +38,4 @@ describe Lumberjack::Tags do
       expect(Lumberjack::Tags.expand_runtime_values(hash)).to eq({"foo" => 1, "bar" => "stuff", "baz" => p2})
     end
   end
-
 end

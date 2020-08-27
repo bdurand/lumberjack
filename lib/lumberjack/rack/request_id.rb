@@ -16,7 +16,7 @@ module Lumberjack
       def call(env)
         request_id = env[REQUEST_ID]
         if request_id && @abbreviated
-          request_id = request_id.split('-', 2).first
+          request_id = request_id.split("-", 2).first
         end
         Lumberjack.unit_of_work(request_id) do
           @app.call(env)
