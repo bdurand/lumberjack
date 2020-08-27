@@ -1,14 +1,14 @@
 ## 1.2.8
 
-* Add `Logger#untag` to remove previously set logging tags from a block.
+* Add `Logger#untagged` to remove previously set logging tags from a block.
 
 ## 1.2.7
 
-* Allow passing frozen hashes to `Logger.tag`. Tags passed to this method are now duplicated so the logger maintains it's own copy of the hash.
+* Allow passing frozen hashes to `Logger#tag`. Tags passed to this method are now duplicated so the logger maintains it's own copy of the hash.
 
 ## 1.2.6
 
-* Fix Logger#tag so it only ads to the current block's logger tags instead of the global tags if called inside a `Logger#tag` block.
+* Fix `Logger#tag` so it only ads to the current block's logger tags instead of the global tags if called inside a `Logger#tag` block.
 * Add Logger#remove_tag
 
 ## 1.2.5
@@ -18,7 +18,7 @@
 
 ## 1.2.4
 
-* Enhance ActiveSupport::TaggedLogging support so code that Lumberjack loggers can be wrapped with a tagged logger.
+* Enhance `ActiveSupport::TaggedLogging` support so code that Lumberjack loggers can be wrapped with a tagged logger.
 
 ## 1.2.3
 
@@ -34,7 +34,7 @@
 
 ## 1.2.0
 
-* Enable compatibility with ActiveSupport::TaggedLogger by calling `tagged_logger!` on a logger.
+* Enable compatibility with `ActiveSupport::TaggedLogger` by calling `tagged_logger!` on a logger.
 * Add `tag_formatter` to logger to specify formatting of tags for output.
 * Allow adding and removing classes by name to formatters.
 * Allow adding and removing multiple classes in a single call to a formatter.
@@ -53,7 +53,7 @@
 
 ## 1.1.0
 
-* Change Lumberjack::Logger to inherit from ::Logger
+* Change `Lumberjack::Logger` to inherit from ::Logger
 * Add support for tags on log messages
 * Add global tag context for all loggers
 * Add per logger tags and tag contexts
@@ -61,8 +61,8 @@
 * Add support for setting datetime format on log devices
 * Performance optimizations
 * Add Multi device to output to multiple devices
-* Add DateTimeFormatter, IdFormatter, ObjectFormatter, and StructuredFormatter
-* Add rack Context middleware for setting thread global context
+* Add `DateTimeFormatter`, `IdFormatter`, `ObjectFormatter`, and `StructuredFormatter`
+* Add rack `Context` middleware for setting thread global context
 * End support for ruby versions < 2.3
 * Add support for modules in formatters
 
@@ -74,7 +74,7 @@
 
 ## 1.0.12
 
-* Add support for ActionDispatch request id for better Rails compatibility.
+* Add support for `ActionDispatch` request id for better Rails compatibility.
 
 ## 1.0.11
 
@@ -88,11 +88,11 @@
 
 ## 1.0.9
 
-* Add method so Formatter is compatible with ActiveSupport logging extensions.
+* Add method so Formatter is compatible with `ActiveSupport` logging extensions.
 
 ## 1.0.8
 
-* Fix another internal variable name conflict with ActiveSupport logging extensions.
+* Fix another internal variable name conflict with `ActiveSupport` logging extensions.
 
 ## 1.0.7
 
@@ -100,7 +100,7 @@
 
 ## 1.0.6
 
-* Fix internal variable name conflict with ActiveSupport logging extensions.
+* Fix internal variable name conflict with `ActiveSupport` logging extensions.
 
 ## 1.0.5
 
