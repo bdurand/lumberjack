@@ -12,7 +12,6 @@ env:
   BUNDLE_PATH: vendor/bundle
   BUNDLE_JOBS: 3
   BUNDLE_RETRY: 3
-  BUNDLE_WITHOUT: standard yard
 jobs:
   specs:
     name: ${{ matrix.job }} ruby-${{ matrix.ruby }} ${{ matrix.appraisal }}
@@ -37,8 +36,6 @@ jobs:
             job: rspec
           - ruby: 2.7
             job: standardrb
-            env:
-              BUNDLE_WITHOUT: "yard"
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -46,10 +43,13 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
+      - name: remove standardrb
+        if: matrix.appraisal != 'activesupport_4'
+        run: sed -i 's/gem "standard"/# gem "standard"' Gemfile
       - name: inject appraisal ${{ matrix.appraisal }}
         if:   matrix.appraisal && matrix.appraisal != ''
         run: | # inject a specific appraisal Gemfile
-          bundle install
+          bundle update
           bundle exec appraisal generate
           bundle config set gemfile "gemfiles/${{ matrix.appraisal }}.gemfile"
       - name: install dependencies

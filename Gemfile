@@ -9,9 +9,7 @@ group :development, :test do
   gem "rspec", "~> 3.9"
   gem "timecop"
   gem "appraisal"
-end
 
-group :standardrb do
   # Lock standard to a particular version, esp. cause it's still 0.x.x according to Semver
   gem "standard", "0.5.2", require: false
 end
