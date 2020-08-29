@@ -361,10 +361,11 @@ module Lumberjack
         push_thread_local_value(:lumberjack_logger_tags, merged_tags, &block)
       elsif thread_tags
         thread_tags.merge!(tags)
+        nil
       else
         @tags.merge!(tags)
+        nil
       end
-      nil
     end
 
     # Remove a tag from the current tag context. If this is called inside a block to a

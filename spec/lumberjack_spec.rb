@@ -55,6 +55,16 @@ describe Lumberjack do
         expect(Lumberjack.context_tags).to eq("fog" => "bar")
       end
     end
+
+    it "should return the result of the context block" do
+      result = Lumberjack.context { :foo }
+      expect(result).to eq :foo
+    end
+
+    it "should return the result of the use_context block" do
+      result = Lumberjack.use_context(nil) { :foo }
+      expect(result).to eq :foo
+    end
   end
 
   describe "unit of work" do

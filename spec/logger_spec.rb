@@ -544,6 +544,11 @@ describe Lumberjack::Logger do
           expect(logger.tags).to eq("foo" => "bar", "other" => 1)
         end
       end
+
+      it "should return the result of the block" do
+        result = logger.tag(tag: 1) { :foo }
+        expect(result).to eq :foo
+      end
     end
 
     describe "untagged" do
@@ -597,6 +602,11 @@ describe Lumberjack::Logger do
           end
           expect(logger.tags).to eq({"foo" => "bar"})
         end
+      end
+
+      it "should return the result of the block" do
+        result = logger.untagged { :foo }
+        expect(result).to eq :foo
       end
     end
 

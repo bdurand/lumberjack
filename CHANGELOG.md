@@ -1,6 +1,7 @@
 ## 1.2.8
 
 * Add `Logger#untagged` to remove previously set logging tags from a block.
+* Return result of the block when a block is passed to `Logger#tag`.
 
 ## 1.2.7
 
