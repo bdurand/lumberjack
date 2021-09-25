@@ -51,6 +51,9 @@ jobs:
         run: |
           gem uninstall bundler --all
           gem install bundler --no-document --version ${{ matrix.bundler }}
+      - name: Remove standardrb
+        if: matrix.ruby == '2.3'
+        run: sed -i 's/gem "standard"/# gem "standard"/' Gemfile
       - name: Set Appraisal bundle
         if: matrix.appraisal != ''
         run: |
