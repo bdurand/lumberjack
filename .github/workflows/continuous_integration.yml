@@ -22,45 +22,49 @@ jobs:
         ruby: [ "2.3", "2.4", "2.5", "2.6", "2.7", "3.0", "3", "jruby" ]
         job: [ rspec ]
         include:
+          - ruby: "ruby"
+            stanardrb: true
+          - ruby: "jruby"
+          - ruby: "3"
+          - ruby: "3.0"
+          - ruby: "2.7"
+          - ruby: "2.6"
+          - ruby: "2.5"
+          - ruby: "2.4"
           - ruby: "2.3"
+          - ruby: "2.5"
             appraisal: activesupport_4
             bundler: "1.17.3"
-            job: rspec
           - ruby: "2.5"
             appraisal: activesupport_5
-            job: rspec
           - ruby: "2.6"
             appraisal: activesupport
-            job: rspec
           - ruby: "2.6"
             appraisal: logger
-            job: rspec
-          - ruby: "2.7"
-            job: standardrb
     steps:
-      - name: checkout
+      - name: Checkout code
         uses: actions/checkout@v2
-      - name: set up Ruby
+      - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
-      - name: remove standardrb
-        if: matrix.appraisal == 'activesupport_4'
-        run: sed -i 's/gem "standard"/# gem "standard"/' Gemfile
-      - name: setup bundler
+      - name: Setup bundler
+        if: matrix.bundler != ''
         run: |
-          if [ "${{ matrix.bundler }}" != "" ]; then
-            gem uninstall bundler --all
-            gem install bundler --no-document --version ${{ matrix.bundler }}
+          gem uninstall bundler --all
+          gem install bundler --no-document --version ${{ matrix.bundler }}
+      - name: Set Appraisal bundle
+        if: matrix.appraisal != ''
+        run: |
+          echo "using gemfile gemfiles/${{ matrix.appraisal }}.gemfile"
+          bundle config set gemfile "gemfiles/${{ matrix.appraisal }}.gemfile"
           fi
-          if [ "${{ matrix.appraisal }}" != "" ]; then
-            echo "using gemfile gemfiles/${{ matrix.appraisal }}.gemfile"
-            bundle config set gemfile "gemfiles/${{ matrix.appraisal }}.gemfile"
-          fi
+      - name: Install bundle
+        run: |
           bundle update
-      - name: specs
+      - name: Run specs
         if:   matrix.job == 'rspec'
         run:  bundle exec rake spec
-      - name: standardrb
-        if:   matrix.job == 'standardrb'
+      - name: Run standardrb
+        if:   matrix.standardrb == true
         run:  bundle exec standardrb
