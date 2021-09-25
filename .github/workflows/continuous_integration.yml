@@ -19,8 +19,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: [ "2.3", "2.4", "2.5", "2.6", "2.7", "3.0", "3", "jruby" ]
-        job: [ rspec ]
         include:
           - ruby: "ruby"
             stanardrb: true
@@ -58,7 +56,6 @@ jobs:
         run: |
           echo "using gemfile gemfiles/${{ matrix.appraisal }}.gemfile"
           bundle config set gemfile "gemfiles/${{ matrix.appraisal }}.gemfile"
-          fi
       - name: Install bundle
         run: |
           bundle update
