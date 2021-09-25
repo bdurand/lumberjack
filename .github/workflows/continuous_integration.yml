@@ -14,7 +14,7 @@ env:
   BUNDLE_RETRY: 3
 jobs:
   specs:
-    name: ${{ matrix.job }} ruby-${{ matrix.ruby }} ${{ matrix.appraisal }}
+    name: ruby-${{ matrix.ruby }} ${{ matrix.appraisal }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
