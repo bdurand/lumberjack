@@ -8,7 +8,7 @@ Lumberjack is a simple, powerful, and fast logging implementation in Ruby. It us
 
 ## Usage
 
-This code aims to be extremely simple to use. The core interface it the Lumberjack::Logger which is used to log messages (which can be any object) with a specified Severity. Each logger has a level associated with it and messages are only written if their severity is greater than or equal to the level.
+This code aims to be extremely simple to use. The core interface is the Lumberjack::Logger which is used to log messages (which can be any object) with a specified Severity. Each logger has a level associated with it and messages are only written if their severity is greater than or equal to the level.
 
 ```ruby
   logger = Lumberjack::Logger.new("logs/application.log")  # Open a new log file with INFO level
@@ -41,7 +41,7 @@ The following information is recorded for each message:
 
 ### Tags
 
-You can use tags to provide additional meta data about a log message or the context that the log message is being made in. Using tags can keep you log messages clean. You can avoid string interoplation to add additional meta data.
+You can use tags to provide additional meta data about a log message or the context that the log message is being made in. Using tags can keep your log messages clean. You can avoid string interpolation to add additional meta data.
 
 Each of the logger methods includes an additional argument that can be used to specify tags on a messsage:
 
