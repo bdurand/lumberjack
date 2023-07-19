@@ -5,6 +5,7 @@
 .ruby-version
 .yardoc/
 .env
+.tm_properties
 Gemfile.lock
 coverage/
 gemfiles/*.gemfile.lock
