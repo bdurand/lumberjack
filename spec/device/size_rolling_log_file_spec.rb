@@ -48,7 +48,7 @@ describe Lumberjack::Device::SizeRollingLogFile do
   it "should figure out the next archive file name available" do
     log_file = File.join(tmp_dir, "filename.log")
     (3..11).each do |i|
-      File.open("#{log_file}.#{i}", "w") { |f| f.write(i.to_s) }
+      File.write("#{log_file}.#{i}", i.to_s)
     end
     device = Lumberjack::Device::SizeRollingLogFile.new(log_file, max_size: "100M", min_roll_check: 0)
     expect(device.archive_file_suffix).to eq("12")

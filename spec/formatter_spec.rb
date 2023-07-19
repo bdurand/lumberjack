@@ -25,6 +25,11 @@ describe Lumberjack::Formatter do
     expect(formatter.format(nil)).to eq(0)
   end
 
+  it "should be able to add a formatter with arguments" do
+    formatter.add(String, "Lumberjack::Formatter::TruncateFormatter", 9)
+    expect(formatter.format("1234567890")).to eq("12345678…")
+  end
+
   it "should be able to add a formatter object for a module" do
     formatter.add(Enumerable, lambda { |obj| "list: #{obj.inspect}" })
     expect(formatter.format([1, 2])).to eq("list: [1, 2]")

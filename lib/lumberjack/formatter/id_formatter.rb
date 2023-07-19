@@ -6,6 +6,7 @@ module Lumberjack
     # as a default formatter for objects pulled from a data store. By default it will use :id as the
     # id attribute.
     class IdFormatter
+      # @param [Symbol, String] id_attribute The attribute to use as the id.
       def initialize(id_attribute = :id)
         @id_attribute = id_attribute
       end

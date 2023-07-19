@@ -13,29 +13,44 @@ module Lumberjack
     require_relative "device/null"
 
     # Subclasses must implement this method to write a LogEntry.
+    #
+    # @param [Lumberjack::LogEntry] entry The entry to write.
+    # @return [void]
     def write(entry)
       raise NotImplementedError
     end
 
     # Subclasses may implement this method to close the device.
+    #
+    # @return [void]
     def close
       flush
     end
 
     # Subclasses may implement this method to reopen the device.
+    #
+    # @param [Object] logdev The log device to use.
+    # @return [void]
     def reopen(logdev = nil)
       flush
     end
 
     # Subclasses may implement this method to flush any buffers used by the device.
+    #
+    # @return [void]
     def flush
     end
 
     # Subclasses may implement this method to get the format for log timestamps.
+    #
+    # @return [String] The format for log timestamps.
     def datetime_format
     end
 
     # Subclasses may implement this method to set a format for log timestamps.
+    #
+    # @param [String] format The format for log timestamps.
+    # @return [void]
     def datetime_format=(format)
     end
   end

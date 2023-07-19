@@ -20,10 +20,10 @@ module Lumberjack
         @keep = options[:keep]
         super(path, options)
         @file_inode = begin
-                        stream.lstat.ino
-                      rescue
-                        nil
-                      end
+          stream.lstat.ino
+        rescue
+          nil
+        end
         @@rolls = []
         @next_stat_check = Time.now.to_f
         @min_roll_check = (options[:min_roll_check] || 1.0).to_f
@@ -42,15 +42,15 @@ module Lumberjack
 
       # Roll the log file by renaming it to the archive file name and then re-opening a stream to the log
       # file path. Rolling a file is safe in multi-threaded or multi-process environments.
-      def roll_file! #:nodoc:
+      def roll_file! # :nodoc:
         do_once(stream) do
           archive_file = "#{path}.#{archive_file_suffix}"
           stream.flush
           current_inode = begin
-                            File.stat(path).ino
-                          rescue
-                            nil
-                          end
+            File.stat(path).ino
+          rescue
+            nil
+          end
           if @file_inode && current_inode == @file_inode && !File.exist?(archive_file) && File.exist?(path)
             begin
               File.rename(path, archive_file)
@@ -78,10 +78,10 @@ module Lumberjack
         if @min_roll_check <= 0.0 || Time.now.to_f >= @next_stat_check
           @next_stat_check += @min_roll_check
           path_inode = begin
-                         File.lstat(path).ino
-                       rescue
-                         nil
-                       end
+            File.lstat(path).ino
+          rescue
+            nil
+          end
           if path_inode != @file_inode
             @file_inode = path_inode
             reopen_file
@@ -98,10 +98,10 @@ module Lumberjack
         new_stream = File.open(path, "a", encoding: EXTERNAL_ENCODING)
         new_stream.sync = true if buffer_size > 0
         @file_inode = begin
-                        new_stream.lstat.ino
-                      rescue
-                        nil
-                      end
+          new_stream.lstat.ino
+        rescue
+          nil
+        end
         self.stream = new_stream
         old_stream.close
       end
@@ -127,10 +127,10 @@ module Lumberjack
       end
       begin
         verify = begin
-                   file.lstat
-                 rescue
-                   nil
-                 end
+          file.lstat
+        rescue
+          nil
+        end
         # Execute only if the file we locked is still the same one that needed to be rolled
         yield if verify && verify.ino == @file_inode && verify.size > 0
       ensure

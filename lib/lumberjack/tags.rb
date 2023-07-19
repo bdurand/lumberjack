@@ -5,6 +5,9 @@ module Lumberjack
     class << self
       # Transform hash keys to strings. This method exists for optimization and backward compatibility.
       # If a hash already has string keys, it will be returned as is.
+      #
+      # @param [Hash] hash The hash to transform.
+      # @return [Hash] The hash with string keys.
       def stringify_keys(hash)
         return nil if hash.nil?
         if hash.keys.all? { |key| key.is_a?(String) }
@@ -22,6 +25,9 @@ module Lumberjack
 
       # Ensure keys are strings and expand any values in a hash that are Proc's by calling them and replacing
       # the value with the result. This allows setting global tags with runtime values.
+      #
+      # @param [Hash] hash The hash to transform.
+      # @return [Hash] The hash with string keys and expanded values.
       def expand_runtime_values(hash)
         return nil if hash.nil?
         if hash.all? { |key, value| key.is_a?(String) && !value.is_a?(Proc) }

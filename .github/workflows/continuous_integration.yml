@@ -1,4 +1,5 @@
 name: Continuous Integration
+
 on:
   push:
     branches:
@@ -7,64 +8,71 @@ on:
     tags:
       - v*
   pull_request:
+    branches-ignore:
+      - actions-*
+
 env:
   BUNDLE_CLEAN: "true"
   BUNDLE_PATH: vendor/bundle
   BUNDLE_JOBS: 3
   BUNDLE_RETRY: 3
+
 jobs:
-  specs:
-    name: ruby-${{ matrix.ruby }} ${{ matrix.appraisal }}
+  build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
           - ruby: "ruby"
-            stanardrb: true
+            standardrb: true
           - ruby: "jruby"
-          - ruby: "3"
+          - ruby: "3.2"
+          - ruby: "3.1"
           - ruby: "3.0"
           - ruby: "2.7"
           - ruby: "2.6"
           - ruby: "2.5"
           - ruby: "2.4"
           - ruby: "2.3"
+          - ruby: "ruby"
+            appraisal: activesupport_latest
+          - ruby: "3.1"
+            appraisal: activesupport_7
+          - ruby: "3.0"
+            appraisal: activesupport_6
+          - ruby: "2.6"
+            appraisal: activesupport_5
           - ruby: "2.5"
             appraisal: activesupport_4
             bundler: "1.17.3"
-          - ruby: "2.5"
-            appraisal: activesupport_5
-          - ruby: "2.6"
-            appraisal: activesupport
-          - ruby: "2.6"
-            appraisal: logger
+          - ruby: "ruby"
+            appraisal: logger_gem
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Setup Ruby
+      - uses: actions/checkout@v2
+      - name: Set up Ruby ${{ matrix.ruby }}
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby }}
+          ruby-version: "${{ matrix.ruby }}"
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install libsqlite3-dev
       - name: Setup bundler
         if: matrix.bundler != ''
         run: |
           gem uninstall bundler --all
           gem install bundler --no-document --version ${{ matrix.bundler }}
-      - name: Remove standardrb
-        if: matrix.ruby == '2.3'
-        run: sed -i 's/gem "standard"/# gem "standard"/' Gemfile
       - name: Set Appraisal bundle
         if: matrix.appraisal != ''
         run: |
           echo "using gemfile gemfiles/${{ matrix.appraisal }}.gemfile"
           bundle config set gemfile "gemfiles/${{ matrix.appraisal }}.gemfile"
-      - name: Install bundle
+      - name: Install gems
         run: |
           bundle update
-      - name: Run specs
-        if:   matrix.job == 'rspec'
-        run:  bundle exec rake spec
-      - name: Run standardrb
+      - name: Run Tests
+        run: bundle exec rake
+      - name: standardrb
         if:   matrix.standardrb == true
-        run:  bundle exec standardrb
+        run:  bundle exec rake standard

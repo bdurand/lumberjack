@@ -30,6 +30,9 @@ module Lumberjack
     # specified precision.
     #
     # Messages will have white space stripped from both ends.
+    #
+    # @param [String] first_line The template to use to format the first line of a message.
+    # @param [Hash] options The options for the template.
     def initialize(first_line, options = {})
       @first_line_template, @first_line_tags = compile(first_line)
       additional_lines = options[:additional_lines] || "#{Lumberjack::LINE_SEPARATOR}:message"
@@ -39,6 +42,9 @@ module Lumberjack
       self.datetime_format = (options[:time_format] || :milliseconds)
     end
 
+    # Set the format used to format the time.
+    #
+    # @param [String] format The format to use to format the time.
     def datetime_format=(format)
       if format == :milliseconds
         format = MILLISECOND_TIME_FORMAT
@@ -48,11 +54,17 @@ module Lumberjack
       @time_formatter = Formatter::DateTimeFormatter.new(format)
     end
 
+    # Get the format used to format the time.
+    #
+    # @return [String]
     def datetime_format
       @time_formatter.format
     end
 
     # Convert an entry into a string using the template.
+    #
+    # @param [Lumberjack::LogEntry] entry The entry to convert to a string.
+    # @return [String] The entry converted to a string.
     def call(entry)
       return entry unless entry.is_a?(LogEntry)
 
@@ -103,7 +115,7 @@ module Lumberjack
     end
 
     # Compile the template string into a value that can be used with sprintf.
-    def compile(template) #:nodoc:
+    def compile(template) # :nodoc:
       tag_vars = []
       template = template.gsub(PLACEHOLDER_PATTERN) do |match|
         var_name = match.sub("{", "").sub("}", "")
