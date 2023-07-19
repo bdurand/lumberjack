@@ -55,7 +55,7 @@ module Lumberjack
 
     def pop_tags(size = 1)
       tagged_values = Array(@tags["tagged"])
-      tagged_values = (tagged_values.size > size ? tagged_values[0, tagged_values.size - size] : nil)
+      tagged_values = ((tagged_values.size > size) ? tagged_values[0, tagged_values.size - size] : nil)
       tag("tagged" => tagged_values)
     end
 

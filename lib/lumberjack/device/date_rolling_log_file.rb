@@ -13,6 +13,9 @@ module Lumberjack
       # Create a new logging device to the specified file. The period to roll the file is specified
       # with the :roll option which may contain a value of :daily, :weekly,
       # or :monthly.
+      #
+      # @param [String, Pathname] path The path to the log file.
+      # @param [Hash] options The options for the device.
       def initialize(path, options = {})
         @manual = options[:manual]
         @file_date = Date.today
@@ -25,6 +28,9 @@ module Lumberjack
         super
       end
 
+      # The date based suffix for file.
+      #
+      # @return [String]
       def archive_file_suffix
         case @roll_period
         when :weekly
@@ -36,6 +42,9 @@ module Lumberjack
         end
       end
 
+      # Check if the file should be rolled.
+      #
+      # @return [Boolean]
       def roll_file?
         if @manual
           true

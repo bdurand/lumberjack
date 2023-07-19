@@ -14,10 +14,18 @@ module Lumberjack
     SEVERITY_LABELS = %w[DEBUG INFO WARN ERROR FATAL UNKNOWN].freeze
 
     class << self
+      # Convert a severity level to a label.
+      #
+      # @param [Integer] severity The severity level to convert.
+      # @return [String] The severity label.
       def level_to_label(severity)
         SEVERITY_LABELS[severity] || SEVERITY_LABELS.last
       end
 
+      # Convert a severity label to a level.
+      #
+      # @param [String, Symbol] label The severity label to convert.
+      # @return [Integer] The severity level.
       def label_to_level(label)
         SEVERITY_LABELS.index(label.to_s.upcase) || UNKNOWN
       end

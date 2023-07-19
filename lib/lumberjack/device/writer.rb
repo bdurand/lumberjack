@@ -60,6 +60,9 @@ module Lumberjack
       # work id will only appear if it is present.
       #
       # The size of the internal buffer in bytes can be set by providing :buffer_size (defaults to 32K).
+      #
+      # @param [IO] stream The stream to write log entries to.
+      # @param [Hash] options The options for the device.
       def initialize(stream, options = {})
         @lock = Mutex.new
         @stream = stream
@@ -77,12 +80,18 @@ module Lumberjack
 
       # Set the buffer size in bytes. The device will only be physically written to when the buffer size
       # is exceeded.
+      #
+      # @param [Integer] value The size of the buffer in bytes.
+      # @return [void]
       def buffer_size=(value)
         @buffer_size = value
         flush
       end
 
       # Write an entry to the stream. The entry will be converted into a string using the defined template.
+      #
+      # @param [LogEntry, String] entry The entry to write to the stream.
+      # @return [void]
       def write(entry)
         string = (entry.is_a?(LogEntry) ? @template.call(entry) : entry)
         return if string.nil?
@@ -105,12 +114,16 @@ module Lumberjack
       end
 
       # Close the underlying stream.
+      #
+      # @return [void]
       def close
         flush
         stream.close
       end
 
       # Flush the underlying stream.
+      #
+      # @return [void]
       def flush
         lines = nil
         @lock.synchronize do
@@ -120,10 +133,17 @@ module Lumberjack
         write_to_stream(lines) if lines
       end
 
+      # Get the datetime format.
+      #
+      # @return [String] The datetime format.
       def datetime_format
         @template.datetime_format if @template.respond_to?(:datetime_format)
       end
 
+      # Set the datetime format.
+      #
+      # @param [String] format The datetime format.
+      # @return [void]
       def datetime_format=(format)
         if @template.respond_to?(:datetime_format=)
           @template.datetime_format = format

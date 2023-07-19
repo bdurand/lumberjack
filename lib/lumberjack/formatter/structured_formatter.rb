@@ -9,6 +9,8 @@ module Lumberjack
       class RecusiveReferenceError < StandardError
       end
 
+      # @param [Formatter] formatter The formatter to call on each element
+      #   in the structure.
       def initialize(formatter = nil)
         @formatter = formatter
       end

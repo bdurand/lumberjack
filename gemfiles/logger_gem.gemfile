@@ -8,6 +8,6 @@ gem "timecop"
 gem "appraisal"
 gem "standard", "1.0", require: false
 gem "yard"
-gem "activesupport", "~> 5.0", require: "activesupport/all"
+gem "logger"
 
 gemspec path: "../"

@@ -7,6 +7,7 @@ module Lumberjack
     class DateTimeFormatter
       attr_reader :format
 
+      # @param [String] format The format to use when formatting the date/time object.
       def initialize(format = nil)
         @format = format.dup.to_s.freeze unless format.nil?
       end

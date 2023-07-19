@@ -6,7 +6,7 @@ require "securerandom"
 require "logger"
 
 module Lumberjack
-  LINE_SEPARATOR = (RbConfig::CONFIG["host_os"] =~ /mswin/i ? "\r\n" : "\n")
+  LINE_SEPARATOR = ((RbConfig::CONFIG["host_os"] =~ /mswin/i) ? "\r\n" : "\n")
 
   require_relative "lumberjack/severity"
   require_relative "lumberjack/formatter"
@@ -32,6 +32,9 @@ module Lumberjack
     #
     # For the common use case of treating a single web request as a unit of work, see the
     # Lumberjack::Rack::UnitOfWork class.
+    #
+    # @param [String] id The id for the unit of work.
+    # @return [void]
     def unit_of_work(id = nil)
       id ||= SecureRandom.hex(6)
       context do
@@ -41,6 +44,8 @@ module Lumberjack
     end
 
     # Get the UniqueIdentifier for the current unit of work.
+    #
+    # @return [String, nil] The id for the current unit of work.
     def unit_of_work_id
       context[:unit_of_work_id]
     end
@@ -53,6 +58,8 @@ module Lumberjack
     #
     # Otherwise, it will return the current context. If one doesn't exist, it will return a new one
     # but that context will not be in any scope.
+    #
+    # @return [Lumberjack::Context] The current context if called without a block.
     def context(&block)
       current_context = Thread.current[:lumberjack_context]
       if block
@@ -63,6 +70,9 @@ module Lumberjack
     end
 
     # Set the context to use within a block.
+    #
+    # @param [Lumberjack::Context] context The context to use within the block.
+    # @return [Object] The result of the block.
     def use_context(context, &block)
       current_context = Thread.current[:lumberjack_context]
       begin
@@ -74,17 +84,24 @@ module Lumberjack
     end
 
     # Return true if inside a context block.
+    #
+    # @return [Boolean]
     def context?
       !!Thread.current[:lumberjack_context]
     end
 
     # Return the tags from the current context or nil if there are no tags.
+    #
+    # @return [Hash, nil]
     def context_tags
       context = Thread.current[:lumberjack_context]
       context&.tags
     end
 
     # Set tags on the current context
+    #
+    # @param [Hash] tags The tags to set.
+    # @return [void]
     def tag(tags)
       context = Thread.current[:lumberjack_context]
       context&.tag(tags)
