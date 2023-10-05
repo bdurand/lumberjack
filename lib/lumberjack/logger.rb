@@ -1,4 +1,4 @@
-# frozen_string_literals: true
+# frozen_string_literal: true
 
 module Lumberjack
   # Logger is a thread safe logging object. It has a compatible API with the Ruby

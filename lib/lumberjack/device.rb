@@ -1,4 +1,4 @@
-# frozen_string_literals: true
+# frozen_string_literal: true
 
 module Lumberjack
   # This is an abstract class for logging devices. Subclasses must implement the +write+ method and

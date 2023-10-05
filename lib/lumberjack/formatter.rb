@@ -1,4 +1,4 @@
-# frozen_string_literals: true
+# frozen_string_literal: true
 
 module Lumberjack
   # This class controls the conversion of log entry messages into a loggable format. This allows you
