@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   class Formatter
     # Format a Date, Time, or DateTime object. If you don't specify a format in the constructor,

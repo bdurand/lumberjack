@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   module Rack
     # Middleware to create a global context for Lumberjack for the scope of a rack request.

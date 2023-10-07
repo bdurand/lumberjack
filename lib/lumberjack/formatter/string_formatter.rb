@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   class Formatter
     # Format an object by calling `to_s` on it.

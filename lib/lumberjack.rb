@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 require "rbconfig"
 require "time"
 require "securerandom"

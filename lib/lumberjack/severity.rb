@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   # The standard severity levels for logging messages.
   module Severity

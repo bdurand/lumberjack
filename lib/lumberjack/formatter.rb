@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   # This class controls the conversion of log entry messages into a loggable format. This allows you
   # to log any object you want and have the logging system deal with converting it into a string.

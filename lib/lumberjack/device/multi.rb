@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   class Device
     # This is a logging device that forward log entries to multiple other devices.

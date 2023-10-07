@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   class Formatter
     # Format an object that has an id as a hash with keys for class and id. This formatter is useful

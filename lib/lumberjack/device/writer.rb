@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   class Device
     # This logging device writes log entries as strings to an IO stream. By default, messages will be buffered

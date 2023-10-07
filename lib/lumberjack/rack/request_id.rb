@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   module Rack
     # Support for using the Rails ActionDispatch request id in the log.

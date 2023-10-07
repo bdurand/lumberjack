@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   class Formatter
     # Truncate a string object to a specific length. This is useful

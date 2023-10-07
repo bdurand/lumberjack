@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   class Device
     # This is a log device that appends entries to a file and rolls the file when it reaches a specified

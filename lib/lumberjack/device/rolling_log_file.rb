@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   class Device
     # This is an abstract class for a device that appends entries to a file and periodically archives

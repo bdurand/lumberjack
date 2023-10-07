@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   # An entry in a log is a data structure that captures the log message as well as
   # information about the system that logged the message.

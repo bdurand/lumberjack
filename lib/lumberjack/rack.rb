@@ -1,5 +1,3 @@
-# frozen_string_literals: true
-
 module Lumberjack
   module Rack
     require_relative "rack/unit_of_work"
