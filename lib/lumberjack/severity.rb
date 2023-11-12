@@ -1,4 +1,4 @@
-# frozen_string_literals: true
+# frozen_string_literal: true
 
 module Lumberjack
   # The standard severity levels for logging messages.
@@ -28,6 +28,18 @@ module Lumberjack
       # @return [Integer] The severity level.
       def label_to_level(label)
         SEVERITY_LABELS.index(label.to_s.upcase) || UNKNOWN
+      end
+
+      # Coerce a value to a severity level.
+      #
+      # @param [Integer, String, Symbol] value The value to coerce.
+      # @return [Integer] The severity level.
+      def coerce(value)
+        if value.is_a?(Integer)
+          value
+        else
+          label_to_level(value)
+        end
       end
     end
   end

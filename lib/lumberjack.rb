@@ -1,9 +1,10 @@
-# frozen_string_literals: true
+# frozen_string_literal: true
 
 require "rbconfig"
 require "time"
 require "securerandom"
 require "logger"
+require "fiber"
 
 module Lumberjack
   LINE_SEPARATOR = ((RbConfig::CONFIG["host_os"] =~ /mswin/i) ? "\r\n" : "\n")

@@ -67,6 +67,16 @@ describe Lumberjack::Logger do
       expect(logger.level).to eq(Logger::INFO)
     end
 
+    it "should selt the level within a block" do
+      logger = Lumberjack::Logger.new(:null, level: :warn)
+      retval = logger.with_level(:info) do
+        expect(logger.level).to eq(Logger::INFO)
+        :foo
+      end
+      expect(retval).to eq(:foo)
+      expect(logger.level).to eq(Logger::WARN)
+    end
+
     it "should set the progname" do
       logger = Lumberjack::Logger.new(:null, progname: "app")
       expect(logger.progname).to eq("app")

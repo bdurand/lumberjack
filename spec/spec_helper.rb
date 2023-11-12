@@ -4,18 +4,23 @@ begin
 rescue LoadError => e
 end
 
-require File.expand_path("../../lib/lumberjack.rb", __FILE__)
 require "stringio"
 require "fileutils"
 require "timecop"
 
+begin
+  require "simplecov"
+  SimpleCov.start do
+    add_filter ["/spec/"]
+  end
+rescue LoadError
+end
+
+require File.expand_path("../../lib/lumberjack.rb", __FILE__)
+
 RSpec.configure do |config|
-  config.expect_with :rspec do |c|
-    c.syntax = [:should, :expect]
-  end
-  config.mock_with :rspec do |c|
-    c.syntax = [:should, :expect]
-  end
+  config.warnings = true
+  config.order = :random
 end
 
 def tmp_dir

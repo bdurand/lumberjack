@@ -1,4 +1,4 @@
-# frozen_string_literals: true
+# frozen_string_literal: true
 
 module Lumberjack
   # Logger is a thread safe logging object. It has a compatible API with the Ruby
@@ -118,14 +118,18 @@ module Lumberjack
     # @param [Integer, Symbol, String] value The severity level.
     # @return [void]
     def level=(value)
-      @level = if value.is_a?(Integer)
-        value
-      else
-        Severity.label_to_level(value)
-      end
+      @level = Severity.coerce(value)
     end
 
     alias_method :sev_threshold=, :level=
+
+    # Adjust the log level during the block execution for the current Fiber only.
+    #
+    # @param [Integer, Symbol, String] severity The severity level.
+    # @return [Object] The result of the block.
+    def with_level(severity, &block)
+      push_thread_local_value(:lumberjack_logger_level, Severity.coerce(severity), &block)
+    end
 
     # Set the Lumberjack::Formatter used to format objects for logging as messages.
     #

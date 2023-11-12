@@ -1,4 +1,4 @@
-# frozen_string_literals: true
+# frozen_string_literal: true
 
 module Lumberjack
   # A template converts entries to strings. Templates can contain the following place holders to
@@ -98,7 +98,7 @@ module Lumberjack
     def tag_args(tags, tag_vars)
       return [nil] * (tag_vars.size + 1) if tags.nil? || tags.size == 0
 
-      tags_string = ""
+      tags_string = +""
       tags.each do |name, value|
         unless value.nil? || tag_vars.include?(name)
           value = value.to_s

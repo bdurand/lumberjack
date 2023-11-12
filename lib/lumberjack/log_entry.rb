@@ -1,4 +1,4 @@
-# frozen_string_literals: true
+# frozen_string_literal: true
 
 module Lumberjack
   # An entry in a log is a data structure that captures the log message as well as
@@ -66,7 +66,7 @@ module Lumberjack
     private
 
     def tags_to_s
-      tags_string = ""
+      tags_string = +""
       tags&.each { |name, value| tags_string << " #{name}:#{value.inspect}" }
       tags_string
     end
