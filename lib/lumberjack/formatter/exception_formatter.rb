@@ -16,7 +16,7 @@ module Lumberjack
       end
 
       def call(exception)
-        message = "#{exception.class.name}: #{exception.message}"
+        message = +"#{exception.class.name}: #{exception.message}"
         trace = exception.backtrace
         if trace
           trace = clean_backtrace(trace)
