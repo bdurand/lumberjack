@@ -1,8 +1,9 @@
-![Continuous Integration](https://github.com/bdurand/lumberjack/workflows/Continuous%20Integration/badge.svg)
-[![Maintainability](https://api.codeclimate.com/v1/badges/a0abc03721fff9b0cde1/maintainability)](https://codeclimate.com/github/bdurand/lumberjack/maintainability)
-[![Ruby Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://github.com/testdouble/standard)
-
 # Lumberjack
+
+[![Continuous Integration](https://github.com/bdurand/lumberjack/actions/workflows/continuous_integration.yml/badge.svg)](https://github.com/bdurand/lumberjack/actions/workflows/continuous_integration.yml)
+[![Regression Test](https://github.com/bdurand/lumberjack/actions/workflows/regression_test.yml/badge.svg)](https://github.com/bdurand/lumberjack/actions/workflows/regression_test.yml)
+[![Ruby Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://github.com/testdouble/standard)
+[![Gem Version](https://badge.fury.io/rb/lumberjack.svg)](https://badge.fury.io/rb/lumberjack)
 
 Lumberjack is a simple, powerful, and fast logging implementation in Ruby. It uses nearly the same API as the Logger class in the Ruby standard library and as ActiveSupport::BufferedLogger in Rails.
 
@@ -276,3 +277,31 @@ To send log messages to syslog instead of to a file, you could use this (require
 ```ruby
   config.logger = Lumberjack::Logger.new(Lumberjack::SyslogDevice.new)
 ```
+
+## Installation
+
+Add this line to your application's Gemfile:
+
+```ruby
+gem 'lumberjack'
+```
+
+And then execute:
+```bash
+$ bundle
+```
+
+Or install it yourself as:
+```bash
+$ gem install lumberjack
+```
+
+## Contributing
+
+Open a pull request on GitHub.
+
+Please use the [standardrb](https://github.com/testdouble/standard) syntax and lint your code with `standardrb --fix` before submitting.
+
+## License
+
+The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).

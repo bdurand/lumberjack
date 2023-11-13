@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.2.10
+
+### Added
+
+- Added `with_level` method for compatibility with the latest standard library logger gem.
+
+### Fixed
+
+- Fixed typo in magic frozen string literal comments. (thanks @andyw8 and @steveclarke)
+
 ## 1.2.9
 
 ### Added
@@ -134,8 +144,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix Ruby 2.4 deprecation warning on Fixnum (thanks koic).
-- Fix gemspec files to be flat array (thanks e2).
+- Fix Ruby 2.4 deprecation warning on Fixnum (thanks @koic).
+- Fix gemspec files to be flat array (thanks @e2).
 
 ## 1.0.10
 

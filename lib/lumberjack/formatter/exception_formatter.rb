@@ -1,4 +1,4 @@
-# frozen_string_literals: true
+# frozen_string_literal: true
 
 module Lumberjack
   class Formatter
@@ -16,7 +16,7 @@ module Lumberjack
       end
 
       def call(exception)
-        message = "#{exception.class.name}: #{exception.message}"
+        message = +"#{exception.class.name}: #{exception.message}"
         trace = exception.backtrace
         if trace
           trace = clean_backtrace(trace)
