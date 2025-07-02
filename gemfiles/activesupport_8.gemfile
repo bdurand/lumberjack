@@ -9,6 +9,6 @@ gem "appraisal"
 gem "standard", require: false
 gem "simplecov", require: false
 gem "yard"
-gem "logger"
+gem "activesupport", "~> 8.0", require: "activesupport/all"
 
 gemspec path: "../"

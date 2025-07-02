@@ -541,6 +541,16 @@ describe Lumberjack::Logger do
         expect(lines[1]).to eq "two - 1 -"
       end
 
+      it "should be able to extract tags from an object with a formatter that returns Lumberjack::Formatter::TaggedMessage" do
+        logger.formatter.add(Exception, ->(e) {
+          Lumberjack::Formatter::TaggedMessage.new(e.inspect, {message: e.message, class: e.class.name})
+        })
+        error = StandardError.new("foobar")
+        logger.info(error)
+        line = output.string.chomp
+        expect(line).to eq "#{error.inspect} -  - [message:foobar] [class:StandardError]"
+      end
+
       it "should apply a tag formatter to the tags" do
         logger.tag_formatter.add(:foo, &:reverse).add(:count) { |val| val * 100 }
         logger.info("message", count: 2, foo: "abc")

@@ -162,6 +162,22 @@ To define your own formatter, either provide a block or an object that responds 
 
 The default formatter will pass through values for strings, numbers, and booleans, and use the `:inspect` formatter for all objects except for exceptions which will be formatted with the `:exception` formatter.
 
+##### Extracting Tags from Messages
+
+If you are using structured logging, you can use a formatter to extract tags from the log message by adding a formatter that returns a `Lumberjack::Formatter::TaggedMessage`. For example, if you want to extract metadata from exceptions and add them as tags, you could do this:
+
+```ruby
+logger.formatter.add(Exception, ->(e) {
+  Lumberjack::Formatter::TaggedMessage.new(e.inspect, {
+    "error.message": e.message,
+    "error.class": e.class.name,
+    "error.trace": e.backtrace
+  })
+})
+
+logger.error(exception)  # Will log the exception and add tags for the message, class, and trace.
+```
+
 #### Tag Formatters
 
 The `logger.formatter` will only apply to log messages. You can use `logger.tag_formatter` to register formatters for tags. You can register both default formatters that will apply to all tag values, as well as tag specifice formatters that will apply only to objects with a specific tag name.

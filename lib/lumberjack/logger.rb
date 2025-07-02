@@ -74,8 +74,8 @@ module Lumberjack
 
       @device = open_device(device, options) if device
       self.formatter = (options[:formatter] || Formatter.new)
-      @tag_formatter = (options[:tag_formatter] || TagFormatter.new)
-      time_format = (options[:datetime_format] || options[:time_format])
+      @tag_formatter = options[:tag_formatter] || TagFormatter.new
+      time_format = options[:datetime_format] || options[:time_format]
       self.datetime_format = time_format if time_format
       @last_flushed_at = Time.now
       @silencer = true
@@ -196,19 +196,17 @@ module Lumberjack
         time = Time.now
         message = message.call if message.is_a?(Proc)
         message = formatter.format(message)
+        message_tags = nil
+        if message.is_a?(Formatter::TaggedMessage)
+          message_tags = message.tags
+          message = message.message
+        end
         progname ||= self.progname
 
         current_tags = self.tags
         tags = nil unless tags.is_a?(Hash)
-        if current_tags.empty?
-          tags = Tags.stringify_keys(tags) unless tags.nil?
-        else
-          tags = if tags.nil?
-            current_tags.dup
-          else
-            current_tags.merge(Tags.stringify_keys(tags))
-          end
-        end
+        tags = merge_tags(current_tags, tags)
+        tags = merge_tags(tags, message_tags) if message_tags
         tags = Tags.expand_runtime_values(tags)
         tags = tag_formatter.format(tags) if tag_formatter
 
@@ -558,6 +556,20 @@ module Lumberjack
         end
       end
       add_entry(severity, message, progname, tags)
+    end
+
+    # Merge a tags hash into an existing tags hash.
+    def merge_tags(current_tags, tags)
+      if current_tags.nil? || current_tags.empty?
+        tags = Tags.stringify_keys(tags) unless tags.nil?
+      else
+        tags = if tags.nil?
+          current_tags.dup
+        else
+          current_tags.merge(Tags.stringify_keys(tags))
+        end
+      end
+      tags
     end
 
     # Set a local value for a thread tied to this object.

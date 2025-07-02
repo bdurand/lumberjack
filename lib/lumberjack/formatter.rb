@@ -22,6 +22,7 @@ module Lumberjack
     require_relative "formatter/strip_formatter"
     require_relative "formatter/structured_formatter"
     require_relative "formatter/truncate_formatter"
+    require_relative "formatter/tagged_message"
 
     class << self
       # Returns a new empty formatter with no mapping. For historical reasons, a formatter
@@ -173,7 +174,9 @@ module Lumberjack
     # @param [String] progname The name of the program logging the message.
     # @param [Object] msg The message object to format.
     def call(severity, timestamp, progname, msg)
-      "#{format(msg)}#{Lumberjack::LINE_SEPARATOR}"
+      formatted_message = format(msg)
+      formatted_message = formatted_message.message if formatted_message.is_a?(TaggedMessage)
+      "#{formatted_message}#{Lumberjack::LINE_SEPARATOR}"
     end
 
     private

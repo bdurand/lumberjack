@@ -68,12 +68,12 @@ module Lumberjack
         @stream = stream
         @stream.sync = true if @stream.respond_to?(:sync=)
         @buffer = Buffer.new
-        @buffer_size = (options[:buffer_size] || 0)
-        template = (options[:template] || DEFAULT_FIRST_LINE_TEMPLATE)
+        @buffer_size = options[:buffer_size] || 0
+        template = options[:template] || DEFAULT_FIRST_LINE_TEMPLATE
         if template.respond_to?(:call)
           @template = template
         else
-          additional_lines = (options[:additional_lines] || DEFAULT_ADDITIONAL_LINES_TEMPLATE)
+          additional_lines = options[:additional_lines] || DEFAULT_ADDITIONAL_LINES_TEMPLATE
           @template = Template.new(template, additional_lines: additional_lines, time_format: options[:time_format])
         end
       end
@@ -163,8 +163,6 @@ module Lumberjack
       def write_to_stream(lines)
         return if lines.empty?
         lines = lines.first if lines.is_a?(Array) && lines.size == 1
-
-        out = nil
         out = if lines.is_a?(Array)
           "#{lines.join(Lumberjack::LINE_SEPARATOR)}#{Lumberjack::LINE_SEPARATOR}"
         else

@@ -87,7 +87,7 @@ module Lumberjack
       else
         formatted = {}
         tags.each do |name, value|
-          formatter = (@formatters[name.to_s] || @default_formatter)
+          formatter = @formatters[name.to_s] || @default_formatter
           if formatter.is_a?(Lumberjack::Formatter)
             value = formatter.format(value)
           elsif formatter.respond_to?(:call)

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.3.0
+
+### Added
+
+- Added `Lumberjack::Formatter::TaggedMessage` to allow extracting tags from log messages via a formatter in order to better support structured logging of objects.
+
+### Removed
+
+- Removed support for Ruby versions < 2.5.
+
 ## 1.2.10
 
 ### Added
