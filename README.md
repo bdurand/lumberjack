@@ -197,6 +197,9 @@ logger.tag_formatter.default { |value| value.inspect }
 # This will register formatters only on specific tag names
 logger.tag_formatter.add(:thread) { |thread| "Thread(#{thread.name})" }
 logger.tag_formatter.add(:current_user, Lumberjack::Formatter::IdFormatter.new)
+
+# You can also register formatters for tag values by class
+logger.tag_formatter.add(Numeric, &:round)
 ```
 
 #### Templates

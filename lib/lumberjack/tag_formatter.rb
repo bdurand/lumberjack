@@ -11,6 +11,7 @@ module Lumberjack
   class TagFormatter
     def initialize
       @formatters = {}
+      @class_formatters = {}
       @default_formatter = nil
     end
 
@@ -55,8 +56,11 @@ module Lumberjack
         remove(key)
       else
         Array(names_or_classes).each do |key|
-          key = key.to_s unless key.is_a?(Module)
-          @formatters[key] = formatter
+          if key.is_a?(Module)
+            @class_formatters[key] = formatter
+          else
+            @formatters[key.to_s] = formatter
+          end
         end
       end
       self
@@ -64,11 +68,15 @@ module Lumberjack
 
     # Remove formatters for specific tag names. The default formatter will still be applied.
     #
-    # @param [String, Array<String>] names The tag names to remove the formatter from.
+    # @param [String, Module, Array<String, Module>] names_or_classes The tag names or classes to remove the formatter from.
     # @return [Lumberjack::TagFormatter] self
-    def remove(names)
-      Array(names).each do |name|
-        @formatters.delete(name.to_s)
+    def remove(names_or_classes)
+      Array(names_or_classes).each do |key|
+        if key.is_a?(Module)
+          @class_formatters.delete(key)
+        else
+          @formatters.delete(key.to_s)
+        end
       end
       self
     end
@@ -88,21 +96,21 @@ module Lumberjack
     # @return [Hash] The formatted tags.
     def format(tags)
       return nil if tags.nil?
-      if @default_formatter.nil? && @formatters.empty?
-        tags
-      else
-        formatted = {}
-        tags.each do |name, value|
-          formatter = @formatters[name.to_s] || @formatters[value.class] || @default_formatter
-          if formatter.is_a?(Lumberjack::Formatter)
-            value = formatter.format(value)
-          elsif formatter.respond_to?(:call)
-            value = formatter.call(value)
-          end
-          formatted[name.to_s] = value
-        end
-        formatted
+      if @default_formatter.nil? && @formatters.empty? && @class_formatters.empty?
+        return tags
       end
+
+      formatted = {}
+      tags.each do |name, value|
+        formatter = @formatters[name.to_s] || class_formatter(value.class) || @default_formatter
+        if formatter.is_a?(Lumberjack::Formatter)
+          value = formatter.format(value)
+        elsif formatter.respond_to?(:call)
+          value = formatter.call(value)
+        end
+        formatted[name.to_s] = value
+      end
+      formatted
     end
 
     private
@@ -116,6 +124,23 @@ module Lumberjack
       else
         formatter
       end
+    end
+
+    def class_formatter(klass)
+      formatter = @class_formatters[klass]
+      return formatter if formatter
+
+      formatters = @class_formatters.select { |k, _| klass <= k }
+      return formatters.values.first if formatters.length <= 1
+
+      superclass = klass.superclass
+      while superclass
+        formatter = formatters[superclass]
+        return formatter if formatter
+        superclass = superclass.superclass
+      end
+
+      formatters.values.first
     end
   end
 end

@@ -30,6 +30,19 @@ RSpec.describe Lumberjack::TagFormatter do
     tag_formatter = Lumberjack::TagFormatter.new.add(Integer) { |val| val * 2 }
     tag_formatter.add(String, :redact)
     expect(tag_formatter.format(tags)).to eq({"foo" => "*****", "baz" => "*****", "count" => 2})
+
+    tag_formatter.remove(String)
+    expect(tag_formatter.format(tags)).to eq({"foo" => "bar", "baz" => "boo", "count" => 2})
+  end
+
+  it "should use a class formatter on child classes" do
+    tag_formatter = Lumberjack::TagFormatter.new.add(Numeric) { |val| val * 2 }
+    expect(tag_formatter.format({"foo" => 2.5, "bar" => 3})).to eq({"foo" => 5.0, "bar" => 6})
+  end
+
+  it "should use class formatters for modules" do
+    tag_formatter = Lumberjack::TagFormatter.new.add(Enumerable) { |val| val.to_a.join(", ") }
+    expect(tag_formatter.format({"foo" => [1, 2, 3], "bar" => "baz"})).to eq({"foo" => "1, 2, 3", "bar" => "baz"})
   end
 
   it "can mix and match tag and class formatters" do
