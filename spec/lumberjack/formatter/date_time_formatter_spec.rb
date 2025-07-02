@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Formatter::DateTimeFormatter do
+RSpec.describe Lumberjack::Formatter::DateTimeFormatter do
   it "should format a time object" do
     time = Time.now
     formatter = Lumberjack::Formatter::DateTimeFormatter.new("%Y-%m-%d %H:%M")

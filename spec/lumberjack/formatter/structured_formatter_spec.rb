@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Formatter::StructuredFormatter do
+RSpec.describe Lumberjack::Formatter::StructuredFormatter do
   it "should recursively format arrays and hashes" do
     formatter = Lumberjack::Formatter.new.clear
     formatter.add(Enumerable, Lumberjack::Formatter::StructuredFormatter.new(formatter))

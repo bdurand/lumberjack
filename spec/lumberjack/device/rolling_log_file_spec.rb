@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Device::RollingLogFile do
+RSpec.describe Lumberjack::Device::RollingLogFile do
   before :all do
     Lumberjack::Device::SizeRollingLogFile # needed by jruby
     create_tmp_dir

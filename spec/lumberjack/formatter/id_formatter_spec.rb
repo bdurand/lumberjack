@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Formatter::IdFormatter do
+RSpec.describe Lumberjack::Formatter::IdFormatter do
   it "should format an object as a hash of class and id" do
     obj = Object.new
     def obj.id

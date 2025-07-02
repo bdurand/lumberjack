@@ -1,11 +1,10 @@
 # Lumberjack
 
 [![Continuous Integration](https://github.com/bdurand/lumberjack/actions/workflows/continuous_integration.yml/badge.svg)](https://github.com/bdurand/lumberjack/actions/workflows/continuous_integration.yml)
-[![Regression Test](https://github.com/bdurand/lumberjack/actions/workflows/regression_test.yml/badge.svg)](https://github.com/bdurand/lumberjack/actions/workflows/regression_test.yml)
 [![Ruby Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://github.com/testdouble/standard)
 [![Gem Version](https://badge.fury.io/rb/lumberjack.svg)](https://badge.fury.io/rb/lumberjack)
 
-Lumberjack is a simple, powerful, and fast logging implementation in Ruby. It uses nearly the same API as the Logger class in the Ruby standard library and as ActiveSupport::BufferedLogger in Rails.
+Lumberjack is a simple, powerful, and fast logging implementation in Ruby. It uses nearly the same API as the Logger class in the Ruby standard library and as ActiveSupport::BufferedLogger in Rails. It is designed with structured logging in mind, but can be used for simple text logging as well.
 
 ## Usage
 
@@ -34,15 +33,15 @@ When messages are added to the log, additional data about the message is kept in
 
 The following information is recorded for each message:
 
-* severity - The severity recorded for the message.
-* time - The time at which the message was recorded.
-* program name - The name of the program logging the message. This can be either set for all messages or customized with each message.
-* process id - The process id (pid) of the process that logged the message.
-* tags - An map of name value pairs for addition information about the log context.
+- severity - The severity recorded for the message.
+- time - The time at which the message was recorded.
+- program name - The name of the program logging the message. This can be either set for all messages or customized with each message.
+- process id - The process id (pid) of the process that logged the message.
+- tags - An map of name value pairs for addition information about the log context.
 
 ### Tags
 
-You can use tags to provide additional meta data about a log message or the context that the log message is being made in. Using tags can keep your log messages clean. You can avoid string interpolation to add additional meta data.
+You can use tags to provide additional meta data about a log message or the context that the log message is being made in. Using tags can keep your log messages clean. You can avoid string interpolation to add additional meta data. Tags enable a structured logging approach where you can add additional information to log messages without changing the message format.
 
 Each of the logger methods includes an additional argument that can be used to specify tags on a messsage:
 
@@ -113,19 +112,24 @@ Lumberjack 1.0 had a concept of a unit of work id that could be used to tie log 
 
 When a Logger logs a LogEntry, it sends it to a Lumberjack::Device. Lumberjack comes with a variety of devices for logging to IO streams or files.
 
-* Lumberjack::Device::Writer - Writes log entries to an IO stream.
-* Lumberjack::Device::LogFile - Writes log entries to a file.
-* Lumberjack::Device::DateRollingLogFile - Writes log entries to a file that will automatically roll itself based on date.
-* Lumberjack::Device::SizeRollingLogFile - Writes log entries to a file that will automatically roll itself based on size.
-* Lumberjack::Device::Multi - This device wraps mulitiple other devices and will write log entries to each of them.
-* Lumberjack::Device::Null - This device produces no output and is intended for testing environments.
+- Lumberjack::Device::Writer - Writes log entries to an IO stream.
+- Lumberjack::Device::LogFile - Writes log entries to a file.
+- Lumberjack::Device::DateRollingLogFile - Writes log entries to a file that will automatically roll itself based on date.
+- Lumberjack::Device::SizeRollingLogFile - Writes log entries to a file that will automatically roll itself based on size.
+- Lumberjack::Device::Multi - This device wraps mulitiple other devices and will write log entries to each of them.
+- Lumberjack::Device::Null - This device produces no output and is intended for testing environments.
 
 If you'd like to send you log to a different kind of output, you just need to extend the Device class and implement the +write+ method. Or check out these plugins:
 
-* [lumberjack_syslog_device](https://github.com/bdurand/lumberjack_syslog_device) - send your log messages to the system wide syslog service
-* [lumberjack_mongo_device](https://github.com/bdurand/lumberjack_mongo_device) - store your log messages to a [MongoDB](http://www.mongodb.org/) NoSQL data store
-* [lumberjack-couchdb-driver](https://github.com/narkisr/lumberjack-couchdb-driver) - store your log messages to a [CouchDB](http://couchdb.apache.org/) NoSQL data store
-* [lumberjack_heroku_device](https://github.com/tonycoco/lumberjack_heroku_device) - log to Heroku's logging system
+- [lumberjack_json_device](https://github.com/bdurand/lumberjack_json_device) - output your log messages as stream of JSON objects for structured logging.
+- [lumberjack_data_dog_device](https://github.com/bdurand/lumberjack_data_dog_device) - output log messages using the [DataDog standard attributes](https://docs.datadoghq.com/logs/log_configuration/attributes_naming_convention/).
+- [lumberjack_ecs_device](https://github.com/bdurand/lumberjack_ecs_device) - output log messages using the [Elastic Common Schema](https://www.elastic.co/guide/en/ecs/current/index.html) format.
+- [lumberjack_syslog_device](https://github.com/bdurand/lumberjack_syslog_device) - send your log messages to the system wide syslog service
+- [lumberjack_mongo_device](https://github.com/bdurand/lumberjack_mongo_device) - store your log messages to a [MongoDB](http://www.mongodb.org/) NoSQL data store
+- [lumberjack_redis_device](https://github.com/bdurand/lumberjack_redis_device) - store your log messages in a [Redis](https://redis.io/) data store
+- [lumberjack-couchdb-driver](https://github.com/narkisr/lumberjack-couchdb-driver) - store your log messages to a [CouchDB](http://couchdb.apache.org/) NoSQL data store
+- [lumberjack_heroku_device](https://github.com/tonycoco/lumberjack_heroku_device) - log to Heroku's logging system
+- [lumberjack_capture_device](https://github.com/bdurand/lumberjack_capture_device) - capture log messages in memory in test environments so that you can include log output assertions in your tests.
 
 ### Customize Formatting
 
@@ -148,15 +152,15 @@ There are several built in classes you can add as formatters. You can use a symb
   logger.formatter.add(Hash, Lumberjack::Formatter::PrettyPrintFormatter.new)  # alternative using a formatter instance
 ```
 
-* `:object` - `Lumberjack::Formatter::ObjectFormatter` - no op conversion that returns the object itself.
-* `:string` - `Lumberjack::Formatter::StringFormatter` - calls `to_s` on the object.
-* `:strip` - `Lumberjack::Formatter::StripFormatter` - calls `to_s.strip` on the object.
-* `:inspect` - `Lumberjack::Formatter::InspectFormatter` - calls `inspect` on the object.
-* `:exception` - `Lumberjack::Formatter::ExceptionFormatter` - special formatter for exceptions which logs them as multi line statements with the message and backtrace.
-* `:date_time` - `Lumberjack::Formatter::DateTimeFormatter` - special formatter for dates and times to format them using `strftime`.
-* `:pretty_print` - `Lumberjack::Formatter::PrettyPrintFormatter` - returns the pretty print format of the object.
-* `:id` - `Lumberjack::Formatter::IdFormatter` - returns a hash of the object with keys for the id attribute and class.
-* `:structured` - `Lumberjack::Formatter::StructuredFormatter` - crawls the object and applies the formatter recursively to Enumerable objects found in it (arrays, hashes, etc.).
+- `:object` - `Lumberjack::Formatter::ObjectFormatter` - no op conversion that returns the object itself.
+- `:string` - `Lumberjack::Formatter::StringFormatter` - calls `to_s` on the object.
+- `:strip` - `Lumberjack::Formatter::StripFormatter` - calls `to_s.strip` on the object.
+- `:inspect` - `Lumberjack::Formatter::InspectFormatter` - calls `inspect` on the object.
+- `:exception` - `Lumberjack::Formatter::ExceptionFormatter` - special formatter for exceptions which logs them as multi line statements with the message and backtrace.
+- `:date_time` - `Lumberjack::Formatter::DateTimeFormatter` - special formatter for dates and times to format them using `strftime`.
+- `:pretty_print` - `Lumberjack::Formatter::PrettyPrintFormatter` - returns the pretty print format of the object.
+- `:id` - `Lumberjack::Formatter::IdFormatter` - returns a hash of the object with keys for the id attribute and class.
+- `:structured` - `Lumberjack::Formatter::StructuredFormatter` - crawls the object and applies the formatter recursively to Enumerable objects found in it (arrays, hashes, etc.).
 
 To define your own formatter, either provide a block or an object that responds to `call` with a single argument.
 

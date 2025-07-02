@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Context do
+RSpec.describe Lumberjack::Context do
   it "should have tags" do
     context = Lumberjack::Context.new
     expect(context.tags).to eq({})

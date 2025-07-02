@@ -18,6 +18,8 @@ module Lumberjack
     require_relative "formatter/inspect_formatter"
     require_relative "formatter/object_formatter"
     require_relative "formatter/pretty_print_formatter"
+    require_relative "formatter/redact_formatter"
+    require_relative "formatter/round_formatter"
     require_relative "formatter/string_formatter"
     require_relative "formatter/strip_formatter"
     require_relative "formatter/structured_formatter"

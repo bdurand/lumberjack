@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added `Lumberjack::Formatter::TaggedMessage` to allow extracting tags from log messages via a formatter in order to better support structured logging of objects.
+- Added built in `:round` formatter to round numbers to a specified number of decimal places.
+- Added built in `:redact` formatter to redact sensitive information from log tags.
+- Added support in `Lumberjack::TagFormatter` for class formatters. Class formatters will be applied to any tag values that match the class.
 
 ### Removed
 

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::TaggedLoggerSupport do
+RSpec.describe Lumberjack::TaggedLoggerSupport do
   let(:output) { StringIO.new }
   let(:device) { Lumberjack::Device::Writer.new(output, buffer_size: 0, template: ":message - :count - :tags") }
   let(:logger) { Lumberjack::Logger.new(device).tagged_logger! }

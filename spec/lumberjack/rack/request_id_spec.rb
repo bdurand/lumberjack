@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Rack::RequestId do
+RSpec.describe Lumberjack::Rack::RequestId do
   it "should use the action dispatch request id if it exists" do
     app = lambda { |env| [200, {"Content-Type" => env["Content-Type"], "Unit-Of-Work" => Lumberjack.unit_of_work_id.to_s}, ["OK"]] }
     handler = Lumberjack::Rack::RequestId.new(app)

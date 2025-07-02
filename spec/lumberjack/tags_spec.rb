@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Tags do
+RSpec.describe Lumberjack::Tags do
   describe "stringify_keys" do
     it "transforms hash keys to strings" do
       hash = {foo: 1, bar: 2}

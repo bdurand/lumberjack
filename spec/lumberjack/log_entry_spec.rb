@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::LogEntry do
+RSpec.describe Lumberjack::LogEntry do
   it "should have a time" do
     t = Time.now
     entry = Lumberjack::LogEntry.new(t, Logger::INFO, "test", "app", 1500, "unit_of_work_id" => "ABCD")

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Device::Writer do
+RSpec.describe Lumberjack::Device::Writer do
   let(:time_string) { "2011-01-15T14:23:45.123" }
   let(:time) { Time.parse(time_string) }
   let(:stream) { StringIO.new }

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Device::DateRollingLogFile do
+RSpec.describe Lumberjack::Device::DateRollingLogFile do
   before :all do
     create_tmp_dir
   end

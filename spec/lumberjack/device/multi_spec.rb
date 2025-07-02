@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Device::Multi do
+RSpec.describe Lumberjack::Device::Multi do
   let(:output_1) { StringIO.new }
   let(:output_2) { StringIO.new }
   let(:device_1) { Lumberjack::Device::Writer.new(output_1, template: ":message") }

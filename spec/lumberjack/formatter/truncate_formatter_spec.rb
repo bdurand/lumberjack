@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Formatter::TruncateFormatter do
+RSpec.describe Lumberjack::Formatter::TruncateFormatter do
   it "should truncate a string longer than the limit" do
     formatter = Lumberjack::Formatter::TruncateFormatter.new(9)
     expect(formatter.call("1234567890")).to eq "12345678…"

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Template do
+RSpec.describe Lumberjack::Template do
   let(:time_string) { "2011-01-15T14:23:45.123" }
   let(:time) { Time.parse(time_string) }
   let(:entry) { Lumberjack::LogEntry.new(time, Logger::INFO, "line 1#{Lumberjack::LINE_SEPARATOR}line 2#{Lumberjack::LINE_SEPARATOR}line 3", "app", 12345, "unit_of_work_id" => "ABCD", "foo" => "bar") }

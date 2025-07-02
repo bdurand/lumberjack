@@ -26,6 +26,14 @@ module Lumberjack
         @message = message
         @tags = tags || {}
       end
+
+      def to_s
+        inspect
+      end
+
+      def inspect
+        {message: @message, tags: @tags}.inspect
+      end
     end
   end
 end

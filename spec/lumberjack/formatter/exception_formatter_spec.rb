@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Formatter::ExceptionFormatter do
+RSpec.describe Lumberjack::Formatter::ExceptionFormatter do
   it "should convert an exception without a backtrace to a string" do
     e = ArgumentError.new("not expected")
     formatter = Lumberjack::Formatter::ExceptionFormatter.new

@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Device::SizeRollingLogFile do
+RSpec.describe Lumberjack::Device::SizeRollingLogFile do
   before :all do
     create_tmp_dir
   end

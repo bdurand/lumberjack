@@ -1,7 +1,7 @@
 require "spec_helper"
 require "pathname"
 
-describe Lumberjack::Logger do
+RSpec.describe Lumberjack::Logger do
   describe "compatibility" do
     it "should implement the same public API as the ::Logger class" do
       logger = ::Logger.new($stdout)

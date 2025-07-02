@@ -1,3 +1,7 @@
+# frozen_string_literal: true
+
+require "logger"
+
 # ActiveSupport is only available on some Appraisal runs.
 begin
   require "active_support/all"

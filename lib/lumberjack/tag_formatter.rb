@@ -35,22 +35,28 @@ module Lumberjack
       self
     end
 
-    # Add a formatter for specific tag names. This can either be a Lumberjack::Formatter
+    # Add a formatter for specific tag names or object classes. This can either be a Lumberjack::Formatter
     # or an object that responds to `call` or a block. The default formatter will not be
-    # applied.
+    # applied. The formatter will be applied if it matches either a tag name or if the tag value
+    # is an instance of a registered class.
     #
-    # @param [String, Array<String>] names The tag names to apply the formatter to.
+    # @param [String, Module, Array<String, Module>] names_or_classes The tag names or object classes
+    #   to apply the formatter to.
     # @param [Lumberjack::Formatter, #call, nil] formatter The formatter to use.
     #    If this is nil, then the block will be used as the formatter.
     # @return [Lumberjack::TagFormatter] self
-    def add(names, formatter = nil, &block)
+    #
+    # @example
+    #  tag_formatter.add("password", &:redact)
+    def add(names_or_classes, formatter = nil, &block)
       formatter ||= block
       formatter = dereference_formatter(formatter)
       if formatter.nil?
         remove(key)
       else
-        Array(names).each do |name|
-          @formatters[name.to_s] = formatter
+        Array(names_or_classes).each do |key|
+          key = key.to_s unless key.is_a?(Module)
+          @formatters[key] = formatter
         end
       end
       self
@@ -82,12 +88,12 @@ module Lumberjack
     # @return [Hash] The formatted tags.
     def format(tags)
       return nil if tags.nil?
-      if @default_formatter.nil? && (@formatters.empty? || (@formatters.keys & tags.keys).empty?)
+      if @default_formatter.nil? && @formatters.empty?
         tags
       else
         formatted = {}
         tags.each do |name, value|
-          formatter = @formatters[name.to_s] || @default_formatter
+          formatter = @formatters[name.to_s] || @formatters[value.class] || @default_formatter
           if formatter.is_a?(Lumberjack::Formatter)
             value = formatter.format(value)
           elsif formatter.respond_to?(:call)

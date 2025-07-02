@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Device::LogFile do
+RSpec.describe Lumberjack::Device::LogFile do
   before :all do
     create_tmp_dir
   end

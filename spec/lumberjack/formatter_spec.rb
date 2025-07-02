@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack::Formatter do
+RSpec.describe Lumberjack::Formatter do
   let(:formatter) { Lumberjack::Formatter.new }
 
   it "should have a default set of formatters" do
