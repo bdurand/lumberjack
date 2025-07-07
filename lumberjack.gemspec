@@ -4,7 +4,7 @@ Gem::Specification.new do |spec|
   spec.authors = ["Brian Durand"]
   spec.email = ["bbdurand@gmail.com"]
 
-  spec.summary = "A simple, powerful, and very fast logging utility that can be a drop in replacement for Logger or ActiveSupport::BufferedLogger."
+  spec.summary = "A simple, powerful, and fast logging utility with excellent structured logging support that can be a drop in replacement for the standard library Logger."
   spec.homepage = "https://github.com/bdurand/lumberjack"
   spec.license = "MIT"
 

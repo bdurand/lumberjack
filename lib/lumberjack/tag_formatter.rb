@@ -37,9 +37,15 @@ module Lumberjack
     end
 
     # Add a formatter for specific tag names or object classes. This can either be a Lumberjack::Formatter
-    # or an object that responds to `call` or a block. The default formatter will not be
-    # applied. The formatter will be applied if it matches either a tag name or if the tag value
-    # is an instance of a registered class.
+    # or an object that responds to `call` or a block. The formatter will be applied if it matches either a tag name
+    # or if the tag value is an instance of a registered class. Tag name formatters will take precedence
+    # over class formatters. The default formatter will not be applied to a value if a tag formatter
+    # is applied to it.
+    #
+    # Name formatters can be applied to nested hashes using dot syntax. For example, if you add a formatter
+    # for "foo.bar", it will be applied to the value of the "bar" key in the "foo" tag if that value is a hash.
+    #
+    # Class formatters will be applied recursively to nested hashes and arrays.
     #
     # @param [String, Module, Array<String, Module>] names_or_classes The tag names or object classes
     #   to apply the formatter to.

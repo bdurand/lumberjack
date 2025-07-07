@@ -88,6 +88,52 @@ logger.info("no requests") # Will not include the `request_id` tag
 
 Tag keys are always converted to strings. Tags are inherited so that message tags take precedence over block tags which take precedence over global tags.
 
+#### Structured Logging with Tags
+
+Tags are particularly powerful for structured logging, where you want to capture machine-readable data alongside human-readable log messages. Instead of embedding variable data directly in log messages (which makes parsing difficult), you can use tags to separate the static message from the dynamic data.
+
+```ruby
+# Instead of this (harder to parse)
+logger.info("User john_doe logged in from IP 192.168.1.100 in 0.25 seconds")
+
+# Do this (structured and parseable)
+logger.info("User logged in", {
+  user_id: "john_doe",
+  ip_address: "192.168.1.100",
+  duration: 0.25,
+  action: "login"
+})
+```
+
+This approach provides several benefits:
+
+- **Consistent message format** - The base message stays the same while data varies
+- **Easy filtering and searching** - You can search by specific tag values
+- **Better analytics** - Aggregate data by tag values (e.g., average login duration)
+- **Machine processing** - Automated systems can easily extract and process tag data
+
+You can also use nested structures in tags for complex data:
+
+```ruby
+logger.info("API request completed", {
+  request: {
+    method: "POST",
+    path: "/api/users",
+    user_agent: request.user_agent
+  },
+  response: {
+    status: 201,
+    duration_ms: 150
+  },
+  user: {
+    id: current_user.id,
+    role: current_user.role
+  }
+})
+```
+
+When combined with structured output devices (like [`lumberjack_json_device`](https://github.com/bdurand/lumberjack_json_device)), this creates logs that are both human-readable and machine-processable, making them ideal for log aggregation systems, monitoring, and analytics.
+
 #### Compatibility with ActiveSupport::TaggedLogging
 
 `Lumberjack::Logger` version 1.1.2 or greater is compatible with `ActiveSupport::TaggedLogging`. This is so that other code that expects to have a logger that responds to the `tagged` method will work. Any tags added with the `tagged` method will be appended to an array in the "tagged" tag.
@@ -200,6 +246,12 @@ logger.tag_formatter.add(:current_user, Lumberjack::Formatter::IdFormatter.new)
 
 # You can also register formatters for tag values by class
 logger.tag_formatter.add(Numeric, &:round)
+
+# Tag formatters will be applied to nested hashes and arrays as well.
+
+# Name formatters use dot syntax to apply to nested hashes.
+logger.tag_formatter.add("user.username", &:upcase)
+# logger.tag(user: {username: "john_doe"}) # Will log the tag as {"user" => "username" => "JOHN_DOE"}
 ```
 
 #### Templates

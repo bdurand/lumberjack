@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added built in `:round` formatter to round numbers to a specified number of decimal places.
 - Added built in `:redact` formatter to redact sensitive information from log tags.
 - Added support in `Lumberjack::TagFormatter` for class formatters. Class formatters will be applied to any tag values that match the class.
+- Apply formatters to enumerable values in tags. Name formatters are applied using dot syntax when a tag value contains a hash.
 
 ### Removed
 
