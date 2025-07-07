@@ -52,6 +52,43 @@ RSpec.describe Lumberjack::TagFormatter do
     expect(tag_formatter.format(tags)).to eq({"foo" => "rab", "baz" => "boo", "count" => false})
   end
 
+  it "applies class formatters inside arrays and hashes" do
+    tag_formatter = Lumberjack::TagFormatter.new
+    tag_formatter.add(Integer, &:even?)
+    tag_formatter.add(String, &:reverse)
+
+    expect(tag_formatter.format({"foo" => [1, 2, 3], "bar" => {"baz" => "boo"}})).to eq({
+      "foo" => [false, true, false],
+      "bar" => {"baz" => "oob"}
+    })
+  end
+
+  it "applies name formatters inside hashes using dot syntax" do
+    tag_formatter = Lumberjack::TagFormatter.new
+    tag_formatter.add("foo.bar", &:reverse)
+    expect(tag_formatter.format({"foo" => {"bar" => "baz"}})).to eq({"foo" => {"bar" => "zab"}})
+  end
+
+  it "recursively applies class formatters to nested hashes" do
+    tag_formatter = Lumberjack::TagFormatter.new
+    tag_formatter.add("foo") { |val| {"bar" => val.to_s} }
+    tag_formatter.add(String, &:reverse)
+    expect(tag_formatter.format({"foo" => 12})).to eq({"foo" => {"bar" => "21"}})
+  end
+
+  it "recursively applies class formatters to nested arrays" do
+    tag_formatter = Lumberjack::TagFormatter.new
+    tag_formatter.add("foo") { |val| [val, val] }
+    tag_formatter.add(String, &:reverse)
+    expect(tag_formatter.format({"foo" => "bar"})).to eq({"foo" => ["rab", "rab"]})
+  end
+
+  it "short circuits recursive formatting for already formatted classes" do
+    tag_formatter = Lumberjack::TagFormatter.new
+    tag_formatter.add(String) { |val| "#{val},#{val}".split(",") }
+    expect(tag_formatter.format({"foo" => "bar"})).to eq({"foo" => ["bar", "bar"]})
+  end
+
   it "should be able to clear all formatters" do
     tag_formatter = Lumberjack::TagFormatter.new.default(&:to_s).add(:foo, &:reverse)
     expect(tag_formatter.format(tags)).to eq({"foo" => "rab", "baz" => "boo", "count" => "1"})

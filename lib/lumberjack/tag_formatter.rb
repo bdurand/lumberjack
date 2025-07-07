@@ -100,20 +100,58 @@ module Lumberjack
         return tags
       end
 
-      formatted = {}
-      tags.each do |name, value|
-        formatter = @formatters[name.to_s] || class_formatter(value.class) || @default_formatter
-        if formatter.is_a?(Lumberjack::Formatter)
-          value = formatter.format(value)
-        elsif formatter.respond_to?(:call)
-          value = formatter.call(value)
-        end
-        formatted[name.to_s] = value
-      end
-      formatted
+      formated_tags(tags)
     end
 
     private
+
+    def formated_tags(tags, skip_classes: nil, prefix: nil)
+      formatted = {}
+
+      tags.each do |name, value|
+        name = name.to_s
+        formatted[name] = formatted_tag_value(name, value, skip_classes: skip_classes, prefix: prefix)
+      end
+
+      formatted
+    end
+
+    def formatted_tag_value(name, value, skip_classes: nil, prefix: nil)
+      prefixed_name = prefix ? "#{prefix}#{name}" : name
+      using_class_formatter = false
+
+      formatter = @formatters[prefixed_name]
+      if formatter.nil? && (skip_classes.nil? || !skip_classes.include?(value.class))
+        formatter = class_formatter(value.class)
+        using_class_formatter = true if formatter
+      end
+
+      formatter ||= @default_formatter
+
+      formatted_value = if formatter.is_a?(Lumberjack::Formatter)
+        formatter.format(value)
+      elsif formatter.respond_to?(:call)
+        formatter.call(value)
+      else
+        value
+      end
+
+      if formatted_value.is_a?(Enumerable)
+        skip_classes ||= []
+        skip_classes << value.class if using_class_formatter
+        sub_prefix = "#{prefixed_name}."
+
+        formatted_value = if formatted_value.is_a?(Hash)
+          formated_tags(formatted_value, skip_classes: skip_classes, prefix: sub_prefix)
+        else
+          formatted_value.collect do |item|
+            formatted_tag_value(nil, item, skip_classes: skip_classes, prefix: sub_prefix)
+          end
+        end
+      end
+
+      formatted_value
+    end
 
     def dereference_formatter(formatter)
       if formatter.is_a?(TaggedLoggerSupport::Formatter)
