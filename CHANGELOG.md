@@ -13,10 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added built in `:redact` formatter to redact sensitive information from log tags.
 - Added support in `Lumberjack::TagFormatter` for class formatters. Class formatters will be applied to any tag values that match the class.
 - Apply formatters to enumerable values in tags. Name formatters are applied using dot syntax when a tag value contains a hash.
+- Added support for setting tags from the request environment in `Lumberjack::Rack::Context` middleware.
 
 ### Removed
 
+- Removed unit of work id from default log templates. You can add back the same functionality by adding the `:unit_of_work_id` tag to the logger template.
 - Removed support for Ruby versions < 2.5.
+
+### Deprecated
+
+- All unit of work related functionality from version 1.0 has been officially deprecated and will be removed in version 2.0. Use tags instead to set a global context for log entries.
 
 ## 1.2.10
 

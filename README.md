@@ -150,10 +150,6 @@ The built in `Lumberjack::Device::Writer` class has built in support for includi
 
 You can specify any tag name you want in a template as well as the `:tags` macro for all tags. If a tag name has been used as its own macro, it will not be included in the `:tags` macro.
 
-#### Unit Of Work
-
-Lumberjack 1.0 had a concept of a unit of work id that could be used to tie log messages together. This has been replaced by tags. There is still an implementation of `Lumberjack.unit_of_work`, but it is just a wrapper on the tag implementation.
-
 ### Pluggable Devices
 
 When a Logger logs a LogEntry, it sends it to a Lumberjack::Device. Lumberjack comes with a variety of devices for logging to IO streams or files.
@@ -313,14 +309,16 @@ These examples are for Rails applications, but there is no dependency on Rails f
 In a Rails application you can replace the default production logger by adding this to your config/environments/production.rb file:
 
 ```ruby
-  # Use the ActionDispatch request id as the unit of work id. This will use just the first chunk of the request id.
-  # If you want to use an abbreviated request id for terseness, change the last argument to `true`
-  config.middleware.insert_after ActionDispatch::RequestId, Lumberjack::Rack::RequestId, false
-  # Use a custom unit of work id to each request
-  # config.middleware.insert(0, Lumberjack::Rack::UnitOfWork)
+  # Add the ActionDispatch request id as a global tag on all log entries.
+  config.middleware.insert_after(
+    ActionDispatch::RequestId,
+    Lumberjack::Rack::Context,
+    request_id: ->(env) { env["action_dispatch.request_id"] }
+  )
   # Change the logger to use Lumberjack
-  log_file_path = Rails.root + "log" + "#{Rails.env}.log"
-  config.logger = Lumberjack::Logger.new(log_file_path, :level => :warn)
+  log_file = Rails.root + "log" + "#{Rails.env}.log"
+  # log_file = $stdout # or write to stdout instead of a file
+  config.logger = Lumberjack::Logger.new(log_file, :level => :warn)
 ```
 
 To set up a logger to roll every day at midnight, you could use this code (you can also specify :weekly or :monthly):

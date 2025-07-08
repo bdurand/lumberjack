@@ -5,7 +5,7 @@ module Lumberjack
   class Context
     attr_reader :tags
 
-    # @param [Context] parent_context A parent context to inherit tags from.
+    # @param parent_context [Context] A parent context to inherit tags from.
     def initialize(parent_context = nil)
       @tags = {}
       @tags.merge!(parent_context.tags) if parent_context
@@ -13,7 +13,7 @@ module Lumberjack
 
     # Set tags on the context.
     #
-    # @param [Hash] tags The tags to set.
+    # @param tags [Hash] The tags to set.
     # @return [void]
     def tag(tags)
       tags.each do |key, value|
@@ -23,7 +23,7 @@ module Lumberjack
 
     # Get a context tag.
     #
-    # @param [String, Symbol] key The tag key.
+    # @param key [String, Symbol] The tag key.
     # @return [Object] The tag value.
     def [](key)
       @tags[key.to_s]
@@ -31,8 +31,8 @@ module Lumberjack
 
     # Set a context tag.
     #
-    # @param [String, Symbol] key The tag key.
-    # @param [Object] value The tag value.
+    # @param key [String, Symbol] The tag key.
+    # @param value [Object] The tag value.
     # @return [void]
     def []=(key, value)
       @tags[key.to_s] = value

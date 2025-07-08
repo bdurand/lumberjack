@@ -12,14 +12,8 @@ module Lumberjack
         return nil if hash.nil?
         if hash.keys.all? { |key| key.is_a?(String) }
           hash
-        elsif hash.respond_to?(:transform_keys)
-          hash.transform_keys(&:to_s)
         else
-          copy = {}
-          hash.each do |key, value|
-            copy[key.to_s] = value
-          end
-          copy
+          hash.transform_keys(&:to_s)
         end
       end
 

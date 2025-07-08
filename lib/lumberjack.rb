@@ -34,8 +34,9 @@ module Lumberjack
     # For the common use case of treating a single web request as a unit of work, see the
     # Lumberjack::Rack::UnitOfWork class.
     #
-    # @param [String] id The id for the unit of work.
+    # @param id [String] The id for the unit of work.
     # @return [void]
+    # @deprecated Use tags instead. This will be removed in version 2.0.
     def unit_of_work(id = nil)
       id ||= SecureRandom.hex(6)
       context do
@@ -47,6 +48,7 @@ module Lumberjack
     # Get the UniqueIdentifier for the current unit of work.
     #
     # @return [String, nil] The id for the current unit of work.
+    # @deprecated Use tags instead. This will be removed in version 2.0.
     def unit_of_work_id
       context[:unit_of_work_id]
     end

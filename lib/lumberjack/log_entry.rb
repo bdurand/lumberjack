@@ -8,16 +8,17 @@ module Lumberjack
 
     TIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
+    # @deprecated Will be removed in version 2.0.
     UNIT_OF_WORK_ID = "unit_of_work_id"
 
     # Create a new log entry.
     #
-    # @param [Time] time The time the log entry was created.
-    # @param [Integer, String] severity The severity of the log entry.
-    # @param [String] message The message to log.
-    # @param [String] progname The name of the program that created the log entry.
-    # @param [Integer] pid The process id of the program that created the log entry.
-    # @param [Hash] tags A hash of tags to associate with the log entry.
+    # @param time [Time] The time the log entry was created.
+    # @param severity [Integer, String] The severity of the log entry.
+    # @param message [String] The message to log.
+    # @param progname [String] The name of the program that created the log entry.
+    # @param pid [Integer] The process id of the program that created the log entry.
+    # @param tags [Hash<String, Object>] A hash of tags to associate with the log entry.
     def initialize(time, severity, message, progname, pid, tags)
       @time = time
       @severity = (severity.is_a?(Integer) ? severity : Severity.label_to_level(severity))
@@ -44,12 +45,12 @@ module Lumberjack
       to_s
     end
 
-    # Deprecated - backward compatibility with 1.0 API
+    # @deprecated - backward compatibility with 1.0 API. Will be removed in version 2.0.
     def unit_of_work_id
       tags[UNIT_OF_WORK_ID] if tags
     end
 
-    # Deprecated - backward compatibility with 1.0 API
+    # @deprecated - backward compatibility with 1.0 API. Will be removed in version 2.0.
     def unit_of_work_id=(value)
       if tags
         tags[UNIT_OF_WORK_ID] = value

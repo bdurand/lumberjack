@@ -21,7 +21,7 @@ module Lumberjack
   # monitoring thread, but its use is highly recommended.
   #
   # Each log entry records the log message and severity along with the time it was logged, the
-  # program name, process id, and unit of work id. The message will be converted to a string, but
+  # program name, process id, and an optional hash of tags. The message will be converted to a string, but
   # otherwise, it is up to the device how these values are recorded. Messages are converted to strings
   # using a Formatter associated with the logger.
   class Logger

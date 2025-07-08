@@ -69,12 +69,12 @@ module Lumberjack
     # help avoid loading dependency issues. This applies only to classes; modules cannot be
     # passed in as strings.
     #
-    # @param [Class, Module, String, Array<Class, Module, String>] klass The class or module to add a formatter for.
-    # @param [Symbol, Class, String, #call] formatter The formatter to use for the class.
+    # @param klass [Class, Module, String, Array<Class, Module, String>] The class or module to add a formatter for.
+    # @param formatter [Symbol, Class, String, #call] The formatter to use for the class.
     #   If a symbol is passed in, it will be used to load one of the predefined formatters.
     #   If a class is passed in, it will be initialized with the args passed in.
     #   Otherwise, the object will be used as the formatter and must respond to call method.
-    # @param [Array] args Arguments to pass to the formatter when it is initialized.
+    # @param args [Array] Arguments to pass to the formatter when it is initialized.
     # @yield [obj] A block that will be used as the formatter for the class.
     # @yieldparam [Object] obj The object to format.
     # @yieldreturn [String] The formatted string.
@@ -132,7 +132,7 @@ module Lumberjack
     # help avoid loading dependency issues. This applies only to classes; modules cannot be
     # passed in as strings.
     #
-    # @param [Class, Module, String, Array<Class, Module, String>] klass The class or module to remove the formatters for.
+    # @param klass [Class, Module, String, Array<Class, Module, String>] The class or module to remove the formatters for.
     # @return [self] Returns itself so that remove statements can be chained together.
     def remove(klass)
       Array(klass).each do |k|
@@ -157,7 +157,7 @@ module Lumberjack
 
     # Format a message object by applying all formatters attached to it.
     #
-    # @param [Object] message The message object to format.
+    # @param message [Object] The message object to format.
     # @return [Object] The formatted object.
     def format(message)
       formatter = formatter_for(message.class)
@@ -171,10 +171,10 @@ module Lumberjack
     # Compatibility with the Logger::Formatter signature. This method will just convert the message
     # object to a string and ignores the other parameters.
     #
-    # @param [Integer, String, Symbol] severity The severity of the message.
-    # @param [Time] timestamp The time the message was logged.
-    # @param [String] progname The name of the program logging the message.
-    # @param [Object] msg The message object to format.
+    # @param severity [Integer, String, Symbol] The severity of the message.
+    # @param timestamp [Time] The time the message was logged.
+    # @param progname [String] The name of the program logging the message.
+    # @param msg [Object] The message object to format.
     def call(severity, timestamp, progname, msg)
       formatted_message = format(msg)
       formatted_message = formatted_message.message if formatted_message.is_a?(TaggedMessage)

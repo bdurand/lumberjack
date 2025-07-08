@@ -5,6 +5,8 @@ module Lumberjack
     # Support for using the Rails ActionDispatch request id in the log.
     # The format is expected to be a random UUID and only the first chunk is used for terseness
     # if the abbreviated argument is true.
+    #
+    # @deprecated Use tags instead of request id for unit of work. Will be removed in version 2.0.
     class RequestId
       REQUEST_ID = "action_dispatch.request_id"
 

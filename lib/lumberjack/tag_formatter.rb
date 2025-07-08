@@ -18,7 +18,7 @@ module Lumberjack
     # Add a default formatter applied to all tag values. This can either be a Lumberjack::Formatter
     # or an object that responds to `call` or a block.
     #
-    # @param [Lumberjack::Formatter, #call, nil] formatter The formatter to use.
+    # @param formatter [Lumberjack::Formatter, #call, nil] The formatter to use.
     #    If this is nil, then the block will be used as the formatter.
     # @return [Lumberjack::TagFormatter] self
     def default(formatter = nil, &block)
@@ -47,9 +47,9 @@ module Lumberjack
     #
     # Class formatters will be applied recursively to nested hashes and arrays.
     #
-    # @param [String, Module, Array<String, Module>] names_or_classes The tag names or object classes
+    # @param names_or_classes [String, Module, Array<String, Module>] The tag names or object classes
     #   to apply the formatter to.
-    # @param [Lumberjack::Formatter, #call, nil] formatter The formatter to use.
+    # @param formatter [Lumberjack::Formatter, #call, nil] The formatter to use.
     #    If this is nil, then the block will be used as the formatter.
     # @return [Lumberjack::TagFormatter] self
     #
@@ -74,7 +74,7 @@ module Lumberjack
 
     # Remove formatters for specific tag names. The default formatter will still be applied.
     #
-    # @param [String, Module, Array<String, Module>] names_or_classes The tag names or classes to remove the formatter from.
+    # @param names_or_classes [String, Module, Array<String, Module>] The tag names or classes to remove the formatter from.
     # @return [Lumberjack::TagFormatter] self
     def remove(names_or_classes)
       Array(names_or_classes).each do |key|
@@ -98,7 +98,7 @@ module Lumberjack
 
     # Format a hash of tags using the formatters
     #
-    # @param [Hash] tags The tags to format.
+    # @param tags [Hash] The tags to format.
     # @return [Hash] The formatted tags.
     def format(tags)
       return nil if tags.nil?
