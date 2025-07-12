@@ -16,6 +16,7 @@ module Lumberjack
     require_relative "formatter/exception_formatter"
     require_relative "formatter/id_formatter"
     require_relative "formatter/inspect_formatter"
+    require_relative "formatter/multiply_formatter"
     require_relative "formatter/object_formatter"
     require_relative "formatter/pretty_print_formatter"
     require_relative "formatter/redact_formatter"
@@ -155,6 +156,13 @@ module Lumberjack
       self
     end
 
+    # Return true if their are no registered formatters.
+    #
+    # @return [Boolean] true if there are no registered formatters, false otherwise.
+    def empty?
+      @class_formatters.empty? && @module_formatters.empty?
+    end
+
     # Format a message object by applying all formatters attached to it.
     #
     # @param message [Object] The message object to format.
@@ -181,10 +189,12 @@ module Lumberjack
       "#{formatted_message}#{Lumberjack::LINE_SEPARATOR}"
     end
 
-    private
-
     # Find the formatter for a class by looking it up using the class hierarchy.
-    def formatter_for(klass) # :nodoc:
+    #
+    # @api private
+    def formatter_for(klass)
+      return nil if empty?
+
       check_modules = true
       until klass.nil?
         formatter = @class_formatters[klass.name]

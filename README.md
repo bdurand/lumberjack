@@ -8,7 +8,7 @@ Lumberjack is a simple, powerful, and fast logging implementation in Ruby. It us
 
 ## Usage
 
-This code aims to be extremely simple to use. The core interface is the Lumberjack::Logger which is used to log messages (which can be any object) with a specified Severity. Each logger has a level associated with it and messages are only written if their severity is greater than or equal to the level.
+This code aims to be extremely simple to use and matches the standard Ruby `Logger` interface. The core interface is the Lumberjack::Logger which is used to log messages (which can be any object) with a specified Severity. Each logger has a level associated with it and messages are only written if their severity is greater than or equal to the level.
 
 ```ruby
   logger = Lumberjack::Logger.new("logs/application.log")  # Open a new log file with INFO level
@@ -22,8 +22,6 @@ This code aims to be extremely simple to use. The core interface is the Lumberja
   end
   logger.info("End request")
 ```
-
-This is all you need to know to log messages.
 
 ## Features
 
@@ -177,7 +175,7 @@ If you'd like to send your log to a different kind of output, you just need to e
 
 #### Formatters
 
-The message you send to the logger can be any object type and does not need to be a string. You can specify a `Lumberjack::Formatter` to instruct the logger how to format objects before outputting them to the device. You do this by mapping classes or modules to formatter code. This code can be either a block or an object that responds to the `call` method. The formatter will be called with the object logged as the message and the returned value will be what is sent to the device.
+The message you send to the logger can be any object type and does not need to be a string. You can specify how to format different object types with a formatter. The formatter is responsible for converting the object into a string representation for logging. You do this by mapping classes or modules to formatter code. This code can be either a block or an object that responds to the `call` method. The formatter will be called with the object logged as the message and the returned value will be what is sent to the device.
 
 ```ruby
   # Format all floating point numbers with three significant digits.
@@ -206,14 +204,26 @@ There are several built in classes you can add as formatters. You can use a symb
 
 To define your own formatter, either provide a block or an object that responds to `call` with a single argument.
 
+#### Default Formatter
+
+The default formatter is applied to all objects being logged. This includes both messages and tags.
+
 The default formatter will pass through values for strings, numbers, and booleans, and use the `:inspect` formatter for all objects except for exceptions which will be formatted with the `:exception` formatter.
+
+#### Message Formatter
+
+You can add a formatter for just the log message with the `message_formatter` method. This formatter will only apply to the message and not to any tags.
+
+```ruby
+logger.message_formatter.add(String, :truncate, 1000)  # Will truncate all string messages to 1000 characters
+```
 
 ##### Extracting Tags from Messages
 
 If you are using structured logging, you can use a formatter to extract tags from the log message by adding a formatter that returns a `Lumberjack::Formatter::TaggedMessage`. For example, if you want to extract metadata from exceptions and add them as tags, you could do this:
 
 ```ruby
-logger.formatter.add(Exception, ->(e) {
+logger.message_formatter.add(Exception, ->(e) {
   Lumberjack::Formatter::TaggedMessage.new(e.inspect, {
     "error.message": e.message,
     "error.class": e.class.name,

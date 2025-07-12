@@ -39,6 +39,9 @@ module Lumberjack
     # The device being written to
     attr_accessor :device
 
+    # The Formatter used only for log entry messages.
+    attr_accessor :message_formatter
+
     # The TagFormatter used for formatting tags for output
     attr_accessor :tag_formatter
 
@@ -51,21 +54,19 @@ module Lumberjack
     # If it is :null, it will be a Null device that won't record any output.
     # Otherwise, it will be assumed to be file path and wrapped in a Device::LogFile class.
     #
-    # This method can take the following options:
-    #
-    # * :level - The logging level below which messages will be ignored.
-    # * :formatter - The formatter to use for outputting messages to the log.
-    # * :datetime_format - The format to use for log timestamps.
-    # * :tag_formatter - The TagFormatter to use for formatting tags.
-    # * :progname - The name of the program that will be recorded with each log entry.
-    # * :flush_seconds - The maximum number of seconds between flush calls.
-    # * :roll - If the log device is a file path, it will be a Device::DateRollingLogFile if this is set.
-    # * :max_size - If the log device is a file path, it will be a Device::SizeRollingLogFile if this is set.
-    #
     # All other options are passed to the device constuctor.
     #
     # @param [Lumberjack::Device, Object, Symbol, String] device The device to log to.
     # @param [Hash] options The options for the logger.
+    # @option options [Integer, Symbol, String] :level The logging level below which messages will be ignored.
+    # @option options [Lumberjack::Formatter] :formatter The formatter to use for outputting messages to the log.
+    # @option options [String] :datetime_format The format to use for log timestamps.
+    # @option options [Lumberjack::Formatter] :message_formatter The MessageFormatter to use for formatting log messages.
+    # @option options [Lumberjack::TagFormatter] :tag_formatter The TagFormatter to use for formatting tags.
+    # @option options [String] :progname The name of the program that will be recorded with each log entry.
+    # @option options [Numeric] :flush_seconds The maximum number of seconds between flush calls.
+    # @option options [Boolean] :roll If the log device is a file path, it will be a Device::DateRollingLogFile if this is set.
+    # @option options [Integer] :max_size If the log device is a file path, it will be a Device::SizeRollingLogFile if this is set.
     def initialize(device = $stdout, options = {})
       options = options.dup
       self.level = options.delete(:level) || INFO
@@ -74,6 +75,7 @@ module Lumberjack
 
       @device = open_device(device, options) if device
       self.formatter = (options[:formatter] || Formatter.new)
+      @message_formatter = options[:message_formatter] || Formatter.empty
       @tag_formatter = options[:tag_formatter] || TagFormatter.new
       time_format = options[:datetime_format] || options[:time_format]
       self.datetime_format = time_format if time_format
@@ -194,13 +196,20 @@ module Lumberjack
         Thread.current[:lumberjack_logging] = true
 
         time = Time.now
+
         message = message.call if message.is_a?(Proc)
-        message = formatter.format(message)
+        msg_class_formatter = message_formatter&.formatter_for(message.class)
+        if msg_class_formatter
+          message = msg_class_formatter.call(message)
+        else
+          message = formatter.format(message) if formatter
+        end
         message_tags = nil
         if message.is_a?(Formatter::TaggedMessage)
           message_tags = message.tags
           message = message.message
         end
+
         progname ||= self.progname
 
         current_tags = self.tags

@@ -69,4 +69,18 @@ RSpec.describe Lumberjack::LogEntry do
     entry = Lumberjack::LogEntry.new(t, Logger::INFO, "test", "app", 1500, "unit_of_work_id" => "ABCD")
     expect(entry.to_s).to eq('[2011-01-29T12:15:32.001 INFO app(1500) unit_of_work_id:"ABCD"] test')
   end
+
+  it "is empty if the log has no message and no tags" do
+    entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, nil, "app", 1500, nil)
+    expect(entry.empty?).to be true
+
+    entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "", "app", 1500, {})
+    expect(entry.empty?).to be true
+
+    entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "message", "app", 1500, nil)
+    expect(entry.empty?).to be false
+
+    entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, nil, "app", 1500, {tag: "value"})
+    expect(entry.empty?).to be false
+  end
 end

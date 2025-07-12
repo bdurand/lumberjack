@@ -64,6 +64,11 @@ module Lumberjack
       tags[name.to_s] if tags
     end
 
+    # Return true if the log entry has no message and no tags.
+    def empty?
+      (message.nil? || message == "") && (tags.nil? || tags.empty?)
+    end
+
     private
 
     def tags_to_s

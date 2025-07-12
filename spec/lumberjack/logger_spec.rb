@@ -37,6 +37,18 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.formatter).to be
     end
 
+    it "should have a message formatter" do
+      output = StringIO.new
+      logger = Lumberjack::Logger.new(output)
+      expect(logger.message_formatter).to be
+    end
+
+    it "should have a tag formatter" do
+      output = StringIO.new
+      logger = Lumberjack::Logger.new(output)
+      expect(logger.tag_formatter).to be
+    end
+
     it "should open a file path in a device" do
       logger = Lumberjack::Logger.new(File.join(tmp_dir, "log_file_1.log"))
       expect(logger.device.class).to eq(Lumberjack::Device::LogFile)
@@ -480,6 +492,30 @@ RSpec.describe Lumberjack::Logger do
           logger.send(level, {tag: 1}, "spec") { "test" }
           expect(output.string.chomp).to eq("[#{timestamp} #{level.upcase} spec(#{$$})] test [tag:1]")
         end
+      end
+    end
+
+    describe "message" do
+      it "should apply the default formatter to the message" do
+        logger = Lumberjack::Logger.new(output, buffer_size: 0, template: ":message")
+        logger.formatter.add(String) { |msg| msg.upcase }
+        logger.info("test")
+        expect(output.string.chomp).to eq "TEST"
+      end
+
+      it "should apply the message formatter instead of the default formatter if it applies" do
+        logger = Lumberjack::Logger.new(output, buffer_size: 0, template: ":message")
+        logger.formatter.add(String) { |msg| msg.upcase }
+        logger.message_formatter.add(String) { |msg| msg.reverse }
+        logger.info("test")
+        expect(output.string.chomp).to eq "tset"
+      end
+
+      it "should copy tags from the message if the formatter returns a Lumberjack::Formatter::TaggedMessage" do
+        logger = Lumberjack::Logger.new(output, buffer_size: 0, template: ":message :tags")
+        logger.formatter.add(String) { |msg| Lumberjack::Formatter::TaggedMessage.new(msg.upcase, tag: msg.downcase) }
+        logger.info("Test")
+        expect(output.string.chomp).to eq "TEST [tag:test]"
       end
     end
 
