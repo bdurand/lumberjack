@@ -201,8 +201,8 @@ module Lumberjack
         msg_class_formatter = message_formatter&.formatter_for(message.class)
         if msg_class_formatter
           message = msg_class_formatter.call(message)
-        else
-          message = formatter.format(message) if formatter
+        elsif formatter
+          message = formatter.format(message)
         end
         message_tags = nil
         if message.is_a?(Formatter::TaggedMessage)
