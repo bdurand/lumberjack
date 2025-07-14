@@ -18,7 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Removed unit of work id from default log templates. You can add back the same functionality by adding the `:unit_of_work_id` tag to the logger template.
 - Removed support for Ruby versions < 2.5.
 
 ### Deprecated
