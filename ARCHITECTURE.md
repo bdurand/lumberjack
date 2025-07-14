@@ -93,8 +93,8 @@ classDiagram
         +Hash tags
         +initialize(parent_context)
         +tag(tags)
-        +[](key)
-        +[]=(key, value)
+        +\[](key)
+        +\[]=(key, value)
         +reset()
     }
 
