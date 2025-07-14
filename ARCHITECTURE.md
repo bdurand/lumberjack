@@ -113,7 +113,7 @@ classDiagram
     Device --> Template : may use
     Formatter --> LogEntry : formats message
     TagFormatter --> LogEntry : formats tags
-    Context --> Logger : provides tags
+    Logger <-- Context : provides tags
 ```
 
 ## Device Hierarchy
