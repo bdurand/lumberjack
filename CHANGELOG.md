@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.3.0
+
+### Added
+
+- Added `Lumberjack::Formatter::TaggedMessage` to allow extracting tags from log messages via a formatter in order to better support structured logging of objects.
+- Added built in `:round` formatter to round numbers to a specified number of decimal places.
+- Added built in `:redact` formatter to redact sensitive information from log tags.
+- Added support in `Lumberjack::TagFormatter` for class formatters. Class formatters will be applied to any tag values that match the class.
+- Apply formatters to enumerable values in tags. Name formatters are applied using dot syntax when a tag value contains a hash.
+- Added support for a dedicated message formatter that can override the default formatter on the log message.
+- Added support for setting tags from the request environment in `Lumberjack::Rack::Context` middleware.
+
+### Removed
+
+- Removed support for Ruby versions < 2.5.
+
+### Deprecated
+
+- All unit of work related functionality from version 1.0 has been officially deprecated and will be removed in version 2.0. Use tags instead to set a global context for log entries.
+
 ## 1.2.10
 
 ### Added

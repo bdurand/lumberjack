@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lumberjack do
+RSpec.describe Lumberjack do
   describe "context" do
     it "should create a context with tags for a block" do
       Lumberjack.context do

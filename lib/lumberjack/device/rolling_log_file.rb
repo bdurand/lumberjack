@@ -18,7 +18,7 @@ module Lumberjack
       def initialize(path, options = {})
         @path = File.expand_path(path)
         @keep = options[:keep]
-        super(path, options)
+        super
         @file_inode = begin
           stream.lstat.ino
         rescue

@@ -21,7 +21,7 @@ module Lumberjack
   # monitoring thread, but its use is highly recommended.
   #
   # Each log entry records the log message and severity along with the time it was logged, the
-  # program name, process id, and unit of work id. The message will be converted to a string, but
+  # program name, process id, and an optional hash of tags. The message will be converted to a string, but
   # otherwise, it is up to the device how these values are recorded. Messages are converted to strings
   # using a Formatter associated with the logger.
   class Logger
@@ -39,6 +39,9 @@ module Lumberjack
     # The device being written to
     attr_accessor :device
 
+    # The Formatter used only for log entry messages.
+    attr_accessor :message_formatter
+
     # The TagFormatter used for formatting tags for output
     attr_accessor :tag_formatter
 
@@ -51,21 +54,19 @@ module Lumberjack
     # If it is :null, it will be a Null device that won't record any output.
     # Otherwise, it will be assumed to be file path and wrapped in a Device::LogFile class.
     #
-    # This method can take the following options:
-    #
-    # * :level - The logging level below which messages will be ignored.
-    # * :formatter - The formatter to use for outputting messages to the log.
-    # * :datetime_format - The format to use for log timestamps.
-    # * :tag_formatter - The TagFormatter to use for formatting tags.
-    # * :progname - The name of the program that will be recorded with each log entry.
-    # * :flush_seconds - The maximum number of seconds between flush calls.
-    # * :roll - If the log device is a file path, it will be a Device::DateRollingLogFile if this is set.
-    # * :max_size - If the log device is a file path, it will be a Device::SizeRollingLogFile if this is set.
-    #
     # All other options are passed to the device constuctor.
     #
     # @param [Lumberjack::Device, Object, Symbol, String] device The device to log to.
     # @param [Hash] options The options for the logger.
+    # @option options [Integer, Symbol, String] :level The logging level below which messages will be ignored.
+    # @option options [Lumberjack::Formatter] :formatter The formatter to use for outputting messages to the log.
+    # @option options [String] :datetime_format The format to use for log timestamps.
+    # @option options [Lumberjack::Formatter] :message_formatter The MessageFormatter to use for formatting log messages.
+    # @option options [Lumberjack::TagFormatter] :tag_formatter The TagFormatter to use for formatting tags.
+    # @option options [String] :progname The name of the program that will be recorded with each log entry.
+    # @option options [Numeric] :flush_seconds The maximum number of seconds between flush calls.
+    # @option options [Boolean] :roll If the log device is a file path, it will be a Device::DateRollingLogFile if this is set.
+    # @option options [Integer] :max_size If the log device is a file path, it will be a Device::SizeRollingLogFile if this is set.
     def initialize(device = $stdout, options = {})
       options = options.dup
       self.level = options.delete(:level) || INFO
@@ -74,8 +75,9 @@ module Lumberjack
 
       @device = open_device(device, options) if device
       self.formatter = (options[:formatter] || Formatter.new)
-      @tag_formatter = (options[:tag_formatter] || TagFormatter.new)
-      time_format = (options[:datetime_format] || options[:time_format])
+      @message_formatter = options[:message_formatter] || Formatter.empty
+      @tag_formatter = options[:tag_formatter] || TagFormatter.new
+      time_format = options[:datetime_format] || options[:time_format]
       self.datetime_format = time_format if time_format
       @last_flushed_at = Time.now
       @silencer = true
@@ -194,21 +196,26 @@ module Lumberjack
         Thread.current[:lumberjack_logging] = true
 
         time = Time.now
+
         message = message.call if message.is_a?(Proc)
-        message = formatter.format(message)
+        msg_class_formatter = message_formatter&.formatter_for(message.class)
+        if msg_class_formatter
+          message = msg_class_formatter.call(message)
+        elsif formatter
+          message = formatter.format(message)
+        end
+        message_tags = nil
+        if message.is_a?(Formatter::TaggedMessage)
+          message_tags = message.tags
+          message = message.message
+        end
+
         progname ||= self.progname
 
         current_tags = self.tags
         tags = nil unless tags.is_a?(Hash)
-        if current_tags.empty?
-          tags = Tags.stringify_keys(tags) unless tags.nil?
-        else
-          tags = if tags.nil?
-            current_tags.dup
-          else
-            current_tags.merge(Tags.stringify_keys(tags))
-          end
-        end
+        tags = merge_tags(current_tags, tags)
+        tags = merge_tags(tags, message_tags) if message_tags
         tags = Tags.expand_runtime_values(tags)
         tags = tag_formatter.format(tags) if tag_formatter
 
@@ -558,6 +565,20 @@ module Lumberjack
         end
       end
       add_entry(severity, message, progname, tags)
+    end
+
+    # Merge a tags hash into an existing tags hash.
+    def merge_tags(current_tags, tags)
+      if current_tags.nil? || current_tags.empty?
+        tags = Tags.stringify_keys(tags) unless tags.nil?
+      else
+        tags = if tags.nil?
+          current_tags.dup
+        else
+          current_tags.merge(Tags.stringify_keys(tags))
+        end
+      end
+      tags
     end
 
     # Set a local value for a thread tied to this object.

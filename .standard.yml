@@ -1,6 +1,4 @@
-# I really just have issues with the automatic "semantic blocks"
-
-ruby_version: 2.3
+ruby_version: 2.5
 
 format: progress
 

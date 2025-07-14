@@ -27,16 +27,18 @@ jobs:
           - ruby: "ruby"
             standardrb: true
           - ruby: "jruby"
+          - ruby: "3.4"
+          - ruby: "3.3"
           - ruby: "3.2"
           - ruby: "3.1"
           - ruby: "3.0"
           - ruby: "2.7"
           - ruby: "2.6"
           - ruby: "2.5"
-          - ruby: "2.4"
-          - ruby: "2.3"
           - ruby: "ruby"
             appraisal: activesupport_latest
+          - ruby: "3.4"
+            appraisal: activesupport_8
           - ruby: "3.1"
             appraisal: activesupport_7
           - ruby: "3.0"
