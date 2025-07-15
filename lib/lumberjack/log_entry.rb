@@ -47,15 +47,19 @@ module Lumberjack
 
     # @deprecated - backward compatibility with 1.0 API. Will be removed in version 2.0.
     def unit_of_work_id
-      tags[UNIT_OF_WORK_ID] if tags
+      Lumberjack::Utils.deprecated("Lumberjack::LogEntry#unit_of_work_id", "Lumberjack::LogEntry#unit_of_work_id will be removed in version 2.0") do
+        tags[UNIT_OF_WORK_ID] if tags
+      end
     end
 
     # @deprecated - backward compatibility with 1.0 API. Will be removed in version 2.0.
     def unit_of_work_id=(value)
-      if tags
-        tags[UNIT_OF_WORK_ID] = value
-      else
-        @tags = {UNIT_OF_WORK_ID => value}
+      Lumberjack::Utils.deprecated("Lumberjack::LogEntry#unit_of_work_id=", "Lumberjack::LogEntry#unit_of_work_id= will be removed in version 2.0") do
+        if tags
+          tags[UNIT_OF_WORK_ID] = value
+        else
+          @tags = {UNIT_OF_WORK_ID => value}
+        end
       end
     end
 

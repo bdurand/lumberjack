@@ -21,12 +21,12 @@ RSpec.describe Lumberjack::Formatter::DateTimeFormatter do
 
   it "should not format a non date or time" do
     formatter = Lumberjack::Formatter::DateTimeFormatter.new("%Y-%m-%d %H:%M")
-    expect("foo").to eq "foo"
+    expect(formatter.call("foo")).to eq "foo"
   end
 
   it "should use iso8601 by default" do
     time = Time.now
     formatter = Lumberjack::Formatter::DateTimeFormatter.new
-    expect(formatter.call(time)).to eq time.iso8601
+    expect(formatter.call(time)).to eq time.iso8601(6)
   end
 end

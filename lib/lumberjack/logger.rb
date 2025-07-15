@@ -219,7 +219,7 @@ module Lumberjack
         tags = Tags.expand_runtime_values(tags)
         tags = tag_formatter.format(tags) if tag_formatter
 
-        entry = LogEntry.new(time, severity, message, progname, $$, tags)
+        entry = LogEntry.new(time, severity, message, progname, Process.pid, tags)
         write_to_device(entry)
       ensure
         Thread.current[:lumberjack_logging] = nil
@@ -469,10 +469,11 @@ module Lumberjack
     end
 
     # Set a hash of tags on logger. If a block is given, the tags will only be set
-    # for the duration of the block. If this method is called inside such a block,
-    # the tags will only be defined on the tags in that block. When the parent block
-    # exits, all the tags will be reverted. If there is no block, then the tags will
-    # be defined as global and apply to all log statements.
+    # for the duration of the block. Otherwise the tags will be applied on the current
+    # logger context for the duration of that context.
+    #
+    # If there is no block or context, the tags will be applied to the global context.
+    # This behavior is deprecated. Use the `tag_globally` method to set global tags instead.
     #
     # @param [Hash] tags The tags to set.
     # @return [void]
@@ -486,9 +487,20 @@ module Lumberjack
         thread_tags.merge!(tags)
         nil
       else
-        @tags.merge!(tags)
-        nil
+        Lumberjack::Utils.deprecated("Lumberjack::Logger#tag", "Lumberjack::Logger#tag must be called with a block or inside a context block. In version 2.0 it will no longer be used for setting global tags. Use Lumberjack::Logger#tag_globally instead.") do
+          tag_globally(tags)
+        end
       end
+    end
+
+    # Add global tags to the logger that will appear on all log entries.
+    #
+    # @param [Hash] tags The tags to set.
+    # @return [void]
+    def tag_globally(tags)
+      tags = Tags.stringify_keys(tags)
+      @tags.merge!(tags)
+      nil
     end
 
     # Remove a tag from the current tag context. If this is called inside a block to a
@@ -538,6 +550,14 @@ module Lumberjack
           set_thread_local_value(:lumberjack_logger_tags, scope_tags)
         end
       end
+    end
+
+    # Return true if the thread is currently in a Lumberjack::Context block.
+    # When the logger is in a context block, tagging will only apply to that block.
+    #
+    # @return [Boolean]
+    def in_tag_context?
+      !!thread_local_value(:lumberjack_logger_tags)
     end
 
     private

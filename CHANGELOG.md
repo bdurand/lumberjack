@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Apply formatters to enumerable values in tags. Name formatters are applied using dot syntax when a tag value contains a hash.
 - Added support for a dedicated message formatter that can override the default formatter on the log message.
 - Added support for setting tags from the request environment in `Lumberjack::Rack::Context` middleware.
+- Added helper methods to generate global PID's and thread ids.
+- Added `Lumberjack::Logger#tag_globally` to explicitly set a global tag for all loggers.
+- Added `Lumberjack::Utils.hostname` to get the hostname in UTF-8 encoding.
+- Added `Lumberjack::Utils.global_pid` to get a global process id in a consistent format.
+- Added `Lumberjack::Utils.global_thread_id` to get a thread id in a consistent format.
+- Added `Lumberjack::Utils.thread_name` to get a thread name in a consistent format.
+
+### Changed
+
+- Default date/time format for log entries is now ISO-8601 with microsecond precision.
 
 ### Removed
 
@@ -23,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 - All unit of work related functionality from version 1.0 has been officially deprecated and will be removed in version 2.0. Use tags instead to set a global context for log entries.
+- Calling `Lumberjack::Logger#tag` without a block is deprecated. Use `Lumberjack::Logger#tag_globally` instead.
 
 ## 1.2.10
 

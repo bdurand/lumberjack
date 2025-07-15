@@ -57,7 +57,7 @@ RSpec.describe Lumberjack::LogEntry do
     expect(entry.tags).to eq("unit_of_work_id" => "ABCD")
   end
 
-  it "should have a unit_of_work_id for backward compatibility with the 1.0 API" do
+  it "should have a unit_of_work_id for backward compatibility with the 1.0 API", suppress_warnings: true do
     entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "ABCD")
     expect(entry.unit_of_work_id).to eq("ABCD")
     entry.unit_of_work_id = "1234"

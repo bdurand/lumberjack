@@ -11,8 +11,10 @@ module Lumberjack
       REQUEST_ID = "action_dispatch.request_id"
 
       def initialize(app, abbreviated = false)
-        @app = app
-        @abbreviated = abbreviated
+        Lumberjack::Utils.deprecated("Lumberjack::Rack::RequestId", "Lumberjack::Rack::RequestId will be removed in version 2.0") do
+          @app = app
+          @abbreviated = abbreviated
+        end
       end
 
       def call(env)
