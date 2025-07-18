@@ -99,7 +99,7 @@ module Lumberjack
       return [nil] * (tag_vars.size + 1) if tags.nil? || tags.size == 0
 
       tags_string = +""
-      tags.each do |name, value|
+      Lumberjack::Utils.flatten_tags(tags).each do |name, value|
         unless value.nil? || tag_vars.include?(name)
           value = value.to_s
           value = value.gsub(Lumberjack::LINE_SEPARATOR, " ") if value.include?(Lumberjack::LINE_SEPARATOR)

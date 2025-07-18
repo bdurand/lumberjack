@@ -16,7 +16,7 @@ module Lumberjack
         if @format && obj.respond_to?(:strftime)
           obj.strftime(@format)
         elsif obj.respond_to?(:iso8601)
-          obj.iso8601
+          obj.iso8601(6)
         else
           obj.to_s
         end

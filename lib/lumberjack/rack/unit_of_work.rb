@@ -6,7 +6,9 @@ module Lumberjack
     # with an identifier to tie log entries together in a unit of work. Will be removed in version 2.0.
     class UnitOfWork
       def initialize(app)
-        @app = app
+        Lumberjack::Utils.deprecated("Lumberjack::Rack::UnitOfWork", "Lumberjack::Rack::UnitOfWork will be removed in version 2.0") do
+          @app = app
+        end
       end
 
       def call(env)

@@ -2,7 +2,7 @@ require "spec_helper"
 
 RSpec.describe Lumberjack::Device::RollingLogFile do
   before :all do
-    Lumberjack::Device::SizeRollingLogFile # needed by jruby
+    [Lumberjack::Device::SizeRollingLogFile] # needed by jruby
     create_tmp_dir
   end
 
@@ -14,7 +14,7 @@ RSpec.describe Lumberjack::Device::RollingLogFile do
     delete_tmp_files
   end
 
-  let(:entry) { Lumberjack::LogEntry.new(Time.now, 1, "New log entry", nil, $$, nil) }
+  let(:entry) { Lumberjack::LogEntry.new(Time.now, 1, "New log entry", nil, Process.pid, nil) }
 
   it "should check for rolling the log file on flush" do
     device = Lumberjack::Device::RollingLogFile.new(File.join(tmp_dir, "test.log"), buffer_size: 32767, min_roll_check: 0)
@@ -32,7 +32,7 @@ RSpec.describe Lumberjack::Device::RollingLogFile do
     allow(device).to receive_messages(archive_file_suffix: "rolled")
     device.write(entry)
     device.flush
-    device.write(Lumberjack::LogEntry.new(Time.now, 1, "Another log entry", nil, $$, nil))
+    device.write(Lumberjack::LogEntry.new(Time.now, 1, "Another log entry", nil, Process.pid, nil))
     device.close
     expect(File.read("#{log_file}.rolled")).to eq("New log entry#{Lumberjack::LINE_SEPARATOR}")
     expect(File.read(log_file)).to eq("Another log entry#{Lumberjack::LINE_SEPARATOR}")
@@ -46,7 +46,7 @@ RSpec.describe Lumberjack::Device::RollingLogFile do
     device.flush
     File.rename(log_file, "#{log_file}.rolled")
     device.flush
-    device.write(Lumberjack::LogEntry.new(Time.now, 1, "Another log entry", nil, $$, nil))
+    device.write(Lumberjack::LogEntry.new(Time.now, 1, "Another log entry", nil, Process.pid, nil))
     device.close
     expect(File.read("#{log_file}.rolled")).to eq("New log entry#{Lumberjack::LINE_SEPARATOR}")
     expect(File.read(log_file)).to eq("Another log entry#{Lumberjack::LINE_SEPARATOR}")
@@ -67,7 +67,7 @@ RSpec.describe Lumberjack::Device::RollingLogFile do
       thread_count.times do
         threads << Thread.new do
           entry_count.times do |i|
-            device.write(Lumberjack::LogEntry.new(Time.now, severity, message, "test", $$, nil))
+            device.write(Lumberjack::LogEntry.new(Time.now, severity, message, "test", Process.pid, nil))
             device.flush if i % 10 == 0
           end
           device.flush

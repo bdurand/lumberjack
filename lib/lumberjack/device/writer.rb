@@ -149,6 +149,13 @@ module Lumberjack
         end
       end
 
+      # Return the underlying stream. Provided for API compatibility with Logger devices.
+      #
+      # @return [IO] The underlying stream.
+      def dev
+        @stream
+      end
+
       protected
 
       # Set the underlying stream.

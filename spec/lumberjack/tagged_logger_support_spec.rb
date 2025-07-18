@@ -7,6 +7,13 @@ RSpec.describe Lumberjack::TaggedLoggerSupport do
 
   describe "logger" do
     describe "tagged" do
+      it "should add global tags to the logger with no block" do
+        logger.tagged("foo", "bar")
+        logger.info("message", count: 1)
+        line = output.string.chomp
+        expect(line).to eq 'message - 1 - [tagged:["foo", "bar"]]'
+      end
+
       it "should add tags to the tag 'tagged'" do
         logger.tagged("foo", "bar") do
           logger.info("message", count: 1)

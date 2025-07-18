@@ -1,6 +1,6 @@
 require "spec_helper"
 
-RSpec.describe Lumberjack::Rack::UnitOfWork do
+RSpec.describe Lumberjack::Rack::UnitOfWork, suppress_warnings: true do
   it "should create a unit of work in a middleware stack" do
     app = lambda { |env| [200, {"Content-Type" => env["Content-Type"], "Unit-Of-Work" => Lumberjack.unit_of_work_id.to_s}, ["OK"]] }
     handler = Lumberjack::Rack::UnitOfWork.new(app)

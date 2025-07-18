@@ -22,6 +22,7 @@ module Lumberjack
   require_relative "lumberjack/tagged_logging"
   require_relative "lumberjack/template"
   require_relative "lumberjack/rack"
+  require_relative "lumberjack/utils"
 
   class << self
     # Define a unit of work within a block. Within the block supplied to this
@@ -38,10 +39,12 @@ module Lumberjack
     # @return [void]
     # @deprecated Use tags instead. This will be removed in version 2.0.
     def unit_of_work(id = nil)
-      id ||= SecureRandom.hex(6)
-      context do
-        context[:unit_of_work_id] = id
-        yield
+      Lumberjack::Utils.deprecated("Lumberjack.unit_of_work", "Lumberjack.unit_of_work will be removed in version 2.0. Use Lumberjack::Logger#tag(unit_of_work: id) instead.") do
+        id ||= SecureRandom.hex(6)
+        context do
+          context[:unit_of_work_id] = id
+          yield
+        end
       end
     end
 
