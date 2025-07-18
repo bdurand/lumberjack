@@ -36,9 +36,6 @@ module Lumberjack
     # Set the name of the program to attach to log entries.
     attr_writer :progname
 
-    # The device being written to
-    attr_accessor :device
-
     # The Formatter used only for log entry messages.
     attr_accessor :message_formatter
 
@@ -73,7 +70,7 @@ module Lumberjack
       self.progname = options.delete(:progname)
       max_flush_seconds = options.delete(:flush_seconds).to_f
 
-      @device = open_device(device, options) if device
+      @logdev = open_device(device, options) if device
       self.formatter = (options[:formatter] || Formatter.new)
       @message_formatter = options[:message_formatter] || Formatter.empty
       @tag_formatter = options[:tag_formatter] || TagFormatter.new
@@ -85,6 +82,25 @@ module Lumberjack
       @closed = false
 
       create_flusher_thread(max_flush_seconds) if max_flush_seconds > 0
+    end
+
+    # Get the logging device that is used to write log entries.
+    #
+    # @return [Lumberjack::Device] The logging device.
+    def device
+      @logdev
+    end
+
+    # Set the logging device to a new device.
+    #
+    # @param [Lumberjack::Device] device The new logging device.
+    # @return [void]
+    def device=(device)
+      if device
+        @logdev = open_device(device, options)
+      else
+        @logdev = nil
+      end
     end
 
     # Get the timestamp format on the device if it has one.
@@ -448,6 +464,14 @@ module Lumberjack
       end
     end
 
+    # Provided for compatibility with ActiveSupport::LoggerThreadSafeLevel to temporarily set the log level.
+    #
+    # @param [Integer, String, Symbol] level The log level to use inside the block.
+    # @return [Object] The result of the block.
+    def log_at(level, &block)
+      silence(level, &block)
+    end
+
     # Set the program name that is associated with log messages. If a block
     # is given, the program name will be valid only within the block.
     #
@@ -530,6 +554,31 @@ module Lumberjack
       scope_tags = thread_local_value(:lumberjack_logger_tags)
       tags.merge!(scope_tags) if scope_tags && !scope_tags.empty?
       tags
+    end
+
+    # Get the value of a tag by name from the current tag context.
+    #
+    # @param [String, Symbol] name The name of the tag to get.
+    # @return [Object, nil] The value of the tag or nil if the tag does not exist.
+    def tag_value(name)
+      all_tags = tags
+      return nil if tags.empty?
+
+      name = name.join(".") if name.is_a?(Array)
+      name = name.to_s
+      return all_tags[name] if all_tags.include?(name)
+
+      flattened_tags = Lumberjack::Utils.flatten_tags(all_tags)
+      return flattened_tags[name] if flattened_tags.include?(name)
+
+      flattened_tags.keys.select { |key| key.include?(".") }.each do |key|
+        parts = key.split(".")
+        while subkey = parts.pop do
+          flattened_tags[parts.join(".")] = {subkey => flattened_tags[(parts + [subkey]).join(".")]}
+        end
+      end
+
+      flattened_tags[name]
     end
 
     # Remove all tags on the current logger and logging context within a block.

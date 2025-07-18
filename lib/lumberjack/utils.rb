@@ -94,6 +94,24 @@ module Lumberjack
         str.dup.force_encoding("ASCII-8BIT").encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
       end
 
+      # Flatten a tag hash to a single level hash with dot notation for nested keys.
+      #
+      # @param tag_hash [Hash] The hash to flatten.
+      # @return [Hash] The flattened hash.
+      def flatten_tags(tag_hash)
+        return {} unless tag_hash.is_a?(Hash)
+
+        tag_hash.each_with_object({}) do |(key, value), result|
+          if value.is_a?(Hash)
+            value.each do |sub_key, sub_value|
+              result["#{key}.#{sub_key}"] = sub_value
+            end
+          else
+            result[key] = value
+          end
+        end
+      end
+
       private
 
       def slugify(str)

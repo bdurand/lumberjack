@@ -48,4 +48,19 @@ describe Lumberjack::Utils do
       expect(Lumberjack::Utils.thread_name(thread)).to eq "Test-Thread"
     end
   end
+
+  describe ".flatten_tags" do
+    it "flattens a nested tag hash" do
+      tag_hash = { "user" => { "id" => 123, "name" => "Alice" }, "action" => "login" }
+      expect(Lumberjack::Utils.flatten_tags(tag_hash)).to eq(
+        "user.id" => 123,
+        "user.name" => "Alice",
+        "action" => "login"
+      )
+    end
+
+    it "returns an empty hash for non-hash input" do
+      expect(Lumberjack::Utils.flatten_tags("not a hash")).to eq({})
+    end
+  end
 end

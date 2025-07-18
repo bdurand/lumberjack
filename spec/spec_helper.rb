@@ -20,7 +20,7 @@ begin
 rescue LoadError
 end
 
-require File.expand_path("../../lib/lumberjack.rb", __FILE__)
+require_relative "../lib/lumberjack.rb"
 
 RSpec.configure do |config|
   config.warnings = true

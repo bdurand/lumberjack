@@ -113,6 +113,51 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.progname).to eq("app")
     end
 
+    it "should be able to set the progname in a block" do
+      logger = Lumberjack::Logger.new
+      logger.set_progname("app")
+      expect(logger.progname).to eq("app")
+      block_executed = false
+      logger.set_progname("xxx") do
+        block_executed = true
+        expect(logger.progname).to eq("xxx")
+      end
+      expect(block_executed).to eq(true)
+      expect(logger.progname).to eq("app")
+    end
+
+    it "should only affect the current thread when changing the progname in a block" do
+      output = StringIO.new
+      logger = Lumberjack::Logger.new(output, progname: "thread1", buffer_size: 0, level: Logger::INFO, template: ":progname :message")
+      # status is used to make sure the two threads are executing at the same time
+      status = 0
+      begin
+        Thread.new do
+          logger.set_progname("thread2") do
+            logger.info("inner")
+            status = 1
+            loop do
+              sleep(0.001)
+              break if status == 2
+            end
+          end
+        end
+        loop do
+          sleep(0.001)
+          break if status == 1
+        end
+        logger.info("outer")
+        status = 2
+        logger.close
+        expect(output.string).to include("thread1")
+        expect(output.string).to include("thread2")
+      ensure
+        status = 2
+      end
+    end
+  end
+
+  describe "#silence" do
     it "should be able to silence the log in a block" do
       output = StringIO.new
       logger = Lumberjack::Logger.new(output, buffer_size: 0, level: Logger::INFO, template: ":message")
@@ -168,19 +213,6 @@ RSpec.describe Lumberjack::Logger do
       expect(output.string.split).to eq(["one", "two", "three", "four"])
     end
 
-    it "should be able to set the progname in a block" do
-      logger = Lumberjack::Logger.new
-      logger.set_progname("app")
-      expect(logger.progname).to eq("app")
-      block_executed = false
-      logger.set_progname("xxx") do
-        block_executed = true
-        expect(logger.progname).to eq("xxx")
-      end
-      expect(block_executed).to eq(true)
-      expect(logger.progname).to eq("app")
-    end
-
     it "should only affect the current thread when silencing the logger" do
       output = StringIO.new
       logger = Lumberjack::Logger.new(output, buffer_size: 0, level: Logger::INFO, template: ":message")
@@ -210,39 +242,9 @@ RSpec.describe Lumberjack::Logger do
         status = 2
       end
     end
-
-    it "should only affect the current thread when changing the progname in a block" do
-      output = StringIO.new
-      logger = Lumberjack::Logger.new(output, progname: "thread1", buffer_size: 0, level: Logger::INFO, template: ":progname :message")
-      # status is used to make sure the two threads are executing at the same time
-      status = 0
-      begin
-        Thread.new do
-          logger.set_progname("thread2") do
-            logger.info("inner")
-            status = 1
-            loop do
-              sleep(0.001)
-              break if status == 2
-            end
-          end
-        end
-        loop do
-          sleep(0.001)
-          break if status == 1
-        end
-        logger.info("outer")
-        status = 2
-        logger.close
-        expect(output.string).to include("thread1")
-        expect(output.string).to include("thread2")
-      ensure
-        status = 2
-      end
-    end
   end
 
-  describe "datetime_format" do
+  describe "#datetime_format" do
     it "should be able to set the datetime format for timestamps on the log device" do
       output = StringIO.new
       logger = Lumberjack::Logger.new(output, template: ":time :message", datetime_format: "%Y-%m-%d")
@@ -255,6 +257,21 @@ RSpec.describe Lumberjack::Logger do
         logger.flush
         expect(output.string).to eq "#{Time.now.strftime("%Y-%m-%d")} one\n#{Time.now.strftime("%m-%d-%Y")} two\n"
       end
+    end
+  end
+
+  describe "#log_at" do
+    it "should temporarily set the log level for a block" do
+      output = StringIO.new
+      logger = Lumberjack::Logger.new(output, level: Logger::INFO, template: ":message")
+      logger.info("one")
+      logger.log_at(Logger::WARN) do
+        expect(logger.level).to eq(Logger::WARN)
+        logger.warn("two")
+        logger.info("three")
+      end
+      logger.info("four")
+      expect(output.string.split).to eq(["one", "two", "four"])
     end
   end
 
@@ -625,6 +642,43 @@ RSpec.describe Lumberjack::Logger do
       end
     end
 
+    describe "#tag_value" do
+      it "should return the value of a tag by name" do
+        logger.tag_globally(foo: "bar") do
+          expect(logger.tag_value(:foo)).to eq("bar")
+          expect(logger.tag_value("foo")).to eq("bar")
+        end
+      end
+
+      it "should return the most recent value of a tag" do
+        logger.tag_globally(foo: "bar")
+        logger.tag(foo: "baz") do
+          logger.tag(foo: "qux") do
+            expect(logger.tag_value(:foo)).to eq("qux")
+          end
+          expect(logger.tag_value(:foo)).to eq("baz")
+        end
+        expect(logger.tag_value(:foo)).to eq("bar")
+      end
+
+      it "should expand dot notation in tag names" do
+        logger.tag(foo: {"bar.baz": "boo"}) do
+          expect(logger.tag_value("foo.bar.baz")).to eq("boo")
+          expect(logger.tag_value("foo.bar")).to eq("baz" => "boo")
+        end
+      end
+
+      it "should expand tag name as a array to dot notation" do
+        logger.tag("foo.bar" => "baz") do
+          expect(logger.tag_value([:foo, :bar])).to eq("baz")
+        end
+      end
+
+      it "should return nil for a non-existent tag" do
+        expect(logger.tag_value(:non_existent)).to be_nil
+      end
+    end
+
     describe "untagged" do
       it "should remove tags from the Lumberjack::Context" do
         Lumberjack.context do
@@ -788,6 +842,19 @@ RSpec.describe Lumberjack::Logger do
         expect(logger.debug?).to eq(false)
         logger.unknown("unknown")
         expect(output.string).to eq("unknown#{n}")
+      end
+    end
+  end
+
+  describe "Rails compatibility" do
+    it "should be compatible with ActiveSupport::Logger.logger_outputs_to?" do
+      if defined?(ActiveSupport::Logger)
+        stream = StringIO.new
+        logger = Lumberjack::Logger.new(stream)
+        expect(ActiveSupport::Logger.logger_outputs_to?(logger, stream)).to be true
+        expect(ActiveSupport::Logger.logger_outputs_to?(logger, $stdout)).to be false
+      else
+        skip "ActiveSupport::Logger is not defined"
       end
     end
   end

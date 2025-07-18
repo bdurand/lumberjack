@@ -17,14 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for setting tags from the request environment in `Lumberjack::Rack::Context` middleware.
 - Added helper methods to generate global PID's and thread ids.
 - Added `Lumberjack::Logger#tag_globally` to explicitly set a global tag for all loggers.
+- Added `Lumberjack::Logger#tag_value` to get the value of a tag by name from the current tag context.
 - Added `Lumberjack::Utils.hostname` to get the hostname in UTF-8 encoding.
 - Added `Lumberjack::Utils.global_pid` to get a global process id in a consistent format.
 - Added `Lumberjack::Utils.global_thread_id` to get a thread id in a consistent format.
 - Added `Lumberjack::Utils.thread_name` to get a thread name in a consistent format.
+- Added support for `ActiveSupport::Logging.logger_outputs_to?` to check if a logger is outputting to a specific IO stream.
+- Added `Lumberjack::Logger#log_at` method to temporarily set the log level for a block of code for compatibility with ActiveSupport loggers.
 
 ### Changed
 
 - Default date/time format for log entries is now ISO-8601 with microsecond precision.
+- Tags that are set to hash values will now be flattened into dot-separated keys in templates.
 
 ### Removed
 
