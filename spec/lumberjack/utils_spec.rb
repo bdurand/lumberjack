@@ -63,4 +63,27 @@ describe Lumberjack::Utils do
       expect(Lumberjack::Utils.flatten_tags("not a hash")).to eq({})
     end
   end
+
+  describe ".deprecated" do
+    around do |example|
+      original_value = ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"]
+      begin
+        ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = "false"
+        example.run
+      ensure
+        ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = original_value
+      end
+    end
+
+    it "prints a deprecation warning the first time a deprecated method is called" do
+      retval = nil
+      expect { retval = Lumberjack::Utils.deprecated("test_method_1", "This is deprecated") { :foo } }.to output.to_stderr
+      expect(retval).to eq :foo
+    end
+
+    it "does not print the warning again for subsequent calls" do
+      expect { Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :foo } }.to output(/DEPRECATION WARNING: This is deprecated/).to_stderr
+      expect { Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :bar } }.not_to output.to_stderr
+    end
+  end
 end

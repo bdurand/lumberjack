@@ -372,12 +372,12 @@ To send log messages to syslog instead of to a file, you could use this (require
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'lumberjack'
+gem "lumberjack"
 ```
 
 And then execute:
 ```bash
-$ bundle
+$ bundle install
 ```
 
 Or install it yourself as:

@@ -15,7 +15,10 @@ module Lumberjack
     @hostname = UNDEFINED
 
     class << self
-      # Print warning when deprecated methods are called the first time.
+      # Print warning when deprecated methods are called the first time. This can be disabled
+      # by setting the environment variable `LUMBERJACK_NO_DEPRECATION_WARNINGS` to "true".
+      # You can see every usage of a deprecated method along with a full stack trace by setting
+      # the environment variable `VERBOSE_LUMBERJACK_DEPRECATION_WARNING` to "true".
       #
       # @param method [String] The name of the deprecated method.
       # @param message [String] Optional message to include in the warning.
@@ -26,9 +29,12 @@ module Lumberjack
           @deprecations_lock.synchronize do
             @deprecations ||= {}
             unless @deprecations.include?(method)
-              trace = caller_locations[2, 2].last
-              message = "DEPRECATION WARNING: #{message} Called from #{trace.path}:#{trace.lineno}."
-              @deprecations[method] = true
+              trace = caller[3..-1]
+              unless ENV["VERBOSE_LUMBERJACK_DEPRECATION_WARNING"] == "true"
+                trace = [trace.first]
+                @deprecations[method] = true
+              end
+              message = "DEPRECATION WARNING: #{message} Called from #{trace.join("\n")}"
               warn(message) unless ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] == "true"
             end
           end
