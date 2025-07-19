@@ -9,12 +9,14 @@ YARD::Rake::YardocTask.new(:yard)
 
 require "bundler/gem_tasks"
 
-task :release do
+task :verify_release_branch do
   unless `git rev-parse --abbrev-ref HEAD`.chomp == "master"
-    warn "Gem can only be released from the master branch"
+    warn "Gem can only be released from the main branch"
     exit 1
   end
 end
+
+task release: :verify_release_branch
 
 require "rspec/core/rake_task"
 
