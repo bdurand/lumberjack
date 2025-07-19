@@ -515,6 +515,15 @@ module Lumberjack
       end
     end
 
+    # Set up a context block for the logger. All tags added within the block will be cleared when
+    # the block exits.
+    #
+    def context(&block)
+      thread_tags = thread_local_value(:lumberjack_logger_tags)&.dup
+      thread_tags ||= {}
+      push_thread_local_value(:lumberjack_logger_tags, thread_tags, &block)
+    end
+
     # Add global tags to the logger that will appear on all log entries.
     #
     # @param [Hash] tags The tags to set.

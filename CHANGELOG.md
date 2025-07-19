@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.3.1
+
+### Added
+
+- Added `Lumberjack::Logger#context` method to set up a context block for the logger. This is the same as calling `Lumberjack::Logger#tag` with an empty hash.
+- Log entries now remove empty tag values so they don't have to be removed downstream.
+
+### Fixed
+
+- ActiveSupport::TaggedLogger now calls `Lumberjack::Logger#tag_globally` to prevent deprcation warnings.
+
 ## 1.3.0
 
 ### Added

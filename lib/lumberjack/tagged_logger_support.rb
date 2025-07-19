@@ -47,7 +47,7 @@ module Lumberjack
         tag_hash["tagged"] = tagged_values + [tag]
       end
 
-      if block || in_tag_context?
+      if block
         tag(tag_hash, &block)
       else
         tag_globally(tag_hash)
@@ -61,11 +61,11 @@ module Lumberjack
     def pop_tags(size = 1)
       tagged_values = Array(@tags["tagged"])
       tagged_values = ((tagged_values.size > size) ? tagged_values[0, tagged_values.size - size] : nil)
-      tag("tagged" => tagged_values)
+      tag_globally("tagged" => tagged_values)
     end
 
     def clear_tags!
-      tag("tagged" => nil)
+      tag_globally("tagged" => nil)
     end
   end
 end
