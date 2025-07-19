@@ -162,8 +162,6 @@ When a Logger logs a LogEntry, it sends it to a Lumberjack::Device. Lumberjack c
 If you'd like to send your log to a different kind of output, you just need to extend the Device class and implement the `write` method. Or check out these plugins:
 
 - [lumberjack_json_device](https://github.com/bdurand/lumberjack_json_device) - output your log messages as stream of JSON objects for structured logging.
-- [lumberjack_data_dog_device](https://github.com/bdurand/lumberjack_data_dog_device) - output log messages using the [DataDog standard attributes](https://docs.datadoghq.com/logs/log_configuration/attributes_naming_convention/).
-- [lumberjack_ecs_device](https://github.com/bdurand/lumberjack_ecs_device) - output log messages using the [Elastic Common Schema](https://www.elastic.co/guide/en/ecs/current/index.html) format.
 - [lumberjack_syslog_device](https://github.com/bdurand/lumberjack_syslog_device) - send your log messages to the system wide syslog service
 - [lumberjack_mongo_device](https://github.com/bdurand/lumberjack_mongo_device) - store your log messages to a [MongoDB](http://www.mongodb.org/) NoSQL data store
 - [lumberjack_redis_device](https://github.com/bdurand/lumberjack_redis_device) - store your log messages in a [Redis](https://redis.io/) data store
@@ -304,6 +302,14 @@ The built in devices include two that can automatically roll log files based eit
 
 There is a similar feature in the standard library Logger class, but the implementation here is safe to use with multiple processes writing to the same log file.
 
+## Integrations
+
+Lumberjack has built in support for logging extensions in Rails.
+
+You can use the [`lumberjack_sidekiq`](https://github.com/bdurand/lumberjack_sidekiq) gem to replace Sidekiq's default logger with Lumberjack. This allows you to use all of Lumberjack's features, such as structured logging and tag support, in your Sidekiq jobs.
+
+If you are using DataDog for logging, you can use the [`lumberjack_data_dog`](https://github.com/bdurand/lumberjack_data_dog) gem to format your logs in DataDog's standard attributes format.
+
 ## Differences from Standard Library Logger
 
 `Lumberjack::Logger` does not extend from the `Logger` class in the standard library, but it does implement a compatible API. The main difference is in the flow of how messages are ultimately sent to devices for output.
@@ -366,12 +372,12 @@ To send log messages to syslog instead of to a file, you could use this (require
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'lumberjack'
+gem "lumberjack"
 ```
 
 And then execute:
 ```bash
-$ bundle
+$ bundle install
 ```
 
 Or install it yourself as:

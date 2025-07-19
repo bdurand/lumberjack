@@ -20,11 +20,21 @@ begin
 rescue LoadError
 end
 
-require File.expand_path("../../lib/lumberjack.rb", __FILE__)
+require_relative "../lib/lumberjack"
 
 RSpec.configure do |config|
   config.warnings = true
   config.order = :random
+
+  config.around(:each, :suppress_warnings) do |example|
+    save_val = ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"]
+    ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = "true"
+    begin
+      example.run
+    ensure
+      ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = save_val
+    end
+  end
 end
 
 def tmp_dir

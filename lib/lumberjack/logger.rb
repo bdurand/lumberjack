@@ -36,9 +36,6 @@ module Lumberjack
     # Set the name of the program to attach to log entries.
     attr_writer :progname
 
-    # The device being written to
-    attr_accessor :device
-
     # The Formatter used only for log entry messages.
     attr_accessor :message_formatter
 
@@ -73,7 +70,7 @@ module Lumberjack
       self.progname = options.delete(:progname)
       max_flush_seconds = options.delete(:flush_seconds).to_f
 
-      @device = open_device(device, options) if device
+      @logdev = open_device(device, options) if device
       self.formatter = (options[:formatter] || Formatter.new)
       @message_formatter = options[:message_formatter] || Formatter.empty
       @tag_formatter = options[:tag_formatter] || TagFormatter.new
@@ -85,6 +82,23 @@ module Lumberjack
       @closed = false
 
       create_flusher_thread(max_flush_seconds) if max_flush_seconds > 0
+    end
+
+    # Get the logging device that is used to write log entries.
+    #
+    # @return [Lumberjack::Device] The logging device.
+    def device
+      @logdev
+    end
+
+    # Set the logging device to a new device.
+    #
+    # @param [Lumberjack::Device] device The new logging device.
+    # @return [void]
+    def device=(device)
+      @logdev = if device
+        open_device(device, options)
+      end
     end
 
     # Get the timestamp format on the device if it has one.
@@ -219,7 +233,7 @@ module Lumberjack
         tags = Tags.expand_runtime_values(tags)
         tags = tag_formatter.format(tags) if tag_formatter
 
-        entry = LogEntry.new(time, severity, message, progname, $$, tags)
+        entry = LogEntry.new(time, severity, message, progname, Process.pid, tags)
         write_to_device(entry)
       ensure
         Thread.current[:lumberjack_logging] = nil
@@ -448,6 +462,14 @@ module Lumberjack
       end
     end
 
+    # Provided for compatibility with ActiveSupport::LoggerThreadSafeLevel to temporarily set the log level.
+    #
+    # @param [Integer, String, Symbol] level The log level to use inside the block.
+    # @return [Object] The result of the block.
+    def log_at(level, &block)
+      silence(level, &block)
+    end
+
     # Set the program name that is associated with log messages. If a block
     # is given, the program name will be valid only within the block.
     #
@@ -469,10 +491,11 @@ module Lumberjack
     end
 
     # Set a hash of tags on logger. If a block is given, the tags will only be set
-    # for the duration of the block. If this method is called inside such a block,
-    # the tags will only be defined on the tags in that block. When the parent block
-    # exits, all the tags will be reverted. If there is no block, then the tags will
-    # be defined as global and apply to all log statements.
+    # for the duration of the block. Otherwise the tags will be applied on the current
+    # logger context for the duration of that context.
+    #
+    # If there is no block or context, the tags will be applied to the global context.
+    # This behavior is deprecated. Use the `tag_globally` method to set global tags instead.
     #
     # @param [Hash] tags The tags to set.
     # @return [void]
@@ -486,9 +509,20 @@ module Lumberjack
         thread_tags.merge!(tags)
         nil
       else
-        @tags.merge!(tags)
-        nil
+        Lumberjack::Utils.deprecated("Lumberjack::Logger#tag", "Lumberjack::Logger#tag must be called with a block or inside a context block. In version 2.0 it will no longer be used for setting global tags. Use Lumberjack::Logger#tag_globally instead.") do
+          tag_globally(tags)
+        end
       end
+    end
+
+    # Add global tags to the logger that will appear on all log entries.
+    #
+    # @param [Hash] tags The tags to set.
+    # @return [void]
+    def tag_globally(tags)
+      tags = Tags.stringify_keys(tags)
+      @tags.merge!(tags)
+      nil
     end
 
     # Remove a tag from the current tag context. If this is called inside a block to a
@@ -520,6 +554,31 @@ module Lumberjack
       tags
     end
 
+    # Get the value of a tag by name from the current tag context.
+    #
+    # @param [String, Symbol] name The name of the tag to get.
+    # @return [Object, nil] The value of the tag or nil if the tag does not exist.
+    def tag_value(name)
+      all_tags = tags
+      return nil if tags.empty?
+
+      name = name.join(".") if name.is_a?(Array)
+      name = name.to_s
+      return all_tags[name] if all_tags.include?(name)
+
+      flattened_tags = Lumberjack::Utils.flatten_tags(all_tags)
+      return flattened_tags[name] if flattened_tags.include?(name)
+
+      flattened_tags.keys.select { |key| key.include?(".") }.each do |key|
+        parts = key.split(".")
+        while (subkey = parts.pop)
+          flattened_tags[parts.join(".")] = {subkey => flattened_tags[(parts + [subkey]).join(".")]}
+        end
+      end
+
+      flattened_tags[name]
+    end
+
     # Remove all tags on the current logger and logging context within a block.
     # You can still set new block scoped tags within theuntagged block and provide
     # tags on individual log methods.
@@ -538,6 +597,14 @@ module Lumberjack
           set_thread_local_value(:lumberjack_logger_tags, scope_tags)
         end
       end
+    end
+
+    # Return true if the thread is currently in a Lumberjack::Context block.
+    # When the logger is in a context block, tagging will only apply to that block.
+    #
+    # @return [Boolean]
+    def in_tag_context?
+      !!thread_local_value(:lumberjack_logger_tags)
     end
 
     private

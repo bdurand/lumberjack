@@ -46,7 +46,12 @@ module Lumberjack
         tagged_values = Array(tag_hash["tagged"] || self.tags["tagged"])
         tag_hash["tagged"] = tagged_values + [tag]
       end
-      tag(tag_hash, &block)
+
+      if block || in_tag_context?
+        tag(tag_hash, &block)
+      else
+        tag_globally(tag_hash)
+      end
     end
 
     def push_tags(*tags)
