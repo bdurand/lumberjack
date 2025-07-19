@@ -51,7 +51,7 @@ describe Lumberjack::Utils do
 
   describe ".flatten_tags" do
     it "flattens a nested tag hash" do
-      tag_hash = { "user" => { "id" => 123, "name" => "Alice" }, "action" => "login" }
+      tag_hash = {"user" => {"id" => 123, "name" => "Alice"}, "action" => "login"}
       expect(Lumberjack::Utils.flatten_tags(tag_hash)).to eq(
         "user.id" => 123,
         "user.name" => "Alice",

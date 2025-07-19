@@ -96,10 +96,8 @@ module Lumberjack
     # @param [Lumberjack::Device] device The new logging device.
     # @return [void]
     def device=(device)
-      if device
-        @logdev = open_device(device, options)
-      else
-        @logdev = nil
+      @logdev = if device
+        open_device(device, options)
       end
     end
 
@@ -573,7 +571,7 @@ module Lumberjack
 
       flattened_tags.keys.select { |key| key.include?(".") }.each do |key|
         parts = key.split(".")
-        while subkey = parts.pop do
+        while (subkey = parts.pop)
           flattened_tags[parts.join(".")] = {subkey => flattened_tags[(parts + [subkey]).join(".")]}
         end
       end

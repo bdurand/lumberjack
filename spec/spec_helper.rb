@@ -20,7 +20,7 @@ begin
 rescue LoadError
 end
 
-require_relative "../lib/lumberjack.rb"
+require_relative "../lib/lumberjack"
 
 RSpec.configure do |config|
   config.warnings = true

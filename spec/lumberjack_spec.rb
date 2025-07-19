@@ -68,7 +68,7 @@ RSpec.describe Lumberjack do
   end
 
   describe "unit of work" do
-    it "should create a unit work with a unique id in a block in a tag" do
+    it "should create a unit work with a unique id in a block in a tag", suppress_warnings: true do
       expect(Lumberjack.unit_of_work_id).to eq(nil)
       Lumberjack.unit_of_work do
         id_1 = Lumberjack.unit_of_work_id
@@ -87,7 +87,7 @@ RSpec.describe Lumberjack do
       expect(Lumberjack.context[:unit_of_work_id]).to eq nil
     end
 
-    it "should allow you to specify a unit of work id for a block" do
+    it "should allow you to specify a unit of work id for a block", suppress_warnings: true do
       Lumberjack.unit_of_work("foo") do
         expect(Lumberjack.unit_of_work_id).to eq("foo")
       end
