@@ -26,9 +26,9 @@ module Lumberjack
       @progname = progname
       @pid = pid
       # backward compatibility with 1.0 API where the last argument was the unit of work id
-      @tags = if tags.nil? || tags.is_a?(Hash)
-        tags
-      else
+      @tags = if tags.is_a?(Hash)
+        compact_tags(tags)
+      elsif !tags.nil?
         {UNIT_OF_WORK_ID => tags}
       end
     end
@@ -79,6 +79,38 @@ module Lumberjack
       tags_string = +""
       tags&.each { |name, value| tags_string << " #{name}:#{value.inspect}" }
       tags_string
+    end
+
+    def compact_tags(tags)
+      delete_keys = nil
+      compacted_keys = nil
+
+      tags.each do |key, value|
+        if value.nil? || value == ""
+          delete_keys ||= []
+          delete_keys << key
+        elsif value.is_a?(Hash)
+          compacted_value = compact_tags(value)
+          if compacted_value.empty?
+            delete_keys ||= []
+            delete_keys << key
+          elsif !value.equal?(compacted_value)
+            compacted_keys ||= []
+            compacted_keys << [key, compacted_value]
+          end
+        elsif value.is_a?(Array) && value.empty?
+          delete_keys ||= []
+          delete_keys << key
+        end
+      end
+
+      return tags if delete_keys.nil? && compacted_keys.nil?
+
+      tags = tags.dup
+      delete_keys&.each { |key| tags.delete(key) }
+      compacted_keys&.each { |key, value| tags[key] = value }
+
+      tags
     end
   end
 end

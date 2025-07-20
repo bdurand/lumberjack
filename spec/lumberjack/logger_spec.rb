@@ -601,6 +601,26 @@ RSpec.describe Lumberjack::Logger do
         expect(lines[2]).to eq "three -  -"
       end
 
+      it "should add and remove tags in a context block" do
+        logger.context do
+          logger.tag(baz: "boo", count: 1)
+          logger.info("one")
+          logger.remove_tag(:baz)
+          logger.context do
+            logger.tag(foo: "bar", count: 2)
+            logger.info("two")
+          end
+          logger.info("three")
+        end
+        logger.info("four")
+
+        lines = output.string.split(n)
+        expect(lines[0]).to eq "one - 1 - [baz:boo]"
+        expect(lines[1]).to eq "two - 2 - [foo:bar]"
+        expect(lines[2]).to eq "three - 1 -"
+        expect(lines[3]).to eq "four -  -"
+      end
+
       it "should add and remove tags in the global scope if there is no block" do
         logger.tag_globally(count: 1, foo: "bar")
         logger.info("one")
