@@ -38,19 +38,18 @@ module Lumberjack
     end
 
     # Compatibility with ActiveSupport::TaggedLogging which only supports adding tags as strings.
-    # If a tag looks like "key:value"  or "key=value", it will be added as a key value pair.
-    # Otherwise it will be appended to a list named "tagged".
+    # Tags will be added to the "tagged" key in the logger's tags hash as an array.
     def tagged(*tags, &block)
-      tag_hash = {}
-      tags.flatten.each do |tag|
-        tagged_values = Array(tag_hash["tagged"] || self.tags["tagged"])
-        tag_hash["tagged"] = tagged_values + [tag]
+      tagged_values = Array(tag_value("tagged"))
+      flattened_tags = tags.flatten.collect(&:to_s).reject do |tag|
+        tag.respond_to?(:blank?) ? tag.blank? : tag.empty?
       end
+      tagged_values += flattened_tags unless flattened_tags.empty?
 
-      if block
-        tag(tag_hash, &block)
+      if block || in_tag_context?
+        tag("tagged" => tagged_values, &block)
       else
-        tag_globally(tag_hash)
+        tag_globally("tagged" => tagged_values)
       end
     end
 
@@ -59,13 +58,24 @@ module Lumberjack
     end
 
     def pop_tags(size = 1)
-      tagged_values = Array(@tags["tagged"])
+      tagged_values = tag_value("tagged")
+      return unless tagged_values.is_a?(Array)
+
       tagged_values = ((tagged_values.size > size) ? tagged_values[0, tagged_values.size - size] : nil)
-      tag_globally("tagged" => tagged_values)
+
+      if in_tag_context?
+        tag("tagged" => tagged_values)
+      else
+        tag_globally("tagged" => tagged_values)
+      end
     end
 
     def clear_tags!
-      tag_globally("tagged" => nil)
+      if in_tag_context?
+        tag("tagged" => nil)
+      else
+        tag_globally("tagged" => nil)
+      end
     end
   end
 end

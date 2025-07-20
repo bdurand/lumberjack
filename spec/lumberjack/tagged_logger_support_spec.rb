@@ -27,7 +27,7 @@ RSpec.describe Lumberjack::TaggedLoggerSupport do
           logger.info("message")
         end
         line = output.string.chomp
-        expect(line).to eq "message -  - [tagged:[15]]"
+        expect(line).to eq 'message -  - [tagged:["15"]]'
       end
 
       it "should be nestable" do
@@ -48,6 +48,22 @@ RSpec.describe Lumberjack::TaggedLoggerSupport do
         logger.push_tags("baz")
         expect(logger.tags).to eq({"tagged" => ["foo", "bar", "baz"]})
       end
+
+      it "should push tags in a context" do
+        logger.push_tags("foo")
+        logger.context do
+          logger.push_tags(["bar"])
+          expect(logger.tags).to eq({"tagged" => ["foo", "bar"]})
+          logger.push_tags("baz")
+          expect(logger.tags).to eq({"tagged" => ["foo", "bar", "baz"]})
+        end
+        expect(logger.tags).to eq({"tagged" => ["foo"]})
+      end
+
+      it "should not push empty tags" do
+        logger.push_tags("", "foo", nil)
+        expect(logger.tags).to eq({"tagged" => ["foo"]})
+      end
     end
 
     describe "pop_tags" do
@@ -58,6 +74,18 @@ RSpec.describe Lumberjack::TaggedLoggerSupport do
         logger.pop_tags(2)
         expect(logger.tags).to eq({"tagged" => nil})
       end
+
+      it "should pop tags in a context" do
+        logger.push_tags("foo")
+        logger.context do
+          logger.push_tags("bar", "baz")
+          logger.pop_tags
+          expect(logger.tags).to eq({"tagged" => ["foo", "bar"]})
+          logger.pop_tags(2)
+          expect(logger.tags).to eq({"tagged" => nil})
+        end
+        expect(logger.tags).to eq({"tagged" => ["foo"]})
+      end
     end
 
     describe "clear_tags!" do
@@ -65,6 +93,16 @@ RSpec.describe Lumberjack::TaggedLoggerSupport do
         logger.push_tags("foo", "bar", "baz")
         logger.clear_tags!
         expect(logger.tags).to eq({"tagged" => nil})
+      end
+
+      it "should clear tags in a context" do
+        logger.push_tags("foo")
+        logger.context do
+          logger.push_tags("bar", "baz")
+          logger.clear_tags!
+          expect(logger.tags).to eq({"tagged" => nil})
+        end
+        expect(logger.tags).to eq({"tagged" => ["foo"]})
       end
     end
   end

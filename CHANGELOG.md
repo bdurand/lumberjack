@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- ActiveSupport::TaggedLogger now calls `Lumberjack::Logger#tag_globally` to prevent deprcation warnings.
+- ActiveSupport::TaggedLogger now calls `Lumberjack::Logger#tag_globally` to prevent deprecation warnings.
 
 ## 1.3.0
 
