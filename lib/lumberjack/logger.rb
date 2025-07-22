@@ -96,9 +96,7 @@ module Lumberjack
     # @param [Lumberjack::Device] device The new logging device.
     # @return [void]
     def device=(device)
-      @logdev = if device
-        open_device(device, options)
-      end
+      @logdev = device.nil? ? nil : open_device(device, {})
     end
 
     # Get the timestamp format on the device if it has one.

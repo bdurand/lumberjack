@@ -155,6 +155,16 @@ RSpec.describe Lumberjack::Logger do
         status = 2
       end
     end
+
+    it "should be able to open a new device by setting the device attribute" do
+      logger = Lumberjack::Logger.new(:null)
+      out = StringIO.new
+      logger.device = out
+      expect(logger.device.class).to eq(Lumberjack::Device::Writer)
+      logger.info("foo")
+      logger.flush
+      expect(out.string).to include("foo\n")
+    end
   end
 
   describe "#silence" do
