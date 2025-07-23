@@ -103,7 +103,10 @@ module Lumberjack
       # Flatten a tag hash to a single level hash with dot notation for nested keys.
       #
       # @param tag_hash [Hash] The hash to flatten.
-      # @return [Hash] The flattened hash.
+      # @return [Hash<String, Object>] The flattened hash.
+      # @example
+      #   expand_tags(user: {id: 123, name: "Alice"}, action: "login")})
+      #   # => {"user.id" => 123, "user.name" => "Alice", "action" => "login"}
       def flatten_tags(tag_hash)
         return {} unless tag_hash.is_a?(Hash)
 
@@ -113,9 +116,24 @@ module Lumberjack
               result["#{key}.#{sub_key}"] = sub_value
             end
           else
-            result[key] = value
+            result[key.to_s] = value
           end
         end
+      end
+
+      # Expand a hash of tags that may contain nested hashes or dot notation keys. Dot notation tags
+      # will be expanded into nested hashes.
+      #
+      # @param tags [Hash] The hash of tags to expand.
+      # @return [Hash] The expanded hash with dot notation keys.
+      #
+      # @example
+      #   expand_tags({"user.id" => 123, "user.name" => "Alice", "action" => "login"})
+      #   # => {"user" => {"id" => 123, "name" => "Alice"}, "action" => "login"}
+      def expand_tags(tags)
+        return {} unless tags.is_a?(Hash)
+
+        expand_dot_notation_hash(tags)
       end
 
       private
@@ -127,6 +145,34 @@ module Lumberjack
         str.delete_prefix!("-")
         str.chomp!("-")
         str
+      end
+
+      def expand_dot_notation_hash(hash, expanded = {})
+        return hash unless hash.is_a?(Hash)
+
+        hash.each do |key, value|
+          key = key.to_s
+          if key.include?(".")
+            main_key, sub_key = key.split(".", 2)
+            main_key_hash = expanded[main_key]
+            unless main_key_hash.is_a?(Hash)
+              main_key_hash = {}
+              expanded[main_key] = main_key_hash
+            end
+            expand_dot_notation_hash({sub_key => value}, main_key_hash)
+          elsif value.is_a?(Hash)
+            key_hash = expanded[key]
+            unless key_hash.is_a?(Hash)
+              key_hash = {}
+              expanded[key] = key_hash
+            end
+            expand_dot_notation_hash(value, key_hash)
+          else
+            expanded[key] = value
+          end
+        end
+
+        expanded
       end
     end
   end
