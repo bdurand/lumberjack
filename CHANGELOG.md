@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.0
+
+### Removed
+
+- Remove `Lumberjack::Device::RollingLogFile`, `Lumberjack::Device::DateRollingLogFile`, and `Lumberjack::Device::SizeRollingLogFile` devices. These have been moved into their own gem.
+
+### Changed
+
+- Calling `Lumberjack::Logger#tag` must now be called with a block or inside a tag context. Any tags added without a block or tag context will be silently ignored. User `Lumberjack::Logger#tag_globally` to set global tags on the logger itself.
+- `Lumberjack::Logger` now extends from `::Logger`. It had always had API compatibility with `::Logger`, but now it is a direct subclass.
+
 ## 1.3.3
 
 ### Added
