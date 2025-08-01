@@ -20,6 +20,7 @@ env:
 
 jobs:
   build:
+    name: build ruby-${{ matrix.ruby }} ${{ matrix.appraisal }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
