@@ -200,12 +200,12 @@ module Lumberjack
     #   logger.add_entry(:warn, "Request took a long time")
     #   logger.add_entry(Logger::DEBUG){"Start processing with options #{options.inspect}"}
     def add_entry(severity, message, progname = nil, tags = nil)
-      begin
-        severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
-        return true unless device && severity && severity >= level
+      severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
+      return true unless device && severity && severity >= level
+      return true if Thread.current[:lumberjack_logging]
 
-        return true if Thread.current[:lumberjack_logging]
-        Thread.current[:lumberjack_logging] = true
+      begin
+        Thread.current[:lumberjack_logging] = true # Prevent circular calls to add_entry
 
         time = Time.now
 
@@ -380,7 +380,7 @@ module Lumberjack
 
     # Return +true+ if +INFO+ messages are being logged.
     #
-
+    # @return [Boolean]
     def info?
       level <= INFO
     end
@@ -465,7 +465,7 @@ module Lumberjack
     # @param [Integer, String, Symbol] level The log level to use inside the block.
     # @return [Object] The result of the block.
     def log_at(level, &block)
-      silence(level, &block)
+      with_level(level, &block)
     end
 
     # Set the program name that is associated with log messages. If a block
@@ -479,6 +479,15 @@ module Lumberjack
       else
         self.progname = value
       end
+    end
+
+    # Set the logger progname for the duration of the block.
+    #
+    # @yield [Object] The block to execute with the program name set.
+    # @param [String] value The program name to use.
+    # @return [Object] The result of the block.
+    def with_progname(value, &block)
+      set_progname(value, &block)
     end
 
     # Get the program name associated with log messages.

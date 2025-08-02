@@ -126,6 +126,15 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.progname).to eq("app")
     end
 
+    it "should be able to set the progname in a block" do
+      logger = Lumberjack::Logger.new
+      logger.set_progname("app")
+      logger.with_progname("xxx") do
+        expect(logger.progname).to eq("xxx")
+      end
+      expect(logger.progname).to eq("app")
+    end
+
     it "should only affect the current thread when changing the progname in a block" do
       output = StringIO.new
       logger = Lumberjack::Logger.new(output, progname: "thread1", buffer_size: 0, level: Logger::INFO, template: ":progname :message")

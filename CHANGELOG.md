@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.3.4
+
+### Added
+
+- Added `Lumberjack::Logger#with_progname` alias for `set_progname` to match the naming convention used for setting temporary levels.
+
+### Fixed
+
+- Ensure that the safety check for circular calls to `Lumberjack::Logger#add_entry` cannot lose state.
+
 ## 1.3.3
 
 ### Added
