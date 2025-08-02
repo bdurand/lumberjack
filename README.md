@@ -50,7 +50,7 @@ logger.info("request completed", duration: elapsed_time, status: response.status
 You can also specify tags on a logger that will be included with every log message.
 
 ```ruby
-logger.tag(host: Socket.gethostname)
+logger.tag_globally(host: Socket.gethostname)
 ```
 
 You can specify tags that will only be applied to the logger in a block as well.
@@ -62,6 +62,18 @@ logger.tag(thread_id: Thread.current.object_id) do
   logger.info("with count") # Will include the `count` tag
 end
 logger.info("there") # Will not include the `thread_id` or `count` tag
+```
+
+The block opens up a new tag context. The context applies only within a block and only for the currently executing thread. You can also open up a new context block without specifying any tags and then add tags to the context within the block.
+
+```ruby
+logger.context do # When a block is given to `context`, it opens a new empty tag context.
+  # `context` can be called without a block, to get an TagContext object for manipulating tags.
+  logger.context.tag(user_id: current_user.id, username: current_user.username)
+  logger.context["user_role"] = current_user.role # You can also use hash syntax to set tags.
+  logger.info("user logged in") # Will include the `user_id`, `username`, and `user_role` tags.
+end
+logger.info("no user") # Will not include the tags
 ```
 
 You can also set tags to `Proc` objects that will be evaluated when creating a log entry.
@@ -134,7 +146,7 @@ When combined with structured output devices (like [`lumberjack_json_device`](ht
 
 #### Compatibility with ActiveSupport::TaggedLogging
 
-`Lumberjack::Logger` version 1.1.2 or greater is compatible with `ActiveSupport::TaggedLogging`. This is so that other code that expects to have a logger that responds to the `tagged` method will work. Any tags added with the `tagged` method will be appended to an array in the "tagged" tag.
+`Lumberjack::Logger` is compatible with `ActiveSupport::TaggedLogging`. This is so that other code that expects to have a logger that responds to the `tagged` method will work. Any tags added with the `tagged` method will be appended to an array in the "tagged" tag.
 
 ```ruby
 logger.tagged("foo", "bar=1", "other") do
@@ -199,6 +211,7 @@ There are several built in classes you can add as formatters. You can use a symb
 - `:pretty_print` - `Lumberjack::Formatter::PrettyPrintFormatter` - returns the pretty print format of the object.
 - `:id` - `Lumberjack::Formatter::IdFormatter` - returns a hash of the object with keys for the id attribute and class.
 - `:structured` - `Lumberjack::Formatter::StructuredFormatter` - crawls the object and applies the formatter recursively to Enumerable objects found in it (arrays, hashes, etc.).
+- `:truncate` - `Lumberjack::Formatter::TruncateFormatter` - truncates long strings to a specified length.
 
 To define your own formatter, either provide a block or an object that responds to `call` with a single argument.
 
@@ -260,7 +273,7 @@ logger.tag_formatter.add("user.username", &:upcase)
 
 #### Templates
 
-If you use the built-in `Lumberjack::Writer` derived devices, you can also customize the Template used to format the LogEntry.
+If you use the built-in `Lumberjack::Device::Writer` derived devices, you can also customize the Template used to format the LogEntry.
 
 See `Lumberjack::Template` for a complete list of macros you can use in the template. You can also use a block that receives a `Lumberjack::LogEntry` as a template.
 
@@ -286,7 +299,7 @@ The logger has hooks for devices that support buffering to potentially increase 
 
 You can use the `:flush_seconds` option on the logger to periodically flush the log. This is usually a good idea so you can more easily debug hung processes. Without periodic flushing, a process that hangs may never write anything to the log because the messages are sitting in a buffer. By turning on periodic flushing, the logged messages will be written which can greatly aid in debugging the problem.
 
-The built in stream based logging devices use an internal buffer. The size of the buffer (in bytes) can be set with the `:buffer_size` options when initializing a logger. The default behavior is to not to buffer.
+The built in stream based logging devices use an internal buffer. The size of the buffer (in bytes) can be set with the `:buffer_size` options when initializing a logger. The default behavior is to not buffer.
 
 ```ruby
   # Set buffer to flush after 8K has been written to the log.
@@ -361,7 +374,7 @@ To change the log message format to output JSON, you could use this code:
   config.logger = Lumberjack::Logger.new(log_file_path, :template => lambda{|e| JSON.dump(time: e.time, level: e.severity_label, message: e.message)})
 ```
 
-To send log messages to syslog instead of to a file, you could use this (require the lumberjack_syslog_device gem):
+To send log messages to syslog instead of to a file, you could use this (requires the lumberjack_syslog_device gem):
 
 ```ruby
   config.logger = Lumberjack::Logger.new(Lumberjack::SyslogDevice.new)

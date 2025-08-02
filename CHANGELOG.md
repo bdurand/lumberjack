@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.4.0
+
+### Changed
+
+- Tags are consistently flattened internally to dot notation keys. This makes tag handling more consistent when using nested hashes as tag values. This changes how nested tags are merged, though. Now when new nested tags are set they will be merged into the existing tags rather than replacing them entirely. So `logger.tag(foo: {bar: "baz"})` will now merge the `foo.bar` tag into the existing tags rather than replacing the entire `foo` tag.
+- The `Lumberjack::Logger#context` method can now be called without a block. When called with a block it sets up a new tag context for the block. When called without a block, it returns the current tag context in a `Lumberjack::TagContext` object which can be used to add tags to the current context.
+
 ## 1.3.4
 
 ### Added
