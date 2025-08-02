@@ -223,6 +223,7 @@ module Lumberjack
         end
 
         progname ||= self.progname
+        message_tags = Utils.flatten_tags(message_tags) if message_tags
 
         current_tags = self.tags
         tags = nil unless tags.is_a?(Hash)
@@ -643,15 +644,12 @@ module Lumberjack
     # Merge a tags hash into an existing tags hash.
     def merge_tags(current_tags, tags)
       if current_tags.nil? || current_tags.empty?
-        tags = Tags.stringify_keys(tags) unless tags.nil?
+        tags
+      elsif tags.nil?
+        current_tags
       else
-        tags = if tags.nil?
-          current_tags.dup
-        else
-          current_tags.merge(Tags.stringify_keys(tags))
-        end
+        current_tags.merge(tags)
       end
-      tags
     end
 
     # Set a local value for a thread tied to this object.

@@ -96,4 +96,20 @@ RSpec.describe Lumberjack::LogEntry do
     entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, nil, "app", 1500, {tag: "value"})
     expect(entry.empty?).to be false
   end
+
+  describe "#tag" do
+    it "returns the tag value for a given name" do
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "a" => 1, "b" => 2)
+      expect(entry.tag("a")).to eq(1)
+      expect(entry.tag("b")).to eq(2)
+      expect(entry.tag("non_existent")).to be_nil
+    end
+
+    it "returns a hash when a tag is a parent of a dot notation key" do
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo.bar" => "baz", "foo.far" => "qux")
+      expect(entry.tag("foo")).to eq({"bar" => "baz", "far" => "qux"})
+      expect(entry.tag("foo.bar")).to eq("baz")
+      expect(entry.tag("foo.far")).to eq("qux")
+    end
+  end
 end

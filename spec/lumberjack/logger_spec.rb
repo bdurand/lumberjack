@@ -670,6 +670,14 @@ RSpec.describe Lumberjack::Logger do
         expect(logger.tags).to eq("foo.bar" => "baz")
       end
 
+      it "flattens tags sent with the log message" do
+        logger.tag(foo: {bar: "baz"}) do
+          logger.info("message", foo: {fee: "foe"})
+        end
+        expect(output.string).to include("foo.bar:baz")
+        expect(output.string).to include("foo.fee:foe")
+      end
+
       it "should be able to extract tags from an object with a formatter that returns Lumberjack::Formatter::TaggedMessage" do
         logger.formatter.add(Exception, ->(e) {
           Lumberjack::Formatter::TaggedMessage.new(e.inspect, {message: e.message, class: e.class.name})

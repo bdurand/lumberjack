@@ -46,6 +46,17 @@ RSpec.describe Lumberjack::TagContext do
       tag_context[:foo] = {bar: "baz", far: "qux"}
       expect(tag_context.to_h).to eq({"foo.bar" => "baz", "foo.far" => "qux"})
     end
+
+    it "returns a hash with subtags" do
+      tag_context.tag(foo: {bar: "baz", far: "qux"})
+      expect(tag_context[:foo]).to eq({"bar" => "baz", "far" => "qux"})
+    end
+
+    it "returns has deeply nested tags" do
+      tag_context.tag(a: {b: {c: {d: 4, e: 5}, f: 6}, g: 7})
+      expect(tag_context[:a]).to eq({"b.c.d" => 4, "b.c.e" => 5, "b.f" => 6, "g" => 7})
+      expect(tag_context["a.b"]).to eq({"c.d" => 4, "c.e" => 5, "f" => 6})
+    end
   end
 
   describe "#delete" do

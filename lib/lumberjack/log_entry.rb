@@ -64,8 +64,11 @@ module Lumberjack
     end
 
     # Return the tag with the specified name.
+    #
+    # @param name [String, Symbol] The tag name.
+    # @return [Object, nil] The tag value or nil if the tag does not exist.
     def tag(name)
-      tags[name.to_s] if tags
+      TagContext.new(tags)[name]
     end
 
     # Return true if the log entry has no message and no tags.

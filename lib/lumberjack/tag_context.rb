@@ -29,17 +29,21 @@ module Lumberjack
       return @tags[name] if @tags.include?(name)
 
       # Check for partial matches in dot notation and return the hash representing the partial match.
-      partial_match_tags = {}
-      @tags.keys.select { |key| key.include?(".") }.each do |key|
-        parts = key.split(".")
-        while (subkey = parts.pop)
-          partial_match_tags[parts.join(".")] = {subkey => @tags[key]}
+      prefix_key = "#{name}."
+      matching_tags = {}
+      @tags.each do |key, value|
+        if key.start_with?(prefix_key)
+          # Remove the prefix to get the relative key
+          relative_key = key[prefix_key.length..-1]
+          matching_tags[relative_key] = value
         end
       end
-      partial_match_tags[name]
+
+      return nil if matching_tags.empty?
+      matching_tags
     end
 
-    # Set a context tag.
+    # Set a tag value.
     #
     # @param name [String, Symbol] The tag name.
     # @param value [Object] The tag value.

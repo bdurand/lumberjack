@@ -50,7 +50,7 @@ logger.info("request completed", duration: elapsed_time, status: response.status
 You can also specify tags on a logger that will be included with every log message.
 
 ```ruby
-logger.tag_globally(host: Socket.gethostname)
+logger.tag_globally(host: Socket.gethostname.force_encoding("UTF-8"))
 ```
 
 You can specify tags that will only be applied to the logger in a block as well.
@@ -79,19 +79,22 @@ logger.info("no user") # Will not include the tags
 You can also set tags to `Proc` objects that will be evaluated when creating a log entry.
 
 ```ruby
-logger.tag(thread_id: lambda { Thread.current.object_id })
+logger.tag_globally(thread_id: lambda { Thread.current.object_id })
+
 Thread.new do
   logger.info("inside thread") # Will include the `thread_id` tag with id of the spawned thread
 end
+
 logger.info("outside thread") # Will include the `thread_id` tag with id of the main thread
 ```
 
-Finally, you can specify a logging context with tags that apply within a block to all loggers.
+Finally, you can specify a global logging context that applies to all loggers.
 
 ```ruby
 Lumberjack.context do
-  Lumberjack.tag(request_id: SecureRandom.hex)
+  Lumberjack.tag(request_id: SecureRandom.hex) # add a global context tag
   logger.info("begin request") # Will include the `request_id` tag
+  event_logger.info("http.request") # Will also include the `request_id` tag
 end
 logger.info("no requests") # Will not include the `request_id` tag
 ```
