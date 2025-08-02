@@ -59,6 +59,15 @@ describe Lumberjack::Utils do
       )
     end
 
+    it "flattens a deeply nested tag hash" do
+      tag_hash = {"a" => {"b" => {"c" => 3, "d" => 4}}, "e" => 5}
+      expect(Lumberjack::Utils.flatten_tags(tag_hash)).to eq(
+        "a.b.c" => 3,
+        "a.b.d" => 4,
+        "e" => 5
+      )
+    end
+
     it "returns an empty hash for non-hash input" do
       expect(Lumberjack::Utils.flatten_tags("not a hash")).to eq({})
     end

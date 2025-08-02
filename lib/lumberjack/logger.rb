@@ -223,6 +223,7 @@ module Lumberjack
         end
 
         progname ||= self.progname
+        message_tags = Utils.flatten_tags(message_tags) if message_tags
 
         current_tags = self.tags
         tags = nil unless tags.is_a?(Hash)
@@ -507,16 +508,16 @@ module Lumberjack
     # @param [Hash] tags The tags to set.
     # @return [void]
     def tag(tags, &block)
-      tags = Tags.stringify_keys(tags)
       thread_tags = thread_local_value(:lumberjack_logger_tags)
       if block
-        merged_tags = (thread_tags ? thread_tags.merge(tags) : tags.dup)
+        merged_tags = (thread_tags ? thread_tags.dup : {})
+        TagContext.new(merged_tags).tag(tags)
         push_thread_local_value(:lumberjack_logger_tags, merged_tags, &block)
       elsif thread_tags
-        thread_tags.merge!(tags)
+        TagContext.new(thread_tags).tag(tags)
         nil
       else
-        Lumberjack::Utils.deprecated("Lumberjack::Logger#tag", "Lumberjack::Logger#tag must be called with a block or inside a context block. In version 2.0 it will no longer be used for setting global tags. Use Lumberjack::Logger#tag_globally instead.") do
+        Utils.deprecated("Lumberjack::Logger#tag", "Lumberjack::Logger#tag must be called with a block or inside a context block. In version 2.0 it will no longer be used for setting global tags. Use Lumberjack::Logger#tag_globally instead.") do
           tag_globally(tags)
         end
       end
@@ -525,10 +526,21 @@ module Lumberjack
     # Set up a context block for the logger. All tags added within the block will be cleared when
     # the block exits.
     #
+    # @param [Proc] block The block to execute with the tag context.
+    # @return [TagContext] If no block is passed, then a Lumberjack::TagContext is returned that can be used
+    #   to interact with the tags (add, remove, etc.).
+    # @yield [TagContext] If a block is passed, it will be yielded a TagContext object that can be used to
+    #   add or remove tags within the context.
     def context(&block)
-      thread_tags = thread_local_value(:lumberjack_logger_tags)&.dup
-      thread_tags ||= {}
-      push_thread_local_value(:lumberjack_logger_tags, thread_tags, &block)
+      if block
+        thread_tags = thread_local_value(:lumberjack_logger_tags)&.dup
+        thread_tags ||= {}
+        push_thread_local_value(:lumberjack_logger_tags, thread_tags) do
+          block.call(TagContext.new(thread_tags))
+        end
+      else
+        TagContext.new(thread_local_value(:lumberjack_logger_tags) || {})
+      end
     end
 
     # Add global tags to the logger that will appear on all log entries.
@@ -536,24 +548,19 @@ module Lumberjack
     # @param [Hash] tags The tags to set.
     # @return [void]
     def tag_globally(tags)
-      tags = Tags.stringify_keys(tags)
-      @tags.merge!(tags)
+      TagContext.new(@tags).tag(tags)
       nil
     end
 
-    # Remove a tag from the current tag context. If this is called inside a block to a
-    # call to `tag`, the tags will only be removed for the duration of that block. Otherwise
-    # they will be removed from the global tags.
+    # Remove a tag from the current tag context. If this is called inside a tag context,
+    # the tags will only be removed for the duration of that block. Otherwise they will be removed
+    # from the global tags.
     #
     # @param [Array<String, Symbol>] tag_names The tags to remove.
     # @return [void]
     def remove_tag(*tag_names)
-      thread_tags = thread_local_value(:lumberjack_logger_tags)
-      if thread_tags
-        tag_names.each { |name| thread_tags.delete(name.to_s) }
-      else
-        tag_names.each { |name| @tags.delete(name.to_s) }
-      end
+      tags = thread_local_value(:lumberjack_logger_tags) || @tags
+      TagContext.new(tags).delete(*tag_names)
     end
 
     # Return all tags in scope on the logger including global tags set on the Lumberjack
@@ -575,24 +582,8 @@ module Lumberjack
     # @param [String, Symbol] name The name of the tag to get.
     # @return [Object, nil] The value of the tag or nil if the tag does not exist.
     def tag_value(name)
-      all_tags = tags
-      return nil if tags.empty?
-
       name = name.join(".") if name.is_a?(Array)
-      name = name.to_s
-      return all_tags[name] if all_tags.include?(name)
-
-      flattened_tags = Lumberjack::Utils.flatten_tags(all_tags)
-      return flattened_tags[name] if flattened_tags.include?(name)
-
-      flattened_tags.keys.select { |key| key.include?(".") }.each do |key|
-        parts = key.split(".")
-        while (subkey = parts.pop)
-          flattened_tags[parts.join(".")] = {subkey => flattened_tags[(parts + [subkey]).join(".")]}
-        end
-      end
-
-      flattened_tags[name]
+      TagContext.new(tags)[name]
     end
 
     # Remove all tags on the current logger and logging context within a block.
@@ -653,15 +644,12 @@ module Lumberjack
     # Merge a tags hash into an existing tags hash.
     def merge_tags(current_tags, tags)
       if current_tags.nil? || current_tags.empty?
-        tags = Tags.stringify_keys(tags) unless tags.nil?
+        tags
+      elsif tags.nil?
+        current_tags
       else
-        tags = if tags.nil?
-          current_tags.dup
-        else
-          current_tags.merge(Tags.stringify_keys(tags))
-        end
+        current_tags.merge(tags)
       end
-      tags
     end
 
     # Set a local value for a thread tied to this object.

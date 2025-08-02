@@ -640,6 +640,20 @@ RSpec.describe Lumberjack::Logger do
         expect(lines[3]).to eq "four -  -"
       end
 
+      it "should flatten tags in a context block" do
+        logger.context do
+          logger.tag(foo: {bar: "baz"}) do
+            logger.tag(foo: {bip: "boo"}) do
+              expect(logger.tags).to eq("foo.bar" => "baz", "foo.bip" => "boo")
+            end
+            expect(logger.tags).to eq("foo.bar" => "baz")
+            logger.tag("foo.bip" => "box") do
+              expect(logger.tags).to eq("foo.bar" => "baz", "foo.bip" => "box")
+            end
+          end
+        end
+      end
+
       it "should add and remove tags in the global scope if there is no block" do
         logger.tag_globally(count: 1, foo: "bar")
         logger.info("one")
@@ -649,6 +663,19 @@ RSpec.describe Lumberjack::Logger do
         lines = output.string.split(n)
         expect(lines[0]).to eq "one - 1 - [foo:bar]"
         expect(lines[1]).to eq "two - 1 -"
+      end
+
+      it "flattens tags in the global scope" do
+        logger.tag_globally(foo: {bar: "baz"})
+        expect(logger.tags).to eq("foo.bar" => "baz")
+      end
+
+      it "flattens tags sent with the log message" do
+        logger.tag(foo: {bar: "baz"}) do
+          logger.info("message", foo: {fee: "foe"})
+        end
+        expect(output.string).to include("foo.bar:baz")
+        expect(output.string).to include("foo.fee:foe")
       end
 
       it "should be able to extract tags from an object with a formatter that returns Lumberjack::Formatter::TaggedMessage" do
@@ -743,7 +770,7 @@ RSpec.describe Lumberjack::Logger do
         end
       end
 
-      it "should remove scoped tags from teh logger" do
+      it "should remove scoped tags from the logger" do
         logger.tag(foo: "bar") do
           expect(logger.tags).to eq({"foo" => "bar"})
           logger.untagged do
@@ -881,6 +908,67 @@ RSpec.describe Lumberjack::Logger do
         expect(logger.debug?).to eq(false)
         logger.unknown("unknown")
         expect(output.string).to eq("unknown#{n}")
+      end
+    end
+  end
+
+  describe "#context" do
+    let(:logger) { Lumberjack::Logger.new(StringIO.new) }
+
+    it "creates a new tag context within a block" do
+      logger.context do
+        logger.tag(foo: "bar")
+        expect(logger.tags).to eq("foo" => "bar")
+      end
+      expect(logger.tags).to be_empty
+    end
+
+    it "returns the result of the block" do
+      result = logger.context { :foobar }
+      expect(result).to eq(:foobar)
+    end
+
+    it "yields a the tag context to the block" do
+      logger.context do |tags|
+        expect(tags).to be_a(Lumberjack::TagContext)
+        tags.tag(foo: "bar")
+        expect(logger.tags).to eq("foo" => "bar")
+      end
+      expect(logger.tags).to be_empty
+    end
+
+    it "returns the current tag context if no block is given" do
+      logger.context do
+        tags = logger.context
+        expect(tags).to be_a(Lumberjack::TagContext)
+        tags.tag(foo: "bar")
+        expect(logger.tags).to eq("foo" => "bar")
+      end
+      expect(logger.tags).to be_empty
+    end
+
+    it "returns an empty tag context if no block is given and there is no current context" do
+      tags = logger.context
+      expect(tags).to be_a(Lumberjack::TagContext)
+      tags.tag(foo: "bar")
+      expect(logger.tags).to be_empty
+    end
+
+    it "should not leak tags between contexts" do
+      logger.context do
+        logger.tag(foo: "bar")
+      end
+      logger.context do
+        expect(logger.tags).to be_empty
+      end
+    end
+
+    it "should not leak tags between threads" do
+      logger.context do
+        logger.tag(foo: "bar")
+        Thread.new do
+          expect(logger.tags).to be_empty
+        end.join
       end
     end
   end

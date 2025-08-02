@@ -17,6 +17,7 @@ module Lumberjack
   require_relative "lumberjack/device"
   require_relative "lumberjack/logger"
   require_relative "lumberjack/tags"
+  require_relative "lumberjack/tag_context"
   require_relative "lumberjack/tag_formatter"
   require_relative "lumberjack/tagged_logger_support"
   require_relative "lumberjack/tagged_logging"
@@ -57,6 +58,7 @@ module Lumberjack
     end
 
     # Contexts can be used to store tags that will be attached to all log entries in the block.
+    # The context will apply to all Lumberjack loggers that are used within the block.
     #
     # If this method is called with a block, it will set a logging context for the scope of a block.
     # If there is already a context in scope, a new one will be created that inherits

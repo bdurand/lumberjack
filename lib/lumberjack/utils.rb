@@ -110,15 +110,7 @@ module Lumberjack
       def flatten_tags(tag_hash)
         return {} unless tag_hash.is_a?(Hash)
 
-        tag_hash.each_with_object({}) do |(key, value), result|
-          if value.is_a?(Hash)
-            value.each do |sub_key, sub_value|
-              result["#{key}.#{sub_key}"] = sub_value
-            end
-          else
-            result[key.to_s] = value
-          end
-        end
+        flatten_hash_recursive(tag_hash)
       end
 
       # Expand a hash of tags that may contain nested hashes or dot notation keys. Dot notation tags
@@ -137,6 +129,17 @@ module Lumberjack
       end
 
       private
+
+      def flatten_hash_recursive(hash, prefix = nil)
+        hash.each_with_object({}) do |(key, value), result|
+          full_key = prefix ? "#{prefix}.#{key}" : key.to_s
+          if value.is_a?(Hash)
+            result.merge!(flatten_hash_recursive(value, full_key))
+          else
+            result[full_key] = value
+          end
+        end
+      end
 
       def slugify(str)
         return nil if str.nil?

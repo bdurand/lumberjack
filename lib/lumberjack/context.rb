@@ -9,6 +9,7 @@ module Lumberjack
     def initialize(parent_context = nil)
       @tags = {}
       @tags.merge!(parent_context.tags) if parent_context
+      @tag_context = TagContext.new(@tags)
     end
 
     # Set tags on the context.
@@ -16,9 +17,7 @@ module Lumberjack
     # @param tags [Hash] The tags to set.
     # @return [void]
     def tag(tags)
-      tags.each do |key, value|
-        @tags[key.to_s] = value
-      end
+      @tag_context.tag(tags)
     end
 
     # Get a context tag.
@@ -26,7 +25,7 @@ module Lumberjack
     # @param key [String, Symbol] The tag key.
     # @return [Object] The tag value.
     def [](key)
-      @tags[key.to_s]
+      @tag_context[key]
     end
 
     # Set a context tag.
@@ -35,7 +34,15 @@ module Lumberjack
     # @param value [Object] The tag value.
     # @return [void]
     def []=(key, value)
-      @tags[key.to_s] = value
+      @tag_context[key] = value
+    end
+
+    # Remove tags from the context.
+    #
+    # @param keys [Array<String, Symbol>] The tag keys to remove.
+    # @return [void]
+    def delete(*keys)
+      @tag_context.delete(*keys)
     end
 
     # Clear all the context data.
