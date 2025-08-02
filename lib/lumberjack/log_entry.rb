@@ -71,7 +71,21 @@ module Lumberjack
       TagContext.new(tags)[name]
     end
 
+    # Helper method to expand the tags into a nested structure. Tags with dots in the name
+    # will be expanded into nested hashes.
+    #
+    # @return [Hash] The tags expanded into a nested structure.
+    #
+    # @example
+    #   entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "a.b.c" => 1, "a.b.d" => 2)
+    #   entry.nested_tags # => {"a" => {"b" => {"c" => 1, "d" => 2}}}
+    def nested_tags
+      Utils.expand_tags(tags)
+    end
+
     # Return true if the log entry has no message and no tags.
+    #
+    # @return [Boolean] True if the log entry is empty, false otherwise.
     def empty?
       (message.nil? || message == "") && (tags.nil? || tags.empty?)
     end
