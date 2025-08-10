@@ -567,13 +567,11 @@ RSpec.describe Lumberjack::Logger do
         expect(lines[1]).to eq "two - 2 - [foo:bar]"
       end
 
-      it "should be able to add global tags with the tag method and no block or context", suppress_warnings: true do
-        logger.tag(foo: "bar", count: 1)
+      it "ignores tags added outside of a block or tag context" do
+        logger.tag(foo: "bar")
         logger.info("one")
-        logger.info("two", count: 2)
         lines = output.string.split(n)
-        expect(lines[0]).to eq "one - 1 - [foo:bar]"
-        expect(lines[1]).to eq "two - 2 - [foo:bar]"
+        expect(lines[0]).to eq "one -  -"
       end
 
       it "should be able to add tags to the logs" do
