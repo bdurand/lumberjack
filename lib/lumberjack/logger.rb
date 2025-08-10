@@ -502,11 +502,8 @@ module Lumberjack
     # for the duration of the block. Otherwise the tags will be applied on the current
     # logger context for the duration of that context.
     #
-    # If there is no block or context, the tags will be applied to the global context.
-    # This behavior is deprecated. Use the `tag_globally` method to set global tags instead.
-    #
     # @param [Hash] tags The tags to set.
-    # @return [void]
+    # @return [Object, nil] The result of the block if given, otherwise nil.
     def tag(tags, &block)
       thread_tags = thread_local_value(:lumberjack_logger_tags)
       if block
@@ -515,11 +512,6 @@ module Lumberjack
         push_thread_local_value(:lumberjack_logger_tags, merged_tags, &block)
       elsif thread_tags
         TagContext.new(thread_tags).tag(tags)
-        nil
-      else
-        Utils.deprecated("Lumberjack::Logger#tag", "Lumberjack::Logger#tag must be called with a block or inside a context block. In version 2.0 it will no longer be used for setting global tags. Use Lumberjack::Logger#tag_globally instead.") do
-          tag_globally(tags)
-        end
       end
     end
 
