@@ -26,37 +26,6 @@ module Lumberjack
   require_relative "lumberjack/utils"
 
   class << self
-    # Define a unit of work within a block. Within the block supplied to this
-    # method, calling +unit_of_work_id+ will return the same value that can
-    # This can then be used for tying together log entries.
-    #
-    # You can specify the id for the unit of work if desired. If you don't supply
-    # it, a 12 digit hexidecimal number will be automatically generated for you.
-    #
-    # For the common use case of treating a single web request as a unit of work, see the
-    # Lumberjack::Rack::UnitOfWork class.
-    #
-    # @param id [String] The id for the unit of work.
-    # @return [void]
-    # @deprecated Use tags instead. This will be removed in version 2.0.
-    def unit_of_work(id = nil)
-      Lumberjack::Utils.deprecated("Lumberjack.unit_of_work", "Lumberjack.unit_of_work will be removed in version 2.0. Use Lumberjack::Logger#tag(unit_of_work: id) instead.") do
-        id ||= SecureRandom.hex(6)
-        context do
-          context[:unit_of_work_id] = id
-          yield
-        end
-      end
-    end
-
-    # Get the UniqueIdentifier for the current unit of work.
-    #
-    # @return [String, nil] The id for the current unit of work.
-    # @deprecated Use tags instead. This will be removed in version 2.0.
-    def unit_of_work_id
-      context[:unit_of_work_id]
-    end
-
     # Contexts can be used to store tags that will be attached to all log entries in the block.
     # The context will apply to all Lumberjack loggers that are used within the block.
     #

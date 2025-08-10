@@ -66,32 +66,4 @@ RSpec.describe Lumberjack do
       expect(result).to eq :foo
     end
   end
-
-  describe "unit of work" do
-    it "should create a unit work with a unique id in a block in a tag", suppress_warnings: true do
-      expect(Lumberjack.unit_of_work_id).to eq(nil)
-      Lumberjack.unit_of_work do
-        id_1 = Lumberjack.unit_of_work_id
-        expect(id_1).to match(/^[0-9a-f]{12}$/)
-        expect(Lumberjack.context[:unit_of_work_id]).to eq id_1
-        Lumberjack.unit_of_work do
-          id_2 = Lumberjack.unit_of_work_id
-          expect(id_2).to match(/^[0-9a-f]{12}$/)
-          expect(id_2).not_to eq(id_1)
-          expect(Lumberjack.context[:unit_of_work_id]).to eq id_2
-        end
-        expect(id_1).to eq(Lumberjack.unit_of_work_id)
-        expect(Lumberjack.context[:unit_of_work_id]).to eq id_1
-      end
-      expect(Lumberjack.unit_of_work_id).to eq(nil)
-      expect(Lumberjack.context[:unit_of_work_id]).to eq nil
-    end
-
-    it "should allow you to specify a unit of work id for a block", suppress_warnings: true do
-      Lumberjack.unit_of_work("foo") do
-        expect(Lumberjack.unit_of_work_id).to eq("foo")
-      end
-      expect(Lumberjack.unit_of_work_id).to eq(nil)
-    end
-  end
 end
