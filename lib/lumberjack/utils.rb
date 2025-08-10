@@ -29,7 +29,7 @@ module Lumberjack
           @deprecations_lock.synchronize do
             @deprecations ||= {}
             unless @deprecations.include?(method)
-              trace = caller[3..-1]
+              trace = caller[3..]
               unless ENV["VERBOSE_LUMBERJACK_DEPRECATION_WARNING"] == "true"
                 trace = [trace.first]
                 @deprecations[method] = true
