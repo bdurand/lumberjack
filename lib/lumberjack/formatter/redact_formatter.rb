@@ -11,7 +11,7 @@ module Lumberjack
         return obj unless obj.is_a?(String)
 
         if obj.length > 8
-          "#{obj[0..1]}#{"*" * (obj.length - 4)}#{obj[-2..-1]}"
+          "#{obj[0..1]}#{"*" * (obj.length - 4)}#{obj[-2..]}"
         elsif obj.length > 5
           "#{obj[0]}#{"*" * (obj.length - 2)}#{obj[-1]}"
         else
