@@ -8,9 +8,6 @@ module Lumberjack
 
     TIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
-    # @deprecated Will be removed in version 2.0.
-    UNIT_OF_WORK_ID = "unit_of_work_id"
-
     # Create a new log entry.
     #
     # @param time [Time] The time the log entry was created.
@@ -25,12 +22,7 @@ module Lumberjack
       @message = message
       @progname = progname
       @pid = pid
-      # backward compatibility with 1.0 API where the last argument was the unit of work id
-      @tags = if tags.is_a?(Hash)
-        compact_tags(tags)
-      elsif !tags.nil?
-        {UNIT_OF_WORK_ID => tags}
-      end
+      @tags = compact_tags(tags) if tags.is_a?(Hash)
     end
 
     def severity_label
@@ -43,24 +35,6 @@ module Lumberjack
 
     def inspect
       to_s
-    end
-
-    # @deprecated - backward compatibility with 1.0 API. Will be removed in version 2.0.
-    def unit_of_work_id
-      Lumberjack::Utils.deprecated("Lumberjack::LogEntry#unit_of_work_id", "Lumberjack::LogEntry#unit_of_work_id will be removed in version 2.0") do
-        tags[UNIT_OF_WORK_ID] if tags
-      end
-    end
-
-    # @deprecated - backward compatibility with 1.0 API. Will be removed in version 2.0.
-    def unit_of_work_id=(value)
-      Lumberjack::Utils.deprecated("Lumberjack::LogEntry#unit_of_work_id=", "Lumberjack::LogEntry#unit_of_work_id= will be removed in version 2.0") do
-        if tags
-          tags[UNIT_OF_WORK_ID] = value
-        else
-          @tags = {UNIT_OF_WORK_ID => value}
-        end
-      end
     end
 
     # Return the tag with the specified name.
