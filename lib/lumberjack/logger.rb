@@ -24,17 +24,12 @@ module Lumberjack
   # program name, process id, and an optional hash of tags. The message will be converted to a string, but
   # otherwise, it is up to the device how these values are recorded. Messages are converted to strings
   # using a Formatter associated with the logger.
-  class Logger
-    include Severity
-
+  class Logger < ::Logger
     # The time that the device was last flushed.
     attr_reader :last_flushed_at
 
     # Set +silencer+ to false to disable silencing the log.
     attr_accessor :silencer
-
-    # Set the name of the program to attach to log entries.
-    attr_writer :progname
 
     # The Formatter used only for log entry messages.
     attr_accessor :message_formatter
@@ -64,24 +59,35 @@ module Lumberjack
     # @option options [Numeric] :flush_seconds The maximum number of seconds between flush calls.
     # @option options [Boolean] :roll If the log device is a file path, it will be a Device::DateRollingLogFile if this is set.
     # @option options [Integer] :max_size If the log device is a file path, it will be a Device::SizeRollingLogFile if this is set.
-    def initialize(device = $stdout, options = {})
-      options = options.dup
-      self.level = options.delete(:level) || INFO
-      self.progname = options.delete(:progname)
-      max_flush_seconds = options.delete(:flush_seconds).to_f
+    def initialize(logdev, shift_age = 0, shift_size = 1048576,
+      level: DEBUG, progname: nil, formatter: nil, datetime_format: nil,
+      binmode: false, shift_period_suffix: "%Y%m%d", reraise_write_errors: [], skip_header: false,
+      message_formatter: nil, tag_formatter: nil, flush_seconds: nil, buffer_size: 0, template: nil)
+      @logdev = open_device(logdev,
+        datetime_format: datetime_format,
+        binmode: binmode,
+        shift_period_suffix: shift_period_suffix,
+        reraise_write_errors: reraise_write_errors,
+        skip_header: skip_header,
+        buffer_size: buffer_size,
+        template: template)
 
-      @logdev = open_device(device, options) if device
-      self.formatter = (options[:formatter] || Formatter.new)
-      @message_formatter = options[:message_formatter] || Formatter.empty
-      @tag_formatter = options[:tag_formatter] || TagFormatter.new
-      time_format = options[:datetime_format] || options[:time_format]
-      self.datetime_format = time_format if time_format
-      @last_flushed_at = Time.now
-      @silencer = true
+      self.level = level
+      self.progname = progname
+      self.formatter = formatter || Formatter.new
+      @message_formatter = message_formatter || Formatter.empty
+      @tag_formatter = tag_formatter || TagFormatter.new
+      self.datetime_format = datetime_format if datetime_format
       @tags = {}
-      @closed = false
 
-      create_flusher_thread(max_flush_seconds) if max_flush_seconds > 0
+      @closed = false # TODO
+      @silencer = true # TODO
+
+      @fiber_locals = {}
+      @fiber_locals_mutex = Mutex.new
+
+      @last_flushed_at = Time.now
+      create_flusher_thread(flush_seconds.to_f) if flush_seconds.to_f > 0
     end
 
     # Get the logging device that is used to write log entries.
@@ -121,7 +127,7 @@ module Lumberjack
     #
     # @return [Integer] The severity level.
     def level
-      thread_local_value(:lumberjack_logger_level) || @level
+      fiber_local_value(:lumberjack_logger_level) || @level
     end
 
     alias_method :sev_threshold, :level
@@ -135,14 +141,14 @@ module Lumberjack
       @level = Severity.coerce(value)
     end
 
-    alias_method :sev_threshold=, :level=
+    # alias_method :sev_threshold=, :level=
 
     # Adjust the log level during the block execution for the current Fiber only.
     #
     # @param [Integer, Symbol, String] severity The severity level.
     # @return [Object] The result of the block.
     def with_level(severity, &block)
-      push_thread_local_value(:lumberjack_logger_level, Severity.coerce(severity), &block)
+      push_fiber_local_value(:lumberjack_logger_level, Severity.coerce(severity), &block)
     end
 
     # Set the Lumberjack::Formatter used to format objects for logging as messages.
@@ -202,10 +208,10 @@ module Lumberjack
     def add_entry(severity, message, progname = nil, tags = nil)
       severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
       return true unless device && severity && severity >= level
-      return true if Thread.current[:lumberjack_logging]
+      return true if fiber_local_value(:lumberjack_logging)
 
       begin
-        Thread.current[:lumberjack_logging] = true # Prevent circular calls to add_entry
+        set_fiber_local_value(:lumberjack_logging, true)
 
         time = Time.now
 
@@ -235,7 +241,7 @@ module Lumberjack
         entry = LogEntry.new(time, severity, message, progname, Process.pid, tags)
         write_to_device(entry)
       ensure
-        Thread.current[:lumberjack_logging] = nil
+        set_fiber_local_value(:lumberjack_logging, nil)
       end
       true
     end
@@ -455,7 +461,7 @@ module Lumberjack
         unless temporary_level.is_a?(Integer)
           temporary_level = Severity.label_to_level(temporary_level)
         end
-        push_thread_local_value(:lumberjack_logger_level, temporary_level, &block)
+        push_fiber_local_value(:lumberjack_logger_level, temporary_level, &block)
       else
         yield
       end
@@ -476,7 +482,7 @@ module Lumberjack
     # @return [void]
     def set_progname(value, &block)
       if block
-        push_thread_local_value(:lumberjack_logger_progname, value, &block)
+        push_fiber_local_value(:lumberjack_logger_progname, value, &block)
       else
         self.progname = value
       end
@@ -495,7 +501,7 @@ module Lumberjack
     #
     # @return [String]
     def progname
-      thread_local_value(:lumberjack_logger_progname) || @progname
+      fiber_local_value(:lumberjack_logger_progname) || @progname
     end
 
     # Set a hash of tags on logger. If a block is given, the tags will only be set
@@ -505,11 +511,11 @@ module Lumberjack
     # @param [Hash] tags The tags to set.
     # @return [Object, nil] The result of the block if given, otherwise nil.
     def tag(tags, &block)
-      thread_tags = thread_local_value(:lumberjack_logger_tags)
+      thread_tags = fiber_local_value(:lumberjack_logger_tags)
       if block
         merged_tags = (thread_tags ? thread_tags.dup : {})
         TagContext.new(merged_tags).tag(tags)
-        push_thread_local_value(:lumberjack_logger_tags, merged_tags, &block)
+        push_fiber_local_value(:lumberjack_logger_tags, merged_tags, &block)
       elsif thread_tags
         TagContext.new(thread_tags).tag(tags)
       end
@@ -525,13 +531,13 @@ module Lumberjack
     #   add or remove tags within the context.
     def context(&block)
       if block
-        thread_tags = thread_local_value(:lumberjack_logger_tags)&.dup
+        thread_tags = fiber_local_value(:lumberjack_logger_tags)&.dup
         thread_tags ||= {}
-        push_thread_local_value(:lumberjack_logger_tags, thread_tags) do
+        push_fiber_local_value(:lumberjack_logger_tags, thread_tags) do
           block.call(TagContext.new(thread_tags))
         end
       else
-        TagContext.new(thread_local_value(:lumberjack_logger_tags) || {})
+        TagContext.new(fiber_local_value(:lumberjack_logger_tags) || {})
       end
     end
 
@@ -551,7 +557,7 @@ module Lumberjack
     # @param [Array<String, Symbol>] tag_names The tags to remove.
     # @return [void]
     def remove_tag(*tag_names)
-      tags = thread_local_value(:lumberjack_logger_tags) || @tags
+      tags = fiber_local_value(:lumberjack_logger_tags) || @tags
       TagContext.new(tags).delete(*tag_names)
     end
 
@@ -563,8 +569,8 @@ module Lumberjack
       tags = {}
       context_tags = Lumberjack.context_tags
       tags.merge!(context_tags) if context_tags && !context_tags.empty?
-      tags.merge!(@tags) if !@tags.empty? && !thread_local_value(:lumberjack_logger_untagged)
-      scope_tags = thread_local_value(:lumberjack_logger_tags)
+      tags.merge!(@tags) if !@tags.empty? && !fiber_local_value(:lumberjack_logger_untagged)
+      scope_tags = fiber_local_value(:lumberjack_logger_tags)
       tags.merge!(scope_tags) if scope_tags && !scope_tags.empty?
       tags
     end
@@ -585,15 +591,15 @@ module Lumberjack
     # @return [void]
     def untagged(&block)
       Lumberjack.use_context(nil) do
-        scope_tags = thread_local_value(:lumberjack_logger_tags)
-        untagged = thread_local_value(:lumberjack_logger_untagged)
+        scope_tags = fiber_local_value(:lumberjack_logger_tags)
+        untagged = fiber_local_value(:lumberjack_logger_untagged)
         begin
-          set_thread_local_value(:lumberjack_logger_untagged, true)
-          set_thread_local_value(:lumberjack_logger_tags, nil)
+          set_fiber_local_value(:lumberjack_logger_untagged, true)
+          set_fiber_local_value(:lumberjack_logger_tags, nil)
           tag({}, &block)
         ensure
-          set_thread_local_value(:lumberjack_logger_untagged, untagged)
-          set_thread_local_value(:lumberjack_logger_tags, scope_tags)
+          set_fiber_local_value(:lumberjack_logger_untagged, untagged)
+          set_fiber_local_value(:lumberjack_logger_tags, scope_tags)
         end
       end
     end
@@ -603,7 +609,7 @@ module Lumberjack
     #
     # @return [Boolean]
     def in_tag_context?
-      !!thread_local_value(:lumberjack_logger_tags)
+      !!fiber_local_value(:lumberjack_logger_tags)
     end
 
     private
@@ -645,34 +651,43 @@ module Lumberjack
     end
 
     # Set a local value for a thread tied to this object.
-    def set_thread_local_value(name, value) # :nodoc:
-      values = Thread.current[name]
-      unless values
-        values = {}
-        Thread.current[name] = values
+    def set_fiber_local_value(name, value) # :nodoc:
+      local_values = @fiber_locals[Fiber.current]
+      if local_values.nil?
+        return if value.nil?
+
+        local_values = {}
+        @fiber_locals_mutex.synchronize do
+          @fiber_locals[Fiber.current] = local_values
+        end
       end
+
       if value.nil?
-        values.delete(self)
-        Thread.current[name] = nil if values.empty?
+        local_values.delete(name)
+        if local_values.empty?
+          @fiber_locals_mutex.synchronize do
+            @fiber_locals.delete(Fiber.current)
+          end
+        end
       else
-        values[self] = value
+        local_values[name] = value
       end
     end
 
     # Get a local value for a thread tied to this object.
-    def thread_local_value(name) # :nodoc:
-      values = Thread.current[name]
-      values[self] if values
+    def fiber_local_value(name) # :nodoc:
+      values = @fiber_locals[Fiber.current]
+      values[name] if values
     end
 
     # Set a local value for a thread tied to this object within a block.
-    def push_thread_local_value(name, value) # :nodoc:
-      save_val = thread_local_value(name)
-      set_thread_local_value(name, value)
+    def push_fiber_local_value(name, value) # :nodoc:
+      save_val = fiber_local_value(name)
+      set_fiber_local_value(name, value)
       begin
         yield
       ensure
-        set_thread_local_value(name, save_val)
+        set_fiber_local_value(name, save_val)
       end
     end
 

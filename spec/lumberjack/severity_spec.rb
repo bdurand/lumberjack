@@ -7,7 +7,7 @@ RSpec.describe Lumberjack::Severity do
     expect(Lumberjack::Severity.level_to_label(Logger::WARN)).to eq("WARN")
     expect(Lumberjack::Severity.level_to_label(Logger::ERROR)).to eq("ERROR")
     expect(Lumberjack::Severity.level_to_label(Logger::FATAL)).to eq("FATAL")
-    expect(Lumberjack::Severity.level_to_label(100)).to eq("UNKNOWN")
+    expect(Lumberjack::Severity.level_to_label(100)).to eq("ANY")
   end
 
   it "should convert a label to a level" do

@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 2.0.0
 
+### Changed
+
+- `Lumberjack::Logger` now inherits from `::Logger` instead of just having API compatibility with the standard library `Logger` class.
+- The default log level is now DEBUG instead of INFO.
+- The severity label for log entries with an unknown level is now ANY instead of UNKNOWN.
+
 ### Removed
 
 - Removed deprecated unit of work id code. These have been replaced with tags.
