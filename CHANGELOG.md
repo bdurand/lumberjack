@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 2.0.0
 
+### Added
+
+- Added `Lumberjack::EntryFormatter` class to provide a unified interface for formatting log entry details. Going forward this is the preferred way to define log entry formatters. `Lumberjack::Logger.formatter` now returns an entry formatter.
+
 ### Changed
 
 - `Lumberjack::Logger` now inherits from `::Logger` instead of just having API compatibility with the standard library `Logger` class.

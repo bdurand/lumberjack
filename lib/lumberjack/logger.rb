@@ -31,12 +31,6 @@ module Lumberjack
     # Set +silencer+ to false to disable silencing the log.
     attr_accessor :silencer
 
-    # The Formatter used only for log entry messages.
-    attr_accessor :message_formatter
-
-    # The TagFormatter used for formatting tags for output
-    attr_accessor :tag_formatter
-
     # Create a new logger to log to a Device.
     #
     # The +device+ argument can be in any one of several formats.
@@ -74,10 +68,18 @@ module Lumberjack
 
       self.level = level
       self.progname = progname
-      self.formatter = formatter || Formatter.new
-      @message_formatter = message_formatter || Formatter.empty
-      @tag_formatter = tag_formatter || TagFormatter.new
+
+      entry_formatter = formatter if formatter.is_a?(Lumberjack::EntryFormatter)
+      unless entry_formatter
+        message_formatter ||= formatter if formatter.is_a?(Lumberjack::Formatter)
+        entry_formatter = Lumberjack::EntryFormatter.new
+      end
+      entry_formatter.message_formatter = message_formatter if message_formatter
+      entry_formatter.tag_formatter = tag_formatter if tag_formatter
+
+      self.formatter = entry_formatter
       self.datetime_format = datetime_format if datetime_format
+
       @tags = {}
 
       @closed = false # TODO
@@ -171,6 +173,22 @@ module Lumberjack
       end
     end
 
+    def message_formatter
+      formatter.message.message_formatter
+    end
+
+    def message_formatter=(value)
+      formatter.message_formatter = value
+    end
+
+    def tag_formatter
+      formatter.tags.tag_formatter
+    end
+
+    def tag_formatter=(value)
+      formatter.tag_formatter = value
+    end
+
     # Enable this logger to function like an ActiveSupport::TaggedLogger. This will make the logger
     # API compatible with ActiveSupport::TaggedLogger and is provided as a means of compatibility
     # with other libraries that assume they can call the `tagged` method on a logger to add tags.
@@ -211,34 +229,16 @@ module Lumberjack
       return true if fiber_local_value(:lumberjack_logging)
 
       begin
-        set_fiber_local_value(:lumberjack_logging, true)
+        set_fiber_local_value(:lumberjack_logging, true) # protection from infinite loops
 
         time = Time.now
-
-        message = message.call if message.is_a?(Proc)
-        msg_class_formatter = message_formatter&.formatter_for(message.class)
-        if msg_class_formatter
-          message = msg_class_formatter.call(message)
-        elsif formatter
-          message = formatter.format(message)
-        end
-        message_tags = nil
-        if message.is_a?(Formatter::TaggedMessage)
-          message_tags = message.tags
-          message = message.message
-        end
-
         progname ||= self.progname
-        message_tags = Utils.flatten_tags(message_tags) if message_tags
-
-        current_tags = self.tags
         tags = nil unless tags.is_a?(Hash)
-        tags = merge_tags(current_tags, tags)
-        tags = merge_tags(tags, message_tags) if message_tags
-        tags = Tags.expand_runtime_values(tags)
-        tags = tag_formatter.format(tags) if tag_formatter
+        tags = merge_tags(self.tags, tags)
+        message, tags = formatter.format(message, tags) if formatter
 
-        entry = LogEntry.new(time, severity, message, progname, Process.pid, tags)
+        entry = Lumberjack::LogEntry.new(time, severity, message, progname, Process.pid, tags)
+
         write_to_device(entry)
       ensure
         set_fiber_local_value(:lumberjack_logging, nil)

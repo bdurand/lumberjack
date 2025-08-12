@@ -7,20 +7,20 @@ require "logger"
 module Lumberjack
   LINE_SEPARATOR = ((RbConfig::CONFIG["host_os"] =~ /mswin/i) ? "\r\n" : "\n")
 
-  require_relative "lumberjack/severity"
-  require_relative "lumberjack/formatter"
-
   require_relative "lumberjack/context"
   require_relative "lumberjack/log_entry"
   require_relative "lumberjack/device"
+  require_relative "lumberjack/entry_formatter"
+  require_relative "lumberjack/formatter"
   require_relative "lumberjack/logger"
+  require_relative "lumberjack/rack"
+  require_relative "lumberjack/severity"
   require_relative "lumberjack/tags"
   require_relative "lumberjack/tag_context"
   require_relative "lumberjack/tag_formatter"
   require_relative "lumberjack/tagged_logger_support"
   require_relative "lumberjack/tagged_logging"
   require_relative "lumberjack/template"
-  require_relative "lumberjack/rack"
   require_relative "lumberjack/utils"
 
   @global_contexts = {}
