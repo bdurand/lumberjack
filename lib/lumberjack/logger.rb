@@ -174,7 +174,7 @@ module Lumberjack
     end
 
     def message_formatter
-      formatter.message.message_formatter
+      formatter.message_formatter
     end
 
     def message_formatter=(value)
