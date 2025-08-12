@@ -176,93 +176,6 @@ RSpec.describe Lumberjack::Logger do
     end
   end
 
-  describe "#silence" do
-    it "should be able to silence the log in a block" do
-      output = StringIO.new
-      logger = Lumberjack::Logger.new(output, buffer_size: 0, level: Logger::INFO, template: ":message")
-      logger.info("one")
-      logger.silence do
-        expect(logger.level).to eq(Logger::ERROR)
-        logger.info("two")
-        logger.error("three")
-      end
-      logger.info("four")
-      expect(output.string.split).to eq(["one", "three", "four"])
-    end
-
-    it "should be able to customize the level of silence in a block" do
-      output = StringIO.new
-      logger = Lumberjack::Logger.new(output, buffer_size: 0, level: Logger::INFO, template: ":message")
-      logger.info("one")
-      logger.silence(Logger::FATAL) do
-        expect(logger.level).to eq(Logger::FATAL)
-        logger.info("two")
-        logger.error("three")
-        logger.fatal("woof")
-      end
-      logger.info("four")
-      expect(output.string.split).to eq(["one", "woof", "four"])
-    end
-
-    it "should be able to customize the level of silence in a block with a symbol" do
-      output = StringIO.new
-      logger = Lumberjack::Logger.new(output, buffer_size: 0, level: Logger::INFO, template: ":message")
-      logger.info("one")
-      logger.silence(:fatal) do
-        expect(logger.level).to eq(Logger::FATAL)
-        logger.info("two")
-        logger.error("three")
-        logger.fatal("woof")
-      end
-      logger.info("four")
-      expect(output.string.split).to eq(["one", "woof", "four"])
-    end
-
-    it "should not be able to silence the logger if silencing is disabled" do
-      output = StringIO.new
-      logger = Lumberjack::Logger.new(output, buffer_size: 0, level: Logger::INFO, template: ":message")
-      logger.silencer = false
-      logger.info("one")
-      logger.silence do
-        expect(logger.level).to eq(Logger::INFO)
-        logger.info("two")
-        logger.error("three")
-      end
-      logger.info("four")
-      expect(output.string.split).to eq(["one", "two", "three", "four"])
-    end
-
-    it "should only affect the current thread when silencing the logger" do
-      output = StringIO.new
-      logger = Lumberjack::Logger.new(output, buffer_size: 0, level: Logger::INFO, template: ":message")
-      # status is used to make sure the two threads are executing at the same time
-      status = 0
-      begin
-        Thread.new do
-          logger.silence do
-            logger.info("inner")
-            status = 1
-            loop do
-              sleep(0.001)
-              break if status == 2
-            end
-          end
-        end
-        loop do
-          sleep(0.001)
-          break if status == 1
-        end
-        logger.info("outer")
-        status = 2
-        logger.close
-        expect(output.string).to include("outer")
-        expect(output.string).not_to include("inner")
-      ensure
-        status = 2
-      end
-    end
-  end
-
   describe "#datetime_format" do
     it "should be able to set the datetime format for timestamps on the log device" do
       output = StringIO.new
@@ -276,21 +189,6 @@ RSpec.describe Lumberjack::Logger do
         logger.flush
         expect(output.string).to eq "#{Time.now.strftime("%Y-%m-%d")} one\n#{Time.now.strftime("%m-%d-%Y")} two\n"
       end
-    end
-  end
-
-  describe "#log_at" do
-    it "should temporarily set the log level for a block" do
-      output = StringIO.new
-      logger = Lumberjack::Logger.new(output, level: Logger::INFO, template: ":message")
-      logger.info("one")
-      logger.log_at(Logger::WARN) do
-        expect(logger.level).to eq(Logger::WARN)
-        logger.warn("two")
-        logger.info("three")
-      end
-      logger.info("four")
-      expect(output.string.split).to eq(["one", "two", "four"])
     end
   end
 
@@ -967,19 +865,6 @@ RSpec.describe Lumberjack::Logger do
         Thread.new do
           expect(logger.tags).to be_empty
         end.join
-      end
-    end
-  end
-
-  describe "Rails compatibility" do
-    it "should be compatible with ActiveSupport::Logger.logger_outputs_to?" do
-      if defined?(ActiveSupport::Logger)
-        stream = StringIO.new
-        logger = Lumberjack::Logger.new(stream)
-        expect(ActiveSupport::Logger.logger_outputs_to?(logger, stream)).to be true
-        expect(ActiveSupport::Logger.logger_outputs_to?(logger, $stdout)).to be false
-      else
-        skip "ActiveSupport::Logger is not defined"
       end
     end
   end

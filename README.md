@@ -4,6 +4,9 @@
 [![Ruby Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://github.com/testdouble/standard)
 [![Gem Version](https://badge.fury.io/rb/lumberjack.svg)](https://badge.fury.io/rb/lumberjack)
 
+> [! WARNING]
+> TODO: Update for Lumberjack 2
+
 Lumberjack is a simple, powerful, and fast logging implementation in Ruby. It uses nearly the same API as the Logger class in the Ruby standard library and as ActiveSupport::BufferedLogger in Rails. It is designed with structured logging in mind, but can be used for simple text logging as well.
 
 ## Usage

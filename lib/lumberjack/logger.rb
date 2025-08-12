@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  # Logger is a thread safe logging object. It has a compatible API with the Ruby
-  # standard library Logger class, the Log4r gem, and ActiveSupport::BufferedLogger.
+  # Logger is a thread safe implementation of the standard library Logger class. TODO: update this
   #
   # === Example
   #
@@ -28,8 +27,7 @@ module Lumberjack
     # The time that the device was last flushed.
     attr_reader :last_flushed_at
 
-    # Set +silencer+ to false to disable silencing the log.
-    attr_accessor :silencer
+    attr_accessor :formatter
 
     # Create a new logger to log to a Device.
     #
@@ -83,7 +81,6 @@ module Lumberjack
       @tags = {}
 
       @closed = false # TODO
-      @silencer = true # TODO
 
       @fiber_locals = {}
       @fiber_locals_mutex = Mutex.new
@@ -153,26 +150,6 @@ module Lumberjack
       push_fiber_local_value(:lumberjack_logger_level, Severity.coerce(severity), &block)
     end
 
-    # Set the Lumberjack::Formatter used to format objects for logging as messages.
-    #
-    # @param [Lumberjack::Formatter, Object] value The formatter to use.
-    # @return [void]
-    def formatter=(value)
-      @_formatter = (value.is_a?(TaggedLoggerSupport::Formatter) ? value.__formatter : value)
-    end
-
-    # Get the Lumberjack::Formatter used to format objects for logging as messages.
-    #
-    # @return [Lumberjack::Formatter] The formatter.
-    def formatter
-      if respond_to?(:tagged)
-        # Wrap in an object that supports ActiveSupport::TaggedLogger API
-        TaggedLoggerSupport::Formatter.new(logger: self, formatter: @_formatter)
-      else
-        @_formatter
-      end
-    end
-
     def message_formatter
       formatter.message_formatter
     end
@@ -187,20 +164,6 @@ module Lumberjack
 
     def tag_formatter=(value)
       formatter.tag_formatter = value
-    end
-
-    # Enable this logger to function like an ActiveSupport::TaggedLogger. This will make the logger
-    # API compatible with ActiveSupport::TaggedLogger and is provided as a means of compatibility
-    # with other libraries that assume they can call the `tagged` method on a logger to add tags.
-    #
-    # The tags added with this method are just strings so they are stored in the logger tags
-    # in an array under the "tagged" tag. So calling `logger.tagged("foo", "bar")` will result
-    # in tags `{"tagged" => ["foo", "bar"]}`.
-    #
-    # @return [Lumberjack::Logger] self.
-    def tagged_logger!
-      extend(TaggedLoggerSupport)
-      self
     end
 
     # Add a message to the log with a given severity. The message can be either
@@ -444,37 +407,6 @@ module Lumberjack
       add_entry(UNKNOWN, msg)
     end
 
-    # Silence the logger by setting a new log level inside a block. By default, only +ERROR+ or +FATAL+
-    # messages will be logged.
-    #
-    # @param [Integer, String, Symbol] temporary_level The log level to use inside the block.
-    # @return [Object] The result of the block.
-    #
-    # @example
-    #
-    #   logger.level = Logger::INFO
-    #   logger.silence do
-    #     do_something   # Log level inside the block is +ERROR+
-    #   end
-    def silence(temporary_level = ERROR, &block)
-      if silencer
-        unless temporary_level.is_a?(Integer)
-          temporary_level = Severity.label_to_level(temporary_level)
-        end
-        push_fiber_local_value(:lumberjack_logger_level, temporary_level, &block)
-      else
-        yield
-      end
-    end
-
-    # Provided for compatibility with ActiveSupport::LoggerThreadSafeLevel to temporarily set the log level.
-    #
-    # @param [Integer, String, Symbol] level The log level to use inside the block.
-    # @return [Object] The result of the block.
-    def log_at(level, &block)
-      with_level(level, &block)
-    end
-
     # Set the program name that is associated with log messages. If a block
     # is given, the program name will be valid only within the block.
     #
@@ -482,7 +414,7 @@ module Lumberjack
     # @return [void]
     def set_progname(value, &block)
       if block
-        push_fiber_local_value(:lumberjack_logger_progname, value, &block)
+        with_progname(value, &block)
       else
         self.progname = value
       end
@@ -494,7 +426,7 @@ module Lumberjack
     # @param [String] value The program name to use.
     # @return [Object] The result of the block.
     def with_progname(value, &block)
-      set_progname(value, &block)
+      push_fiber_local_value(:lumberjack_logger_progname, value, &block)
     end
 
     # Get the program name associated with log messages.
