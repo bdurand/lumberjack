@@ -24,7 +24,7 @@ module Lumberjack
       # @param message [String] Optional message to include in the warning.
       # @yield The block to execute after the warning.
       def deprecated(method, message)
-        if Warning[:deprecated] && !@deprecations&.include?(method)
+        if (Warning[:deprecated] || $VERBOSE) && !@deprecations&.include?(method)
           @deprecations_lock ||= Mutex.new
           @deprecations_lock.synchronize do
             @deprecations ||= {}
@@ -35,7 +35,7 @@ module Lumberjack
                 @deprecations[method] = true
               end
               message = "DEPRECATION WARNING: #{message} Called from #{trace.join("\n")}"
-              warn(message, category: :deprecated)
+              warn(message)
             end
           end
         end

@@ -94,7 +94,7 @@ describe Lumberjack::EntryFormatter do
 
     it "handles nil tags" do
       entry_formatter.tags { add("foo") { |obj| "Foo: #{obj}" } }
-      message, tags = entry_formatter.format("foobar",nil)
+      message, tags = entry_formatter.format("foobar", nil)
       expect(message).to eq("foobar")
       expect(tags).to be_nil
     end
