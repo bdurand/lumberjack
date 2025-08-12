@@ -3,15 +3,8 @@
 module Lumberjack
   # The standard severity levels for logging messages.
   module Severity
-    # Backward compatibilty with 1.0 API
-    DEBUG = ::Logger::Severity::DEBUG
-    INFO = ::Logger::Severity::INFO
-    WARN = ::Logger::Severity::WARN
-    ERROR = ::Logger::Severity::ERROR
-    FATAL = ::Logger::Severity::FATAL
-    UNKNOWN = ::Logger::Severity::UNKNOWN
-
-    SEVERITY_LABELS = %w[DEBUG INFO WARN ERROR FATAL UNKNOWN].freeze
+    SEVERITY_LABELS = %w[DEBUG INFO WARN ERROR FATAL ANY].freeze
+    private_constant :SEVERITY_LABELS
 
     class << self
       # Convert a severity level to a label.
@@ -27,7 +20,7 @@ module Lumberjack
       # @param [String, Symbol] label The severity label to convert.
       # @return [Integer] The severity level.
       def label_to_level(label)
-        SEVERITY_LABELS.index(label.to_s.upcase) || UNKNOWN
+        SEVERITY_LABELS.index(label.to_s.upcase) || Logger::Severity::UNKNOWN
       end
 
       # Coerce a value to a severity level.

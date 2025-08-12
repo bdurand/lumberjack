@@ -2,28 +2,30 @@
 
 require "rbconfig"
 require "time"
-require "securerandom"
 require "logger"
 require "fiber"
 
 module Lumberjack
   LINE_SEPARATOR = ((RbConfig::CONFIG["host_os"] =~ /mswin/i) ? "\r\n" : "\n")
 
-  require_relative "lumberjack/severity"
-  require_relative "lumberjack/formatter"
-
   require_relative "lumberjack/context"
   require_relative "lumberjack/log_entry"
   require_relative "lumberjack/device"
+  require_relative "lumberjack/entry_formatter"
+  require_relative "lumberjack/formatter"
   require_relative "lumberjack/logger"
+  require_relative "lumberjack/rack"
+  require_relative "lumberjack/severity"
   require_relative "lumberjack/tags"
   require_relative "lumberjack/tag_context"
   require_relative "lumberjack/tag_formatter"
   require_relative "lumberjack/tagged_logger_support"
   require_relative "lumberjack/tagged_logging"
   require_relative "lumberjack/template"
-  require_relative "lumberjack/rack"
   require_relative "lumberjack/utils"
+
+  @global_contexts = {}
+  @global_contexts_mutex = Mutex.new
 
   class << self
     # Contexts can be used to store tags that will be attached to all log entries in the block.
@@ -38,7 +40,7 @@ module Lumberjack
     #
     # @return [Lumberjack::Context] The current context if called without a block.
     def context(&block)
-      current_context = Thread.current[:lumberjack_context]
+      current_context = @global_contexts[Fiber.current]
       if block
         use_context(Context.new(current_context), &block)
       else
@@ -51,12 +53,20 @@ module Lumberjack
     # @param [Lumberjack::Context] context The context to use within the block.
     # @return [Object] The result of the block.
     def use_context(context, &block)
-      current_context = Thread.current[:lumberjack_context]
+      current_context = @global_contexts[Fiber.current]
       begin
-        Thread.current[:lumberjack_context] = (context || Context.new)
+        @global_contexts_mutex.synchronize do
+          @global_contexts[Fiber.current] = (context || Context.new)
+        end
         yield
       ensure
-        Thread.current[:lumberjack_context] = current_context
+        @global_contexts_mutex.synchronize do
+          if current_context.nil?
+            @global_contexts.delete(Fiber.current)
+          else
+            @global_contexts[Fiber.current] = current_context
+          end
+        end
       end
     end
 
@@ -64,14 +74,14 @@ module Lumberjack
     #
     # @return [Boolean]
     def context?
-      !!Thread.current[:lumberjack_context]
+      !!@global_contexts[Fiber.current]
     end
 
     # Return the tags from the current context or nil if there are no tags.
     #
     # @return [Hash, nil]
     def context_tags
-      context = Thread.current[:lumberjack_context]
+      context = @global_contexts[Fiber.current]
       context&.tags
     end
 
@@ -80,7 +90,7 @@ module Lumberjack
     # @param [Hash] tags The tags to set.
     # @return [void]
     def tag(tags)
-      context = Thread.current[:lumberjack_context]
+      context = @global_contexts[Fiber.current]
       context&.tag(tags)
     end
   end

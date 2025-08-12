@@ -40,7 +40,6 @@ module Lumberjack
 
     def initialize
       @class_formatters = {}
-      @module_formatters = {}
       structured_formatter = StructuredFormatter.new(self)
       add([String, Numeric, TrueClass, FalseClass], :object)
       add(Object, InspectFormatter.new)
@@ -114,12 +113,7 @@ module Lumberjack
         end
 
         Array(klass).each do |k|
-          if k.instance_of?(Module)
-            @module_formatters[k] = formatter
-          else
-            k = k.name if k.is_a?(Class)
-            @class_formatters[k] = formatter
-          end
+          @class_formatters[k.to_s] = formatter
         end
       end
       self
@@ -137,12 +131,7 @@ module Lumberjack
     # @return [self] Returns itself so that remove statements can be chained together.
     def remove(klass)
       Array(klass).each do |k|
-        if k.instance_of?(Module)
-          @module_formatters.delete(k)
-        else
-          k = k.name if k.is_a?(Class)
-          @class_formatters.delete(k)
-        end
+        @class_formatters.delete(k.to_s)
       end
       self
     end
@@ -152,7 +141,6 @@ module Lumberjack
     # @return [self] Returns itself so that clear statements can be chained together.
     def clear
       @class_formatters.clear
-      @module_formatters.clear
       self
     end
 
@@ -160,7 +148,7 @@ module Lumberjack
     #
     # @return [Boolean] true if there are no registered formatters, false otherwise.
     def empty?
-      @class_formatters.empty? && @module_formatters.empty?
+      @class_formatters.empty?
     end
 
     # Format a message object by applying all formatters attached to it.
@@ -193,21 +181,11 @@ module Lumberjack
     #
     # @api private
     def formatter_for(klass)
-      return nil if empty?
+      return nil if @class_formatters.empty?
 
-      check_modules = true
-      until klass.nil?
-        formatter = @class_formatters[klass.name]
-        return formatter if formatter
-
-        if check_modules
-          _, formatter = @module_formatters.detect { |mod, f| klass.include?(mod) }
-          check_modules = false
-          return formatter if formatter
-        end
-
-        klass = klass.superclass
-      end
+      formatter = nil
+      klass.ancestors.detect { |ancestor| formatter = @class_formatters[ancestor.to_s] }
+      formatter
     end
   end
 end

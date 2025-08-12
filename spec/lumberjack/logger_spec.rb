@@ -74,9 +74,9 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.level).to eq(Logger::WARN)
     end
 
-    it "should default the level to INFO" do
+    it "should default the level to DEBUG" do
       logger = Lumberjack::Logger.new(:null)
-      expect(logger.level).to eq(Logger::INFO)
+      expect(logger.level).to eq(Logger::DEBUG)
     end
 
     it "should selt the level within a block" do
@@ -102,19 +102,19 @@ RSpec.describe Lumberjack::Logger do
 
   describe "attributes" do
     it "should have a level" do
-      logger = Lumberjack::Logger.new
+      logger = Lumberjack::Logger.new(StringIO.new)
       logger.level = Logger::DEBUG
       expect(logger.level).to eq(Logger::DEBUG)
     end
 
     it "should have a progname" do
-      logger = Lumberjack::Logger.new
+      logger = Lumberjack::Logger.new(StringIO.new)
       logger.progname = "app"
       expect(logger.progname).to eq("app")
     end
 
     it "should be able to set the progname in a block" do
-      logger = Lumberjack::Logger.new
+      logger = Lumberjack::Logger.new(StringIO.new)
       logger.set_progname("app")
       expect(logger.progname).to eq("app")
       block_executed = false
@@ -127,7 +127,7 @@ RSpec.describe Lumberjack::Logger do
     end
 
     it "should be able to set the progname in a block" do
-      logger = Lumberjack::Logger.new
+      logger = Lumberjack::Logger.new(StringIO.new)
       logger.set_progname("app")
       logger.with_progname("xxx") do
         expect(logger.progname).to eq("xxx")
@@ -402,11 +402,11 @@ RSpec.describe Lumberjack::Logger do
         expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO app(#{Process.pid})] test")
       end
 
-      it "should append messages with unknown severity to the log" do
+      it "should append messages with ANY severity to the log" do
         time = Time.parse("2011-01-30T12:31:56.123")
         allow(Time).to receive_messages(now: time)
         logger << "test"
-        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 UNKNOWN app(#{Process.pid})] test")
+        expect(output.string.chomp).to eq("[2011-01-30T12:31:56.123 ANY app(#{Process.pid})] test")
       end
     end
 

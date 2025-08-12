@@ -94,6 +94,7 @@ module Lumberjack
       def write(entry)
         string = (entry.is_a?(LogEntry) ? @template.call(entry) : entry)
         return if string.nil?
+
         string = string.strip
         return if string.length == 0
 

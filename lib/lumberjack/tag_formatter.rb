@@ -96,15 +96,17 @@ module Lumberjack
       self
     end
 
+    def empty?
+      @formatters.empty? && @class_formatters.empty? && @default_formatter.nil?
+    end
+
     # Format a hash of tags using the formatters
     #
     # @param tags [Hash] The tags to format.
     # @return [Hash] The formatted tags.
     def format(tags)
       return nil if tags.nil?
-      if @default_formatter.nil? && @formatters.empty? && @class_formatters.empty?
-        return tags
-      end
+      return tags if empty?
 
       formated_tags(tags)
     end
@@ -171,20 +173,11 @@ module Lumberjack
     end
 
     def class_formatter(klass)
-      formatter = @class_formatters[klass]
-      return formatter if formatter
+      return nil if @class_formatters.empty?
 
-      formatters = @class_formatters.select { |k, _| klass <= k }
-      return formatters.values.first if formatters.length <= 1
-
-      superclass = klass.superclass
-      while superclass
-        formatter = formatters[superclass]
-        return formatter if formatter
-        superclass = superclass.superclass
-      end
-
-      formatters.values.first
+      formatter = nil
+      klass.ancestors.detect { |ancestor| formatter = @class_formatters[ancestor] }
+      formatter
     end
   end
 end
