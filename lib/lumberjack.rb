@@ -19,8 +19,6 @@ module Lumberjack
   require_relative "lumberjack/tags"
   require_relative "lumberjack/tag_context"
   require_relative "lumberjack/tag_formatter"
-  require_relative "lumberjack/tagged_logger_support"
-  require_relative "lumberjack/tagged_logging"
   require_relative "lumberjack/template"
   require_relative "lumberjack/utils"
 

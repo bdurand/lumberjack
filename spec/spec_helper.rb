@@ -2,12 +2,6 @@
 
 require "logger"
 
-# ActiveSupport is only available on some Appraisal runs.
-begin
-  require "active_support/all"
-rescue LoadError => e
-end
-
 require "stringio"
 require "fileutils"
 require "timecop"

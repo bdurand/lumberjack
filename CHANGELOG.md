@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Removed Rails integration code (`tagged`, `silence`, `log_at` methods on `Lumberjack::Logger`). Rails support is now moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem.
 - Removed deprecated unit of work id code. These have been replaced with tags.
 - Removed deprecated support for setting global tags with `Lumberjack::Logger#tag`. Now calling `tag` outside of a block or context will be ignored. Use `tag_globally` to set global tags.
 - Removed support for Ruby versions < 2.5.

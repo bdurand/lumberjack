@@ -36,14 +36,6 @@ jobs:
           - ruby: "3.0"
           - ruby: "2.7"
           - ruby: "ruby"
-            appraisal: activesupport_latest
-          - ruby: "3.4"
-            appraisal: activesupport_8
-          - ruby: "3.0"
-            appraisal: activesupport_7
-          - ruby: "2.7"
-            appraisal: activesupport_6
-          - ruby: "ruby"
             appraisal: logger_gem
     steps:
       - uses: actions/checkout@v4
