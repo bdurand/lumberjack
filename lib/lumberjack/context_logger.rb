@@ -323,19 +323,7 @@ module Lumberjack
     #
     # @return [Hash]
     def tags
-      tags = {}
-      unless fiber_local_value(:logger_untagged)
-        global_context_tags = Lumberjack.context_tags
-        tags.merge!(global_context_tags) if global_context_tags && !global_context_tags.empty?
-
-        default_tags = default_context&.tags
-        tags.merge!(default_tags) if default_tags && !default_tags.empty?
-      end
-
-      context_tags = current_context&.tags
-      tags.merge!(context_tags) if context_tags && !context_tags.empty?
-
-      tags
+      merge_all_tags || {}
     end
 
     # Get the value of a tag by name from the current tag context.
@@ -448,6 +436,32 @@ module Lumberjack
       else
         current_tags.merge(tags)
       end
+    end
+
+    def merge_all_tags
+      tags = nil
+
+      unless fiber_local_value(:logger_untagged)
+        global_context_tags = Lumberjack.context_tags
+        if global_context_tags && !global_context_tags.empty?
+          tags ||= {}
+          tags.merge!(global_context_tags)
+        end
+
+        default_tags = default_context&.tags
+        if default_tags && !default_tags.empty?
+          tags ||= {}
+          tags.merge!(default_tags)
+        end
+      end
+
+      context_tags = current_context&.tags
+      if context_tags && !context_tags.empty?
+        tags ||= {}
+        tags.merge!(context_tags)
+      end
+
+      tags
     end
 
     def init_fiber_locals!
