@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 
 RSpec.describe Lumberjack::Device::Writer do
@@ -27,8 +29,8 @@ RSpec.describe Lumberjack::Device::Writer do
     io = Object.new
     # rubocop:disable Style/TrivialAccessors
     def io.init
-      @string = ""
-      @buffer = ""
+      @string = +""
+      @buffer = +""
       @sync = false
     end
 
@@ -38,7 +40,7 @@ RSpec.describe Lumberjack::Device::Writer do
 
     def io.flush
       @string << @buffer
-      @buffer = ""
+      @buffer = +""
     end
 
     def io.string

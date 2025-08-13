@@ -9,12 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added `Lumberjack::EntryFormatter` class to provide a unified interface for formatting log entry details. Going forward this is the preferred way to define log entry formatters. `Lumberjack::Logger.formatter` now returns an entry formatter.
+- Added `Lumberjack::Logger.tag!` as the preferred method for adding global tags to a logger.
 
 ### Changed
 
 - `Lumberjack::Logger` now inherits from `::Logger` instead of just having API compatibility with the standard library `Logger` class.
 - The default log level is now DEBUG instead of INFO.
 - The severity label for log entries with an unknown level is now ANY instead of UNKNOWN.
+- Changing logger level or progname inside a context block will now only be in effect inside the block.
+- `LumberJack::Logger#context` now yields or returns a `Lumberjack::Context` rather than a `Lumberjack::TagContext`.
+- `Lumberjack::Logger#tag` now returns a `Lumberjack::ContextLogger` object when called without a block. This allows for chaining methods on the logger while still having the tags applied.
 
 ### Removed
 

@@ -95,6 +95,10 @@ module Lumberjack
       [message, tags]
     end
 
+    def call(severity, timestamp, progname, msg)
+      message_formatter&.call(severity, timestamp, progname, msg)
+    end
+
     private
 
     def merge_tags(current_tags, tags)

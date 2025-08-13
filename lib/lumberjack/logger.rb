@@ -24,6 +24,8 @@ module Lumberjack
   # otherwise, it is up to the device how these values are recorded. Messages are converted to strings
   # using a Formatter associated with the logger.
   class Logger < ::Logger
+    include ContextLogger
+
     # The time that the device was last flushed.
     attr_reader :last_flushed_at
 
@@ -55,6 +57,8 @@ module Lumberjack
       level: DEBUG, progname: nil, formatter: nil, datetime_format: nil,
       binmode: false, shift_period_suffix: "%Y%m%d", reraise_write_errors: [], skip_header: false,
       message_formatter: nil, tag_formatter: nil, flush_seconds: nil, buffer_size: 0, template: nil)
+      init_fiber_locals!
+
       @logdev = open_device(logdev,
         datetime_format: datetime_format,
         binmode: binmode,
@@ -64,7 +68,8 @@ module Lumberjack
         buffer_size: buffer_size,
         template: template)
 
-      self.level = level
+      @context = Context.new
+      self.level = level || DEBUG
       self.progname = progname
 
       entry_formatter = formatter if formatter.is_a?(Lumberjack::EntryFormatter)
@@ -78,12 +83,7 @@ module Lumberjack
       self.formatter = entry_formatter
       self.datetime_format = datetime_format if datetime_format
 
-      @tags = {}
-
       @closed = false # TODO
-
-      @fiber_locals = {}
-      @fiber_locals_mutex = Mutex.new
 
       @last_flushed_at = Time.now
       create_flusher_thread(flush_seconds.to_f) if flush_seconds.to_f > 0
@@ -121,35 +121,6 @@ module Lumberjack
       end
     end
 
-    # Get the level of severity of entries that are logged. Entries with a lower
-    # severity level will be ignored.
-    #
-    # @return [Integer] The severity level.
-    def level
-      fiber_local_value(:lumberjack_logger_level) || @level
-    end
-
-    alias_method :sev_threshold, :level
-
-    # Set the log level using either an integer level like Logger::INFO or a label like
-    # :info or "info"
-    #
-    # @param [Integer, Symbol, String] value The severity level.
-    # @return [void]
-    def level=(value)
-      @level = Severity.coerce(value)
-    end
-
-    # alias_method :sev_threshold=, :level=
-
-    # Adjust the log level during the block execution for the current Fiber only.
-    #
-    # @param [Integer, Symbol, String] severity The severity level.
-    # @return [Object] The result of the block.
-    def with_level(severity, &block)
-      push_fiber_local_value(:lumberjack_logger_level, Severity.coerce(severity), &block)
-    end
-
     def message_formatter
       formatter.message_formatter
     end
@@ -165,69 +136,6 @@ module Lumberjack
     def tag_formatter=(value)
       formatter.tag_formatter = value
     end
-
-    # Add a message to the log with a given severity. The message can be either
-    # passed in the +message+ argument or supplied with a block. This method
-    # is not normally called. Instead call one of the helper functions
-    # +fatal+, +error+, +warn+, +info+, or +debug+.
-    #
-    # The severity can be passed in either as one of the Severity constants,
-    # or as a Severity label.
-    #
-    # @param [Integer, Symbol, String] severity The severity of the message.
-    # @param [Object] message The message to log.
-    # @param [String] progname The name of the program that is logging the message.
-    # @param [Hash] tags The tags to add to the log entry.
-    # @return [void]
-    #
-    # @example
-    #
-    #   logger.add_entry(Logger::ERROR, exception)
-    #   logger.add_entry(Logger::INFO, "Request completed")
-    #   logger.add_entry(:warn, "Request took a long time")
-    #   logger.add_entry(Logger::DEBUG){"Start processing with options #{options.inspect}"}
-    def add_entry(severity, message, progname = nil, tags = nil)
-      severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
-      return true unless device && severity && severity >= level
-      return true if fiber_local_value(:lumberjack_logging)
-
-      begin
-        set_fiber_local_value(:lumberjack_logging, true) # protection from infinite loops
-
-        time = Time.now
-        progname ||= self.progname
-        tags = nil unless tags.is_a?(Hash)
-        tags = merge_tags(self.tags, tags)
-        message, tags = formatter.format(message, tags) if formatter
-
-        entry = Lumberjack::LogEntry.new(time, severity, message, progname, Process.pid, tags)
-
-        write_to_device(entry)
-      ensure
-        set_fiber_local_value(:lumberjack_logging, nil)
-      end
-      true
-    end
-
-    # ::Logger compatible method to add a log entry.
-    #
-    # @param [Integer, Symbol, String] severity The severity of the message.
-    # @param [Object] message The message to log.
-    # @param [String] progname The name of the program that is logging the message.
-    # @return [void]
-    def add(severity, message = nil, progname = nil, &block)
-      if message.nil?
-        if block
-          message = block
-        else
-          message = progname
-          progname = nil
-        end
-      end
-      add_entry(severity, message, progname)
-    end
-
-    alias_method :log, :add
 
     # Flush the logging device. Messages are not guaranteed to be written until this method is called.
     #
@@ -262,151 +170,6 @@ module Lumberjack
       device.reopen(logdev) if device.respond_to?(:reopen)
     end
 
-    # Log a +FATAL+ message. The message can be passed in either the +message+ argument or in a block.
-    #
-    # @param [Object] message_or_progname_or_tags The message to log or progname
-    #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_tags The name of the program that is logging the message or tags
-    #   if the message is passed in a block.
-    # @return [void]
-    def fatal(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
-      call_add_entry(FATAL, message_or_progname_or_tags, progname_or_tags, &block)
-    end
-
-    # Return +true+ if +FATAL+ messages are being logged.
-    #
-    # @return [Boolean]
-    def fatal?
-      level <= FATAL
-    end
-
-    # Set the log level to fatal.
-    #
-    # @return [void]
-    def fatal!
-      self.level = FATAL
-    end
-
-    # Log an +ERROR+ message. The message can be passed in either the +message+ argument or in a block.
-    #
-    # @param [Object] message_or_progname_or_tags The message to log or progname
-    #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_tags The name of the program that is logging the message or tags
-    #   if the message is passed in a block.
-    # @return [void]
-    def error(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
-      call_add_entry(ERROR, message_or_progname_or_tags, progname_or_tags, &block)
-    end
-
-    # Return +true+ if +ERROR+ messages are being logged.
-    #
-    # @return [Boolean]
-    def error?
-      level <= ERROR
-    end
-
-    # Set the log level to error.
-    #
-    # @return [void]
-    def error!
-      self.level = ERROR
-    end
-
-    # Log a +WARN+ message. The message can be passed in either the +message+ argument or in a block.
-    #
-    # @param [Object] message_or_progname_or_tags The message to log or progname
-    #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_tags The name of the program that is logging the message or tags
-    #   if the message is passed in a block.
-    # @return [void]
-    def warn(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
-      call_add_entry(WARN, message_or_progname_or_tags, progname_or_tags, &block)
-    end
-
-    # Return +true+ if +WARN+ messages are being logged.
-    #
-    # @return [Boolean]
-    def warn?
-      level <= WARN
-    end
-
-    # Set the log level to warn.
-    #
-    # @return [void]
-    def warn!
-      self.level = WARN
-    end
-
-    # Log an +INFO+ message. The message can be passed in either the +message+ argument or in a block.
-    #
-    # @param [Object] message_or_progname_or_tags The message to log or progname
-    #   if the message is passed in a block.
-    # @param [String] progname_or_tags The name of the program that is logging the message or tags
-    #   if the message is passed in a block.
-    # @return [void]
-    def info(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
-      call_add_entry(INFO, message_or_progname_or_tags, progname_or_tags, &block)
-    end
-
-    # Return +true+ if +INFO+ messages are being logged.
-    #
-    # @return [Boolean]
-    def info?
-      level <= INFO
-    end
-
-    # Set the log level to info.
-    #
-    # @return [void]
-    def info!
-      self.level = INFO
-    end
-
-    # Log a +DEBUG+ message. The message can be passed in either the +message+ argument or in a block.
-    #
-    # @param [Object] message_or_progname_or_tags The message to log or progname
-    #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_tags The name of the program that is logging the message or tags
-    #   if the message is passed in a block.
-    # @return [void]
-    def debug(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
-      call_add_entry(DEBUG, message_or_progname_or_tags, progname_or_tags, &block)
-    end
-
-    # Return +true+ if +DEBUG+ messages are being logged.
-    #
-    # @return [Boolean]
-    def debug?
-      level <= DEBUG
-    end
-
-    # Set the log level to debug.
-    #
-    # @return [void]
-    def debug!
-      self.level = DEBUG
-    end
-
-    # Log a message when the severity is not known. Unknown messages will always appear in the log.
-    # The message can be passed in either the +message+ argument or in a block.
-    #
-    # @param [Object] message_or_progname_or_tags The message to log or progname
-    #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_tags The name of the program that is logging the message or tags
-    #   if the message is passed in a block.
-    # @return [void]
-    def unknown(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
-      call_add_entry(UNKNOWN, message_or_progname_or_tags, progname_or_tags, &block)
-    end
-
-    # Add a message when the severity is not known.
-    #
-    # @param [Object] msg The message to log.
-    # @return [void]
-    def <<(msg)
-      add_entry(UNKNOWN, msg)
-    end
-
     # Set the program name that is associated with log messages. If a block
     # is given, the program name will be valid only within the block.
     #
@@ -420,207 +183,61 @@ module Lumberjack
       end
     end
 
-    # Set the logger progname for the duration of the block.
-    #
-    # @yield [Object] The block to execute with the program name set.
-    # @param [String] value The program name to use.
-    # @return [Object] The result of the block.
-    def with_progname(value, &block)
-      push_fiber_local_value(:lumberjack_logger_progname, value, &block)
-    end
+    alias_method :tag_globally, :tag!
 
-    # Get the program name associated with log messages.
-    #
-    # @return [String]
-    def progname
-      fiber_local_value(:lumberjack_logger_progname) || @progname
-    end
+    alias_method :in_tag_context?, :in_context?
 
-    # Set a hash of tags on logger. If a block is given, the tags will only be set
-    # for the duration of the block. Otherwise the tags will be applied on the current
-    # logger context for the duration of that context.
+    # Add an entry to the log.
     #
-    # @param [Hash] tags The tags to set.
-    # @return [Object, nil] The result of the block if given, otherwise nil.
-    def tag(tags, &block)
-      thread_tags = fiber_local_value(:lumberjack_logger_tags)
-      if block
-        merged_tags = (thread_tags ? thread_tags.dup : {})
-        TagContext.new(merged_tags).tag(tags)
-        push_fiber_local_value(:lumberjack_logger_tags, merged_tags, &block)
-      elsif thread_tags
-        TagContext.new(thread_tags).tag(tags)
-      end
-    end
-
-    # Set up a context block for the logger. All tags added within the block will be cleared when
-    # the block exits.
-    #
-    # @param [Proc] block The block to execute with the tag context.
-    # @return [TagContext] If no block is passed, then a Lumberjack::TagContext is returned that can be used
-    #   to interact with the tags (add, remove, etc.).
-    # @yield [TagContext] If a block is passed, it will be yielded a TagContext object that can be used to
-    #   add or remove tags within the context.
-    def context(&block)
-      if block
-        thread_tags = fiber_local_value(:lumberjack_logger_tags)&.dup
-        thread_tags ||= {}
-        push_fiber_local_value(:lumberjack_logger_tags, thread_tags) do
-          block.call(TagContext.new(thread_tags))
-        end
-      else
-        TagContext.new(fiber_local_value(:lumberjack_logger_tags) || {})
-      end
-    end
-
-    # Add global tags to the logger that will appear on all log entries.
-    #
-    # @param [Hash] tags The tags to set.
+    # @param [Integer, Symbol, String] severity The severity of the message.
+    # @param [Object] message The message to log.
+    # @param [String] progname The name of the program that is logging the message.
+    # @param [Hash] tags The tags to add to the log entry.
     # @return [void]
-    def tag_globally(tags)
-      TagContext.new(@tags).tag(tags)
-      nil
-    end
-
-    # Remove a tag from the current tag context. If this is called inside a tag context,
-    # the tags will only be removed for the duration of that block. Otherwise they will be removed
-    # from the global tags.
+    # @api private
     #
-    # @param [Array<String, Symbol>] tag_names The tags to remove.
-    # @return [void]
-    def remove_tag(*tag_names)
-      tags = fiber_local_value(:lumberjack_logger_tags) || @tags
-      TagContext.new(tags).delete(*tag_names)
-    end
-
-    # Return all tags in scope on the logger including global tags set on the Lumberjack
-    # context, tags set on the logger, and tags set on the current block for the logger.
+    # @example
     #
-    # @return [Hash]
-    def tags
-      tags = {}
-      context_tags = Lumberjack.context_tags
-      tags.merge!(context_tags) if context_tags && !context_tags.empty?
-      tags.merge!(@tags) if !@tags.empty? && !fiber_local_value(:lumberjack_logger_untagged)
-      scope_tags = fiber_local_value(:lumberjack_logger_tags)
-      tags.merge!(scope_tags) if scope_tags && !scope_tags.empty?
-      tags
-    end
+    #   logger.add_entry(Logger::ERROR, exception)
+    #   logger.add_entry(Logger::INFO, "Request completed")
+    #   logger.add_entry(:warn, "Request took a long time")
+    #   logger.add_entry(Logger::DEBUG){"Start processing with options #{options.inspect}"}
+    def add_entry(severity, message, progname = nil, tags = nil)
+      severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
+      return true unless device && severity && severity >= level
+      return true if fiber_local_value(:logging)
 
-    # Get the value of a tag by name from the current tag context.
-    #
-    # @param [String, Symbol] name The name of the tag to get.
-    # @return [Object, nil] The value of the tag or nil if the tag does not exist.
-    def tag_value(name)
-      name = name.join(".") if name.is_a?(Array)
-      TagContext.new(tags)[name]
-    end
+      begin
+        set_fiber_local_value(:logging, true) # protection from infinite loops
 
-    # Remove all tags on the current logger and logging context within a block.
-    # You can still set new block scoped tags within theuntagged block and provide
-    # tags on individual log methods.
-    #
-    # @return [void]
-    def untagged(&block)
-      Lumberjack.use_context(nil) do
-        scope_tags = fiber_local_value(:lumberjack_logger_tags)
-        untagged = fiber_local_value(:lumberjack_logger_untagged)
-        begin
-          set_fiber_local_value(:lumberjack_logger_untagged, true)
-          set_fiber_local_value(:lumberjack_logger_tags, nil)
-          tag({}, &block)
-        ensure
-          set_fiber_local_value(:lumberjack_logger_untagged, untagged)
-          set_fiber_local_value(:lumberjack_logger_tags, scope_tags)
-        end
+        time = Time.now
+        progname ||= self.progname
+        tags = nil unless tags.is_a?(Hash)
+        tags = merge_tags(self.tags, tags)
+        message, tags = formatter.format(message, tags) if formatter
+
+        entry = Lumberjack::LogEntry.new(time, severity, message, progname, Process.pid, tags)
+
+        write_to_device(entry)
+      ensure
+        set_fiber_local_value(:logging, nil)
       end
-    end
-
-    # Return true if the thread is currently in a Lumberjack::Context block.
-    # When the logger is in a context block, tagging will only apply to that block.
-    #
-    # @return [Boolean]
-    def in_tag_context?
-      !!fiber_local_value(:lumberjack_logger_tags)
+      true
     end
 
     private
 
-    # Dereference arguments to log calls so we can have methods with compatibility with ::Logger
-    def call_add_entry(severity, message_or_progname_or_tags, progname_or_tags, &block) # :nodoc:
-      message = nil
-      progname = nil
-      tags = nil
-      if block
-        message = block
-        if message_or_progname_or_tags.is_a?(Hash)
-          tags = message_or_progname_or_tags
-          progname = progname_or_tags
-        else
-          progname = message_or_progname_or_tags
-          tags = progname_or_tags if progname_or_tags.is_a?(Hash)
-        end
-      else
-        message = message_or_progname_or_tags
-        if progname_or_tags.is_a?(Hash)
-          tags = progname_or_tags
-        else
-          progname = progname_or_tags
-        end
-      end
-      add_entry(severity, message, progname, tags)
+    def default_context
+      @context
     end
 
-    # Merge a tags hash into an existing tags hash.
-    def merge_tags(current_tags, tags)
-      if current_tags.nil? || current_tags.empty?
-        tags
-      elsif tags.nil?
-        current_tags
-      else
-        current_tags.merge(tags)
-      end
-    end
-
-    # Set a local value for a thread tied to this object.
-    def set_fiber_local_value(name, value) # :nodoc:
-      local_values = @fiber_locals[Fiber.current]
-      if local_values.nil?
-        return if value.nil?
-
-        local_values = {}
-        @fiber_locals_mutex.synchronize do
-          @fiber_locals[Fiber.current] = local_values
-        end
-      end
-
-      if value.nil?
-        local_values.delete(name)
-        if local_values.empty?
-          @fiber_locals_mutex.synchronize do
-            @fiber_locals.delete(Fiber.current)
-          end
-        end
-      else
-        local_values[name] = value
-      end
-    end
-
-    # Get a local value for a thread tied to this object.
-    def fiber_local_value(name) # :nodoc:
-      values = @fiber_locals[Fiber.current]
-      values[name] if values
-    end
-
-    # Set a local value for a thread tied to this object within a block.
-    def push_fiber_local_value(name, value) # :nodoc:
-      save_val = fiber_local_value(name)
-      set_fiber_local_value(name, value)
-      begin
-        yield
-      ensure
-        set_fiber_local_value(name, save_val)
-      end
+    def write_to_device(entry) # :nodoc:
+      device.write(entry)
+    rescue => e
+      err = e.class.name.dup
+      err << ": #{e.message}" unless e.message.to_s.empty?
+      err << " at #{e.backtrace.first}" if e.backtrace
+      $stderr.write("#{err}\n#{entry}\n") # rubocop:disable Style/StderrPuts
     end
 
     # Open a logging device.
@@ -643,15 +260,6 @@ module Lumberjack
           Device::LogFile.new(device, options)
         end
       end
-    end
-
-    def write_to_device(entry) # :nodoc:
-      device.write(entry)
-    rescue => e
-      # rubocop:disable Style/StderrPuts
-      $stderr.puts("#{e.class.name}: #{e.message}#{" at " + e.backtrace.first if e.backtrace}")
-      $stderr.puts(entry.to_s)
-      # rubocop:enable Style/StderrPuts
     end
 
     # Create a thread that will periodically call flush.
