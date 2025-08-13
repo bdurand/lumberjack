@@ -17,7 +17,8 @@ module Lumberjack
     TEMPLATE_ARGUMENT_ORDER = %w[:time :severity :progname :pid :message :tags].freeze
     MILLISECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%3N"
     MICROSECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%6N"
-    PLACEHOLDER_PATTERN = /:(([a-z0-9_]+)|({[^}]+}))/i.freeze
+    PLACEHOLDER_PATTERN = /:(([a-z0-9_]+)|({[^}]+}))/i
+    private_constant :TEMPLATE_ARGUMENT_ORDER, :MILLISECOND_TIME_FORMAT, :MICROSECOND_TIME_FORMAT, :PLACEHOLDER_PATTERN
 
     # Create a new template from the markup. The +first_line+ argument is used to format only the first
     # line of a message. Additional lines will be added to the message unformatted. If you wish to format
@@ -77,8 +78,8 @@ module Lumberjack
 
       formatted_time = @time_formatter.call(entry.time) if @template_include_time
       format_args = [formatted_time, entry.severity_label, entry.progname, entry.pid, first_line]
-      tag_arguments = tag_args(entry.tags, @first_line_tags)
-      message = (@first_line_template % (format_args + tag_arguments))
+      append_tag_args!(format_args, entry.tags, @first_line_tags)
+      message = (@first_line_template % format_args)
       message.rstrip! if message.end_with?(" ")
 
       if additional_lines && !additional_lines.empty?
@@ -95,8 +96,11 @@ module Lumberjack
 
     private
 
-    def tag_args(tags, tag_vars)
-      return [nil] * (tag_vars.size + 1) if tags.nil? || tags.size == 0
+    def append_tag_args!(args, tags, tag_vars)
+      if tags.nil? || tags.size == 0
+        (tag_vars.length + 1).times { args << nil }
+        return
+      end
 
       tags_string = +""
       Lumberjack::Utils.flatten_tags(tags).each do |name, value|
@@ -107,11 +111,10 @@ module Lumberjack
         end
       end
 
-      args = [tags_string.chop]
+      args << tags_string.chop
       tag_vars.each do |name|
         args << tags[name]
       end
-      args
     end
 
     # Compile the template string into a value that can be used with sprintf.

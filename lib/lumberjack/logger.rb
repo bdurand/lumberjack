@@ -228,7 +228,7 @@ module Lumberjack
         time = Time.now
         progname ||= self.progname
         tags = nil unless tags.is_a?(Hash)
-        tags = merge_tags(self.tags, tags)
+        tags = merge_tags(merge_all_tags, tags)
         message, tags = formatter.format(message, tags) if formatter
 
         entry = Lumberjack::LogEntry.new(time, severity, message, progname, Process.pid, tags)

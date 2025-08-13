@@ -184,7 +184,7 @@ module Lumberjack
       return nil if @class_formatters.empty?
 
       formatter = nil
-      klass.ancestors.detect { |ancestor| formatter = @class_formatters[ancestor.to_s] }
+      klass.ancestors.detect { |ancestor| formatter = @class_formatters[ancestor.name] }
       formatter
     end
   end
