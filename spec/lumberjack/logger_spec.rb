@@ -546,7 +546,7 @@ RSpec.describe Lumberjack::Logger do
         end
       end
 
-      it "should add and remove tags in the global scope if there is no block" do
+      it "should add and remove tags in the global scope if there is no block using deprecated methods" do
         logger.tag_globally(count: 1, foo: "bar")
         logger.info("one")
         logger.remove_tag(:foo)
@@ -698,13 +698,6 @@ RSpec.describe Lumberjack::Logger do
 
     describe "log helper methods" do
       let(:device) { Lumberjack::Device::Writer.new(out, buffer_size: 0, template: ":message") }
-
-      it "should only add messages whose severity is greater or equal to the logger level" do
-        logger.add_entry(Logger::DEBUG, "debug")
-        logger.add_entry(Logger::INFO, "info")
-        logger.add_entry(Logger::ERROR, "error")
-        expect(out.string).to eq("info#{n}error#{n}")
-      end
 
       it "should only log fatal messages when the level is set to fatal" do
         logger.level = Logger::FATAL

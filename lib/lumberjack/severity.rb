@@ -5,7 +5,6 @@ module Lumberjack
   module Severity
     SEVERITY_LABELS = %w[DEBUG INFO WARN ERROR FATAL ANY].freeze
     private_constant :SEVERITY_LABELS
-
     class << self
       # Convert a severity level to a label.
       #

@@ -183,9 +183,23 @@ module Lumberjack
       end
     end
 
+    # @deprecated Use tag! instead
     alias_method :tag_globally, :tag!
 
+    # @deprecated Use in_context? instead
     alias_method :in_tag_context?, :in_context?
+
+    # Remove a tag from the current context block. If this is called inside a tag context,
+    # the tags will only be removed for the duration of that block. Otherwise they will be removed
+    # from the global tags.
+    #
+    # @param [Array<String, Symbol>] tag_names The tags to remove.
+    # @return [void]
+    # @deprecated Use untag or untag! instead.
+    def remove_tag(*tag_names)
+      tags = current_context&.tags
+      TagContext.new(tags).delete(*tag_names) if tags
+    end
 
     # Add an entry to the log.
     #
@@ -203,9 +217,10 @@ module Lumberjack
     #   logger.add_entry(:warn, "Request took a long time")
     #   logger.add_entry(Logger::DEBUG){"Start processing with options #{options.inspect}"}
     def add_entry(severity, message, progname = nil, tags = nil)
+      return false unless device
+      return false if fiber_local_value(:logging)
+
       severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
-      return true unless device && severity && severity >= level
-      return true if fiber_local_value(:logging)
 
       begin
         set_fiber_local_value(:logging, true) # protection from infinite loops

@@ -69,13 +69,14 @@ module Lumberjack
     def add(severity, message = nil, progname = nil, &block)
       if message.nil?
         if block
-          message = block
+          message = block.call
         else
           message = progname
           progname = nil
         end
       end
-      add_entry(severity, message, progname)
+
+      call_add_entry(severity, message, progname)
     end
 
     alias_method :log, :add
@@ -294,15 +295,24 @@ module Lumberjack
       end
     end
 
-    # Remove a tag from the current tag context. If this is called inside a tag context,
-    # the tags will only be removed for the duration of that block. Otherwise they will be removed
-    # from the global tags.
+    # Remove a tag from the current context block.
     #
     # @param [Array<String, Symbol>] tag_names The tags to remove.
     # @return [void]
-    def remove_tag(*tag_names)
-      tags = current_context&.tags
+    def untag(*tag_names)
+      tags = local_context&.tags
       TagContext.new(tags).delete(*tag_names) if tags
+      nil
+    end
+
+    # Remove a tag from the default context for the logger.
+    #
+    # @param [Array<String, Symbol>] tag_names The tags to remove.
+    # @return [void]
+    def untag!(*tag_names)
+      tags = default_context&.tags
+      TagContext.new(tags).delete(*tag_names) if tags
+      nil
     end
 
     # Return all tags in scope on the logger including global tags set on the Lumberjack
@@ -398,6 +408,9 @@ module Lumberjack
 
     # Dereference arguments to log calls so we can have methods with compatibility with ::Logger
     def call_add_entry(severity, message_or_progname_or_tags, progname_or_tags, &block) # :nodoc:
+      severity = Severity.coerce(severity) unless severity.is_a?(Integer)
+      return true unless level.nil? || severity >= level
+
       message = nil
       progname = nil
       tags = nil
@@ -418,6 +431,8 @@ module Lumberjack
           progname = progname_or_tags
         end
       end
+
+      message = message.call if message.is_a?(Proc)
       add_entry(severity, message, progname, tags)
     end
 
