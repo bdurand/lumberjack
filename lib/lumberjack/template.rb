@@ -83,10 +83,12 @@ module Lumberjack
       message.rstrip! if message.end_with?(" ")
 
       if additional_lines && !additional_lines.empty?
-        tag_arguments = tag_args(entry.tags, @additional_line_tags) unless @additional_line_tags == @first_line_tags
+        format_args.slice!(5, format_args.size)
+        append_tag_args!(format_args, entry.tags, @additional_line_tags)
+
         additional_lines.each do |line|
-          format_args[format_args.size - 1] = line
-          line_message = (@additional_line_template % (format_args + tag_arguments)).rstrip
+          format_args[4] = line
+          line_message = @additional_line_template % format_args
           line_message.rstrip! if line_message.end_with?(" ")
           message << line_message
         end
