@@ -9,3 +9,4 @@ gem "appraisal"
 gem "standard", require: false
 gem "simplecov", require: false
 gem "yard"
+gem "ruby-prof"

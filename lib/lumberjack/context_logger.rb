@@ -284,14 +284,17 @@ module Lumberjack
     # @yield [TagContext] If a block is passed, it will be yielded a TagContext object that can be used to
     #   add or remove tags within the context.
     def context(&block)
+      current_context = fiber_local_value(:logger_context)
       if block
-        current_context = fiber_local_value(:logger_context)
         new_context = Context.new(current_context)
-        push_fiber_local_value(:logger_context, new_context) do
+        begin
+          set_fiber_local_value(:logger_context, new_context)
           block.call(new_context)
+        ensure
+          set_fiber_local_value(:logger_context, current_context)
         end
       else
-        fiber_local_value(:logger_context) || Context.new
+        current_context || Context.new
       end
     end
 
@@ -367,7 +370,7 @@ module Lumberjack
     # Return true if the thread is currently in a context block with a local context.
     #
     # @return [Boolean]
-    def in_context?
+    def context?
       !!local_context
     end
 
@@ -456,13 +459,14 @@ module Lumberjack
     def set_fiber_local_value(name, value) # :nodoc:
       init_fiber_locals! unless defined?(@fiber_locals)
 
-      local_values = @fiber_locals[Fiber.current]
+      fiber_id = Fiber.current.object_id
+      local_values = @fiber_locals[fiber_id]
       if local_values.nil?
         return if value.nil?
 
         local_values = {}
         @fiber_locals_mutex.synchronize do
-          @fiber_locals[Fiber.current] = local_values
+          @fiber_locals[fiber_id] = local_values
         end
       end
 
@@ -470,7 +474,7 @@ module Lumberjack
         local_values.delete(name)
         if local_values.empty?
           @fiber_locals_mutex.synchronize do
-            @fiber_locals.delete(Fiber.current)
+            @fiber_locals.delete(fiber_id)
           end
         end
       else
@@ -482,21 +486,7 @@ module Lumberjack
     def fiber_local_value(name) # :nodoc:
       init_fiber_locals! unless defined?(@fiber_locals)
 
-      values = @fiber_locals[Fiber.current]
-      values[name] if values
-    end
-
-    # Set a local value for a thread tied to this object within a block.
-    def push_fiber_local_value(name, value) # :nodoc:
-      init_fiber_locals! unless defined?(@fiber_locals)
-
-      save_val = fiber_local_value(name)
-      set_fiber_local_value(name, value)
-      begin
-        yield
-      ensure
-        set_fiber_local_value(name, save_val)
-      end
+      @fiber_locals.dig(Fiber.current.object_id, name)
     end
   end
 end

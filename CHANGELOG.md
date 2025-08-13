@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Lumberjack::EntryFormatter` class to provide a unified interface for formatting log entry details. Going forward this is the preferred way to define log entry formatters. `Lumberjack::Logger#formatter` now returns an entry formatter.
 - Added `Lumberjack::Logger#tag!` as the preferred method for adding global tags to a logger.
 - Added `Lumberjack::Logger#untag!` and `Lumberjack::Logger#untag!` to remove global tags from a logger.
+- Added `Lumberjack::Logger#context?` as a replacement for `Lumberjack::Logger.in_tag_context?`.
 
 ### Changed
 

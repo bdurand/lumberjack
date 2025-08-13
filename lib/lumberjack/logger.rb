@@ -186,8 +186,8 @@ module Lumberjack
     # @deprecated Use tag! instead
     alias_method :tag_globally, :tag!
 
-    # @deprecated Use in_context? instead
-    alias_method :in_tag_context?, :in_context?
+    # @deprecated Use context? instead
+    alias_method :in_tag_context?, :context?
 
     # Remove a tag from the current context block. If this is called inside a tag context,
     # the tags will only be removed for the duration of that block. Otherwise they will be removed
