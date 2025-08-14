@@ -9,10 +9,12 @@ module Lumberjack
   LINE_SEPARATOR = ((RbConfig::CONFIG["host_os"] =~ /mswin/i) ? "\r\n" : "\n")
 
   require_relative "lumberjack/context"
+  require_relative "lumberjack/context_logger"
   require_relative "lumberjack/log_entry"
   require_relative "lumberjack/device"
   require_relative "lumberjack/entry_formatter"
   require_relative "lumberjack/formatter"
+  require_relative "lumberjack/local_logger"
   require_relative "lumberjack/logger"
   require_relative "lumberjack/rack"
   require_relative "lumberjack/severity"
@@ -38,7 +40,7 @@ module Lumberjack
     #
     # @return [Lumberjack::Context] The current context if called without a block.
     def context(&block)
-      current_context = @global_contexts[Fiber.current]
+      current_context = @global_contexts[Fiber.current.object_id]
       if block
         use_context(Context.new(current_context), &block)
       else
@@ -51,18 +53,19 @@ module Lumberjack
     # @param [Lumberjack::Context] context The context to use within the block.
     # @return [Object] The result of the block.
     def use_context(context, &block)
-      current_context = @global_contexts[Fiber.current]
+      fiber_id = Fiber.current.object_id
+      current_context = @global_contexts[fiber_id]
       begin
         @global_contexts_mutex.synchronize do
-          @global_contexts[Fiber.current] = (context || Context.new)
+          @global_contexts[fiber_id] = (context || Context.new)
         end
         yield
       ensure
         @global_contexts_mutex.synchronize do
           if current_context.nil?
-            @global_contexts.delete(Fiber.current)
+            @global_contexts.delete(fiber_id)
           else
-            @global_contexts[Fiber.current] = current_context
+            @global_contexts[fiber_id] = current_context
           end
         end
       end
@@ -72,14 +75,14 @@ module Lumberjack
     #
     # @return [Boolean]
     def context?
-      !!@global_contexts[Fiber.current]
+      !!@global_contexts[Fiber.current.object_id]
     end
 
     # Return the tags from the current context or nil if there are no tags.
     #
     # @return [Hash, nil]
     def context_tags
-      context = @global_contexts[Fiber.current]
+      context = @global_contexts[Fiber.current.object_id]
       context&.tags
     end
 
@@ -88,7 +91,7 @@ module Lumberjack
     # @param [Hash] tags The tags to set.
     # @return [void]
     def tag(tags)
-      context = @global_contexts[Fiber.current]
+      context = @global_contexts[Fiber.current.object_id]
       context&.tag(tags)
     end
   end

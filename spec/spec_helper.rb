@@ -14,6 +14,9 @@ begin
 rescue LoadError
 end
 
+# Enable all warnings to protect against bad practices and deprecations.
+$VERBOSE = true
+
 require_relative "../lib/lumberjack"
 
 RSpec.configure do |config|
@@ -47,5 +50,33 @@ end
 def delete_tmp_files
   Dir.glob(File.join(tmp_dir, "*")) do |file|
     File.delete(file)
+  end
+end
+
+# Minimal implementation of a Lumberjack::ContextLogger for testing to ensure that methods from
+# Lumberjack::Logger are not polluting any of the logic.
+class TestContextLogger
+  include Lumberjack::ContextLogger
+
+  attr_reader :entries
+
+  def initialize(context = nil)
+    @context = context
+    @entries = []
+  end
+
+  def add_entry(severity, message, progname = nil, tags = nil)
+    @entries << {
+      severity: severity,
+      message: message,
+      progname: progname,
+      tags: tags
+    }
+  end
+
+  private
+
+  def default_context
+    @context
   end
 end

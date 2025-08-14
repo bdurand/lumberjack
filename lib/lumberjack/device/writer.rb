@@ -169,6 +169,8 @@ module Lumberjack
 
       def write_to_stream(lines)
         return if lines.empty?
+
+        # Create a string with the line separator so that writing the line with the separator is atomic.
         lines = lines.first if lines.is_a?(Array) && lines.size == 1
         out = if lines.is_a?(Array)
           "#{lines.join(Lumberjack::LINE_SEPARATOR)}#{Lumberjack::LINE_SEPARATOR}"

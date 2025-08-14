@@ -56,12 +56,12 @@ describe Lumberjack::EntryFormatter do
 
     it "formats the message on the entry" do
       entry_formatter.add(String) { |obj| "String: #{obj}" }
-      message, tags = entry_formatter.format("foobar", {"foo" => "bar"})
+      message, _ = entry_formatter.format("foobar", {"foo" => "bar"})
       expect(message).to eq("String: foobar")
     end
 
     it "calls the message block if it is a Proc" do
-      message, tags = entry_formatter.format(-> { "foobar" }, {"foo" => "bar"})
+      message, _ = entry_formatter.format(-> { "foobar" }, {"foo" => "bar"})
       expect(message).to eq("foobar")
     end
 
