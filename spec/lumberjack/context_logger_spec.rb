@@ -152,7 +152,15 @@ describe Lumberjack::ContextLogger do
   end
 
   describe "#<<" do
-    it "appends a message to the log"
+    it "appends a message to the log" do
+      logger << "Test message"
+      expect(logger.entries.last).to eq({
+        severity: Logger::UNKNOWN,
+        message: "Test message",
+        progname: nil,
+        tags: nil
+      })
+    end
   end
 
   describe "#context" do

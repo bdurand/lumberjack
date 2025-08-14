@@ -2,6 +2,13 @@
 
 module Lumberjack
   module ContextLogger
+    class << self
+      def included(base)
+        base.include(FiberLocals) unless base.include?(FiberLocals)
+        base.include(IOCompatibility) unless base.include?(IOCompatibility)
+      end
+    end
+
     # Get the level of severity of entries that are logged. Entries with a lower
     # severity level will be ignored.
     #
@@ -287,11 +294,8 @@ module Lumberjack
       current_context = fiber_local_value(:logger_context)
       if block
         new_context = Context.new(current_context)
-        begin
-          set_fiber_local_value(:logger_context, new_context)
+        with_fiber_local(:logger_context, new_context) do
           block.call(new_context)
-        ensure
-          set_fiber_local_value(:logger_context, current_context)
         end
       else
         current_context || Context.new
@@ -462,45 +466,6 @@ module Lumberjack
       end
 
       tags
-    end
-
-    def init_fiber_locals!
-      @fiber_locals ||= {}
-      @fiber_locals_mutex ||= Mutex.new
-    end
-
-    # Set a local value for a thread tied to this object.
-    def set_fiber_local_value(name, value) # :nodoc:
-      init_fiber_locals! unless defined?(@fiber_locals)
-
-      fiber_id = Fiber.current.object_id
-      local_values = @fiber_locals[fiber_id]
-      if local_values.nil?
-        return if value.nil?
-
-        local_values = {}
-        @fiber_locals_mutex.synchronize do
-          @fiber_locals[fiber_id] = local_values
-        end
-      end
-
-      if value.nil?
-        local_values.delete(name)
-        if local_values.empty?
-          @fiber_locals_mutex.synchronize do
-            @fiber_locals.delete(fiber_id)
-          end
-        end
-      else
-        local_values[name] = value
-      end
-    end
-
-    # Get a local value for a thread tied to this object.
-    def fiber_local_value(name) # :nodoc:
-      init_fiber_locals! unless defined?(@fiber_locals)
-
-      @fiber_locals.dig(Fiber.current.object_id, name)
     end
   end
 end
