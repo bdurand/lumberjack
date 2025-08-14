@@ -101,19 +101,7 @@ RSpec.describe Lumberjack::Logger do
     end
   end
 
-  describe "attributes" do
-    it "should have a level" do
-      logger = Lumberjack::Logger.new(StringIO.new)
-      logger.level = Logger::DEBUG
-      expect(logger.level).to eq(Logger::DEBUG)
-    end
-
-    it "should have a progname" do
-      logger = Lumberjack::Logger.new(StringIO.new)
-      logger.progname = "app"
-      expect(logger.progname).to eq("app")
-    end
-
+  describe "#set_progname" do
     it "should be able to set the progname in a block" do
       logger = Lumberjack::Logger.new(StringIO.new)
       logger.set_progname("app")
@@ -127,7 +115,7 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.progname).to eq("app")
     end
 
-    it "should be able to set the progname in a block" do
+    it "should be able to set the local progname in a block" do
       logger = Lumberjack::Logger.new(StringIO.new)
       logger.set_progname("app")
       logger.with_progname("xxx") do
@@ -147,7 +135,9 @@ RSpec.describe Lumberjack::Logger do
 
       expect(logger.progname).to eq("thread1")
     end
+  end
 
+  describe "#device" do
     it "should be able to open a new device by setting the device attribute" do
       logger = Lumberjack::Logger.new(:null)
       out = StringIO.new
@@ -223,7 +213,7 @@ RSpec.describe Lumberjack::Logger do
     end
   end
 
-  describe "logging" do
+  describe "logging methods" do
     let(:out) { StringIO.new }
     let(:device) { Lumberjack::Device::Writer.new(out, buffer_size: 0, template: "[:time :severity :progname(:pid)] :message :tags") }
     let(:logger) { Lumberjack::Logger.new(device, level: Logger::INFO, progname: "app") }
@@ -340,21 +330,6 @@ RSpec.describe Lumberjack::Logger do
       end
     end
 
-    describe "level helpers" do
-      it "should set the level using bang methods" do
-        logger.fatal!
-        expect(logger.level).to eq Logger::FATAL
-        logger.error!
-        expect(logger.level).to eq Logger::ERROR
-        logger.warn!
-        expect(logger.level).to eq Logger::WARN
-        logger.info!
-        expect(logger.level).to eq Logger::INFO
-        logger.debug!
-        expect(logger.level).to eq Logger::DEBUG
-      end
-    end
-
     %w[fatal error warn info debug].each do |level|
       describe level do
         around :each do |example|
@@ -436,7 +411,7 @@ RSpec.describe Lumberjack::Logger do
       end
     end
 
-    describe "tags" do
+    describe "#tag_globally" do
       let(:device) { Lumberjack::Device::Writer.new(out, buffer_size: 0, template: ":message - :count - :tags") }
 
       it "should be able to add global tags to the logger" do
@@ -447,127 +422,21 @@ RSpec.describe Lumberjack::Logger do
         expect(lines[0]).to eq "one - 1 - [foo:bar]"
         expect(lines[1]).to eq "two - 2 - [foo:bar]"
       end
+    end
 
-      it "does not add tags added outside of a block or tag context to the logger tags" do
-        logger.tag(foo: "bar")
-        logger.info("one")
-        lines = out.string.split(n)
-        expect(lines[0]).to eq "one -  -"
-      end
+    describe "#remove_tag" do
+      let(:device) { Lumberjack::Device::Writer.new(out, buffer_size: 0, template: ":message - :count - :tags") }
 
-      it "returns self when called without a block inside of a local context block" do
+      it "should remove context tags in a context block and global tags outside of one" do
+        logger.tag!(foo: "bar", wip: "wap")
         logger.context do
-          expect(logger.tag(foo: "bar")).to eq(logger)
-        end
-      end
-
-      it "returns a new local logger with tags set when called outside of a context block" do
-        local_logger = logger.tag(foo: "bar")
-        expect(local_logger).to be_a(Lumberjack::LocalLogger)
-        expect(local_logger.parent_logger).to eq(logger)
-        expect(local_logger.tags).to eq("foo" => "bar")
-      end
-
-      it "should be able to add tags to the logs" do
-        logger.level = :debug
-        logger.debug("debug", count: 1, tag: "a")
-        logger.info("info", count: 2, tag: "b")
-        logger.warn("warn", count: 3, tag: "c")
-        logger.error("error", count: 4, tag: "d")
-        logger.fatal("fatal", count: 5, tag: "e", foo: "bar")
-        lines = out.string.split(n)
-        expect(lines[0]).to eq "debug - 1 - [tag:a]"
-        expect(lines[1]).to eq "info - 2 - [tag:b]"
-        expect(lines[2]).to eq "warn - 3 - [tag:c]"
-        expect(lines[3]).to eq "error - 4 - [tag:d]"
-        expect(lines[4]).to eq "fatal - 5 - [tag:e] [foo:bar]"
-      end
-
-      it "should merge logger and context tags" do
-        Lumberjack.context do
-          Lumberjack.tag(foo: "bar")
-          logger.tag(baz: "boo") do
-            logger.info("one", count: 1, tag: "b")
-            logger.info("two", count: 2, tag: "c", foo: "other")
-            logger.info("three", count: 3, tag: "d", baz: "thing")
-          end
-        end
-        lines = out.string.split(n)
-        expect(lines[0]).to eq "one - 1 - [foo:bar] [baz:boo] [tag:b]"
-        expect(lines[1]).to eq "two - 2 - [foo:other] [baz:boo] [tag:c]"
-        expect(lines[2]).to eq "three - 3 - [foo:bar] [baz:thing] [tag:d]"
-      end
-
-      it "should add and remove tags only in a tag block" do
-        logger.tag(baz: "boo", count: 1) do
-          logger.info("one")
-          logger.tag(foo: "bar", count: 2)
-          logger.info("two")
-        end
-        logger.info("three")
-
-        lines = out.string.split(n)
-        expect(lines[0]).to eq "one - 1 - [baz:boo]"
-        expect(lines[1]).to eq "two - 2 - [baz:boo] [foo:bar]"
-        expect(lines[2]).to eq "three -  -"
-      end
-
-      it "should add and remove tags in a context block" do
-        logger.context do
-          logger.tag(baz: "boo", count: 1)
-          logger.info("one")
+          logger.tag(baz: "boo", bip: "bap")
           logger.remove_tag(:baz)
-          logger.context do
-            logger.tag(foo: "bar", count: 2)
-            logger.info("two")
-          end
-          logger.info("three")
+          logger.remove_tag(:foo)
+          expect(logger.tags).to eq({"foo" => "bar", "wip" => "wap", "bip" => "bap"})
         end
-        logger.info("four")
-
-        lines = out.string.split(n)
-        expect(lines[0]).to eq "one - 1 - [baz:boo]"
-        expect(lines[1]).to eq "two - 2 - [foo:bar]"
-        expect(lines[2]).to eq "three - 1 -"
-        expect(lines[3]).to eq "four -  -"
-      end
-
-      it "should flatten tags in a context block" do
-        logger.context do
-          logger.tag(foo: {bar: "baz"}) do
-            logger.tag(foo: {bip: "boo"}) do
-              expect(logger.tags).to eq("foo.bar" => "baz", "foo.bip" => "boo")
-            end
-            expect(logger.tags).to eq("foo.bar" => "baz")
-            logger.tag("foo.bip" => "box") do
-              expect(logger.tags).to eq("foo.bar" => "baz", "foo.bip" => "box")
-            end
-          end
-        end
-      end
-
-      it "should add and remove tags in the global scope if there is no block using deprecated methods" do
-        logger.tag_globally(count: 1, foo: "bar")
-        logger.info("one")
         logger.remove_tag(:foo)
-        logger.info("two")
-
-        lines = out.string.split(n)
-        expect(lines[0]).to eq "one - 1 - [foo:bar]"
-        expect(lines[1]).to eq "two - 1 -"
-      end
-
-      it "flattens tags in the global scope" do
-        logger.tag_globally(foo: {bar: "baz"})
-        expect(logger.tags).to eq("foo.bar" => "baz")
-      end
-
-      it "flattens tags sent with the log message" do
-        logger.tag(foo: {bar: "baz"}) do
-          logger.info("message", foo: {fee: "foe"})
-        end
-        expect(out.string).to include("foo.bar:baz")
-        expect(out.string).to include("foo.fee:foe")
+        expect(logger.tags).to eq({"wip" => "wap"})
       end
 
       it "should be able to extract tags from an object with a formatter that returns Lumberjack::Formatter::TaggedMessage" do
@@ -585,275 +454,6 @@ RSpec.describe Lumberjack::Logger do
         logger.info("message", count: 2, foo: "abc")
         line = out.string.chomp
         expect(line).to eq "message - 200 - [foo:cba]"
-      end
-
-      it "should work with a frozen hash" do
-        logger.tag_globally({foo: "bar"}.freeze)
-        logger.tag(other: 1) do
-          expect(logger.tags).to eq("foo" => "bar", "other" => 1)
-        end
-      end
-
-      it "should return the result of the block" do
-        result = logger.tag(tag: 1) { :foo }
-        expect(result).to eq :foo
-      end
-    end
-
-    describe "#tag_value" do
-      it "should return the value of a tag by name" do
-        logger.tag_globally(foo: "bar") do
-          expect(logger.tag_value(:foo)).to eq("bar")
-          expect(logger.tag_value("foo")).to eq("bar")
-        end
-      end
-
-      it "should return the most recent value of a tag" do
-        logger.tag_globally(foo: "bar")
-        logger.tag(foo: "baz") do
-          logger.tag(foo: "qux") do
-            expect(logger.tag_value(:foo)).to eq("qux")
-          end
-          expect(logger.tag_value(:foo)).to eq("baz")
-        end
-        expect(logger.tag_value(:foo)).to eq("bar")
-      end
-
-      it "should expand dot notation in tag names" do
-        logger.tag(foo: {"bar.baz": "boo"}) do
-          expect(logger.tag_value("foo.bar.baz")).to eq("boo")
-          expect(logger.tag_value("foo.bar")).to eq("baz" => "boo")
-        end
-      end
-
-      it "should expand tag name as a array to dot notation" do
-        logger.tag("foo.bar" => "baz") do
-          expect(logger.tag_value([:foo, :bar])).to eq("baz")
-        end
-      end
-
-      it "should return nil for a non-existent tag" do
-        expect(logger.tag_value(:non_existent)).to be_nil
-      end
-    end
-
-    describe "untagged" do
-      it "should remove tags from the Lumberjack::Context" do
-        Lumberjack.context do
-          Lumberjack.tag(foo: "bar")
-          expect(logger.tags).to eq({"foo" => "bar"})
-          logger.untagged do
-            expect(logger.tags).to eq({})
-          end
-          expect(logger.tags).to eq({"foo" => "bar"})
-        end
-      end
-
-      it "should remove global tags from the logger" do
-        logger.tag_globally(foo: "bar")
-        begin
-          expect(logger.tags).to eq({"foo" => "bar"})
-          logger.untagged do
-            expect(logger.tags).to eq({})
-          end
-          expect(logger.tags).to eq({"foo" => "bar"})
-        ensure
-          logger.remove_tag(:foo)
-        end
-      end
-
-      it "should remove scoped tags from the logger" do
-        logger.tag(foo: "bar") do
-          expect(logger.tags).to eq({"foo" => "bar"})
-          logger.untagged do
-            expect(logger.tags).to eq({})
-          end
-          expect(logger.tags).to eq({"foo" => "bar"})
-        end
-      end
-
-      it "should allow adding tags inside the block" do
-        logger.tag_globally(foo: "bar") do
-          expect(logger.tags).to eq({"foo" => "bar"})
-          logger.untagged do
-            logger.tag(stuff: "other") do
-              expect(logger.tags).to eq({"stuff" => "other"})
-              logger.untagged do
-                expect(logger.tags).to eq({})
-                logger.tag(thing: 1)
-                expect(logger.tags).to eq({"thing" => 1})
-              end
-              expect(logger.tags).to eq({"stuff" => "other"})
-            end
-          end
-          expect(logger.tags).to eq({"foo" => "bar"})
-        end
-      end
-
-      it "should return the result of the block" do
-        result = logger.untagged { :foo }
-        expect(result).to eq :foo
-      end
-    end
-
-    describe "log helper methods" do
-      let(:device) { Lumberjack::Device::Writer.new(out, buffer_size: 0, template: ":message") }
-
-      it "should only log fatal messages when the level is set to fatal" do
-        logger.level = Logger::FATAL
-        logger.fatal("fatal")
-        expect(logger.fatal?).to eq(true)
-        logger.error("error")
-        expect(logger.error?).to eq(false)
-        logger.warn("warn")
-        expect(logger.warn?).to eq(false)
-        logger.info("info")
-        expect(logger.info?).to eq(false)
-        logger.debug("debug")
-        expect(logger.debug?).to eq(false)
-        logger.unknown("unknown")
-        expect(out.string).to eq("fatal#{n}unknown#{n}")
-      end
-
-      it "should only log error messages and higher when the level is set to error" do
-        logger.level = Logger::ERROR
-        logger.fatal("fatal")
-        expect(logger.fatal?).to eq(true)
-        logger.error("error")
-        expect(logger.error?).to eq(true)
-        logger.warn("warn")
-        expect(logger.warn?).to eq(false)
-        logger.info("info")
-        expect(logger.info?).to eq(false)
-        logger.debug("debug")
-        expect(logger.debug?).to eq(false)
-        logger.unknown("unknown")
-        expect(out.string).to eq("fatal#{n}error#{n}unknown#{n}")
-      end
-
-      it "should only log warn messages and higher when the level is set to warn" do
-        logger.level = Logger::WARN
-        logger.fatal("fatal")
-        expect(logger.fatal?).to eq(true)
-        logger.error("error")
-        expect(logger.error?).to eq(true)
-        logger.warn("warn")
-        expect(logger.warn?).to eq(true)
-        logger.info("info")
-        expect(logger.info?).to eq(false)
-        logger.debug("debug")
-        expect(logger.debug?).to eq(false)
-        logger.unknown("unknown")
-        expect(out.string).to eq("fatal#{n}error#{n}warn#{n}unknown#{n}")
-      end
-
-      it "should only log info messages and higher when the level is set to info" do
-        logger.level = Logger::INFO
-        logger.fatal("fatal")
-        expect(logger.fatal?).to eq(true)
-        logger.error("error")
-        expect(logger.error?).to eq(true)
-        logger.warn("warn")
-        expect(logger.warn?).to eq(true)
-        logger.info("info")
-        expect(logger.info?).to eq(true)
-        logger.debug("debug")
-        expect(logger.debug?).to eq(false)
-        logger.unknown("unknown")
-        expect(out.string).to eq("fatal#{n}error#{n}warn#{n}info#{n}unknown#{n}")
-      end
-
-      it "should log all messages when the level is set to debug" do
-        logger.level = Logger::DEBUG
-        logger.fatal("fatal")
-        expect(logger.fatal?).to eq(true)
-        logger.error("error")
-        expect(logger.error?).to eq(true)
-        logger.warn("warn")
-        expect(logger.warn?).to eq(true)
-        logger.info("info")
-        expect(logger.info?).to eq(true)
-        logger.debug("debug")
-        expect(logger.debug?).to eq(true)
-        logger.unknown("unknown")
-        expect(out.string).to eq("fatal#{n}error#{n}warn#{n}info#{n}debug#{n}unknown#{n}")
-      end
-
-      it "should only log unknown messages when the level is set above fatal" do
-        logger.level = Logger::FATAL + 1
-        logger.fatal("fatal")
-        expect(logger.fatal?).to eq(false)
-        logger.error("error")
-        expect(logger.error?).to eq(false)
-        logger.warn("warn")
-        expect(logger.warn?).to eq(false)
-        logger.info("info")
-        expect(logger.info?).to eq(false)
-        logger.debug("debug")
-        expect(logger.debug?).to eq(false)
-        logger.unknown("unknown")
-        expect(out.string).to eq("unknown#{n}")
-      end
-    end
-  end
-
-  describe "#context" do
-    let(:logger) { Lumberjack::Logger.new(StringIO.new) }
-
-    it "creates a new tag context within a block" do
-      logger.context do
-        logger.tag(foo: "bar")
-        expect(logger.tags).to eq("foo" => "bar")
-      end
-      expect(logger.tags).to be_empty
-    end
-
-    it "returns the result of the block" do
-      result = logger.context { :foobar }
-      expect(result).to eq(:foobar)
-    end
-
-    it "yields a the tag context to the block" do
-      logger.context do |ctx|
-        expect(ctx).to be_a(Lumberjack::Context)
-        ctx.tag(foo: "bar")
-        expect(logger.tags).to eq("foo" => "bar")
-      end
-      expect(logger.tags).to be_empty
-    end
-
-    it "returns the current tag context if no block is given" do
-      logger.context do
-        ctx = logger.context
-        expect(ctx).to be_a(Lumberjack::Context)
-        ctx.tag(foo: "bar")
-        expect(logger.tags).to eq("foo" => "bar")
-      end
-      expect(logger.tags).to be_empty
-    end
-
-    it "returns an empty tag context if no block is given and there is no current context" do
-      ctx = logger.context
-      expect(ctx).to be_a(Lumberjack::Context)
-      ctx.tag(foo: "bar")
-      expect(logger.tags).to be_empty
-    end
-
-    it "should not leak tags between contexts" do
-      logger.context do
-        logger.tag(foo: "bar")
-      end
-      logger.context do
-        expect(logger.tags).to be_empty
-      end
-    end
-
-    it "should not leak tags between threads" do
-      logger.context do
-        logger.tag(foo: "bar")
-        Thread.new do
-          expect(logger.tags).to be_empty
-        end.join
       end
     end
   end

@@ -248,6 +248,13 @@ describe Lumberjack::ContextLogger do
       expect(logger.tags).to be_empty
     end
 
+    it "works with a frozen hash" do
+      logger.tag({foo: "bar"}.freeze) do
+        logger.tag(baz: "qux")
+        expect(logger.tags).to eq({"foo" => "bar", "baz" => "qux"})
+      end
+    end
+
     it "returns the result of the block" do
       result = logger.tag(foo: "bar") { :foobar }
       expect(result).to eq(:foobar)
@@ -259,11 +266,11 @@ describe Lumberjack::ContextLogger do
       end
     end
 
-    it "returns a new context logger with the tags if there is no current context" do
+    it "returns a new local logger with the tags if there is no current context" do
       new_logger = logger.tag(foo: "bar")
       expect(new_logger.tags).to eq({"foo" => "bar"})
       expect(new_logger).to_not eq(logger)
-      expect(new_logger).to be_a(Lumberjack::ContextLogger)
+      expect(new_logger).to be_a(Lumberjack::LocalLogger)
     end
   end
 
@@ -367,6 +374,23 @@ describe Lumberjack::ContextLogger do
           expect(logger.tag_value("bip")).to eq("bap")
         end
       end
+    end
+
+    it "expands dot notation in tag names" do
+      logger.tag(foo: {"bar.baz": "boo"}) do
+        expect(logger.tag_value("foo.bar.baz")).to eq("boo")
+        expect(logger.tag_value("foo.bar")).to eq("baz" => "boo")
+      end
+    end
+
+    it "should expand tag name as a array to dot notation" do
+      logger.tag("foo.bar" => "baz") do
+        expect(logger.tag_value([:foo, :bar])).to eq("baz")
+      end
+    end
+
+    it "should return nil for a non-existent tag" do
+      expect(logger.tag_value(:non_existent)).to be_nil
     end
   end
 
