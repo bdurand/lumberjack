@@ -14,6 +14,24 @@ module Lumberjack
   # If your tag name contains characters other than alpha numerics and the underscore, you must surround it
   # with curly brackets: `:{http.request-id}`.
   class Template
+    class StandardFormatterTemplate < Template
+      def initialize(formatter)
+        @formatter = formatter
+      end
+
+      def call(entry)
+        @formatter.call(entry.severity_label, entry.time, entry.progname, entry.message)
+      end
+
+      def datetime_format=(value)
+        @formatter.datetime_format = value if @formatter.respond_to?(:datetime_format=)
+      end
+
+      def datetime_format
+        @formatter.datetime_format if @formatter.respond_to?(:datetime_format)
+      end
+    end
+
     TEMPLATE_ARGUMENT_ORDER = %w[:time :severity :progname :pid :message :tags].freeze
     MILLISECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%3N"
     MICROSECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%6N"

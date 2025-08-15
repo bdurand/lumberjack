@@ -80,12 +80,16 @@ module Lumberjack
 
         @binmode = options[:binmode]
 
-        template = options[:template] || DEFAULT_FIRST_LINE_TEMPLATE
-        if template.respond_to?(:call)
-          @template = template
+        if options[:standard_logger_formatter]
+          @template = Template::StandardFormatterTemplate.new(options[:standard_logger_formatter])
         else
-          additional_lines = options[:additional_lines] || DEFAULT_ADDITIONAL_LINES_TEMPLATE
-          @template = Template.new(template, additional_lines: additional_lines, time_format: options[:time_format])
+          template = options[:template] || DEFAULT_FIRST_LINE_TEMPLATE
+          if template.respond_to?(:call)
+            @template = template
+          else
+            additional_lines = options[:additional_lines] || DEFAULT_ADDITIONAL_LINES_TEMPLATE
+            @template = Template.new(template, additional_lines: additional_lines, time_format: options[:time_format])
+          end
         end
       end
 
@@ -118,7 +122,7 @@ module Lumberjack
           @buffer << string
           flush if @buffer.size >= buffer_size
         else
-          flush if respond_to?(:before_flush, true)
+          before_flush if respond_to?(:before_flush, true)
           write_to_stream(string)
         end
       end
@@ -137,8 +141,7 @@ module Lumberjack
       def flush
         lines = @buffer.pop! { before_flush if respond_to?(:before_flush, true) }
         write_to_stream(lines) if lines
-
-        @stream.flush
+        stream.flush if stream.respond_to?(:flush)
       end
 
       # Get the datetime format.
@@ -185,6 +188,8 @@ module Lumberjack
         else
           write_line(lines)
         end
+
+        stream.flush if stream.respond_to?(:flush)
       end
 
       def write_line(line)

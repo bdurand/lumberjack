@@ -176,6 +176,37 @@ RSpec.describe Lumberjack::Logger do
     end
   end
 
+  describe "with a ::Logger::Formatter" do
+    let(:out) { StringIO.new }
+
+    it "formats output using the standard library formatter" do
+      formatter = Class.new(Logger::Formatter) do
+        def call(severity, time, progname, msg)
+          super.upcase
+        end
+      end.new
+
+      logger = Lumberjack::Logger.new(out, formatter: formatter)
+      logger.info("test")
+      expect(out.string.chomp).to match(/I, \[.+\]  INFO -- : TEST/)
+    end
+
+    it "formats output using a standard library formatter if it's a Proc that takes 4 args" do
+      formatter = lambda { |severity, time, progname, msg| "#{severity}: #{time.to_i} #{msg}" }
+
+      logger = Lumberjack::Logger.new(out, formatter: formatter)
+      logger.info("test")
+      expect(out.string.chomp).to match(/INFO: \d+ test/)
+    end
+
+    it "can set the datetime format" do
+      formatter = Logger::Formatter.new
+      logger = Lumberjack::Logger.new(out, formatter: formatter, datetime_format: "%Y%m%d")
+      logger.info("test")
+      expect(out.string.chomp).to match(/\b\d{8}\b/)
+    end
+  end
+
   describe "flushing" do
     it "should autoflush the buffer if it hasn't been flushed in a specified number of seconds" do
       out = StringIO.new
