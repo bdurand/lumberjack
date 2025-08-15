@@ -52,7 +52,12 @@ module Lumberjack
     # @param [Hash] options The options for the logger.
     # @param level [Integer, Symbol, String] The logging level below which messages will be ignored.
     # @param progname [String] The name of the program that will be recorded with each log entry.
-    # @param formatter [Lumberjack::Formatter] The formatter to use for outputting messages to the log.
+    # @param formatter [Lumberjack::EntryFormatter, Lumberjack::Formatter, ::Logger::Formatter, #call]
+    #   The formatter to use for outputting messages to the log. If this is a Lumberjack::EntryFormatter
+    #   or a Lumberjack::Formatter, it will be used to format strutured log entries. If it is
+    #   a ::Logger::Formatter or a callable object that takes 4 arguments (severity, time, progname, msg),
+    #   it will be used to format log entries in lieu of the `template` argument when writing to a
+    #   stream.
     # @param datetime_format [String] The format to use for log timestamps.
     # @param binmode [Boolean] Whether to open the log file in binary mode.
     # @param shift_period_suffix [String] The suffix to use for the shifted log file names.
@@ -71,21 +76,14 @@ module Lumberjack
       # contain device specific options.
       device_options = kwargs.merge(shift_age: shift_age, shift_size: shift_size, binmode: binmode, shift_period_suffix: shift_period_suffix)
       device_options[:template] = template unless template.nil?
+      device_options[:standard_logger_formatter] = formatter if standard_logger_formatter?(formatter)
       @logdev = open_device(logdev, device_options)
 
       @context = Context.new
       self.level = level || DEBUG
       self.progname = progname
 
-      entry_formatter = formatter if formatter.is_a?(Lumberjack::EntryFormatter)
-      unless entry_formatter
-        message_formatter ||= formatter if formatter.is_a?(Lumberjack::Formatter)
-        entry_formatter = Lumberjack::EntryFormatter.new
-      end
-      entry_formatter.message_formatter = message_formatter if message_formatter
-      entry_formatter.tag_formatter = tag_formatter if tag_formatter
-
-      self.formatter = entry_formatter
+      self.formatter = build_entry_formatter(formatter, message_formatter, tag_formatter)
       self.datetime_format = datetime_format if datetime_format
 
       @closed = false # TODO
@@ -279,6 +277,48 @@ module Lumberjack
       else
         Device::File.new(device, options)
       end
+    end
+
+    def build_entry_formatter(formatter, message_formatter, tag_formatter) # :nodoc:
+      entry_formatter = formatter if formatter.is_a?(Lumberjack::EntryFormatter)
+
+      unless entry_formatter
+        message_formatter ||= formatter if formatter.is_a?(Lumberjack::Formatter)
+        entry_formatter = Lumberjack::EntryFormatter.new
+      end
+
+      entry_formatter.message_formatter = message_formatter if message_formatter
+      entry_formatter.tag_formatter = tag_formatter if tag_formatter
+
+      entry_formatter
+    end
+
+    def standard_logger_formatter?(formatter)
+      return false if formatter.is_a?(Lumberjack::EntryFormatter)
+      return false if formatter.is_a?(Lumberjack::Formatter)
+      return true if formatter.is_a?(::Logger::Formatter)
+
+      takes_exactly_n_call_args?(formatter, 4)
+    end
+
+    def takes_exactly_n_call_args?(callable, count)
+      params = if callable.is_a?(Proc)
+        callable.parameters
+      elsif callable.respond_to?(:call)
+        callable.method(:call).parameters
+      end
+
+      return false unless params
+
+      positional_arg_count = params.count do |type, _name|
+        type == :req || type == :opt
+      end
+
+      has_forbidden_args = params.any? do |type, _name|
+        [:rest, :keyreq, :key, :keyrest].include?(type)
+      end
+
+      positional_arg_count == 4 && !has_forbidden_args
     end
 
     # Create a thread that will periodically call flush.
