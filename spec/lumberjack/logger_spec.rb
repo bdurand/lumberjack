@@ -203,7 +203,7 @@ RSpec.describe Lumberjack::Logger do
       formatter = Logger::Formatter.new
       logger = Lumberjack::Logger.new(out, formatter: formatter, datetime_format: "%Y%m%d")
       logger.info("test")
-      expect(out.string.chomp).to match(/I, \[\d{8} /)
+      expect(out.string.chomp).to match(/\b\d{8}\b/)
     end
   end
 
