@@ -1,24 +1,23 @@
+# frozen_string_literal: true
+
 require "ruby-prof"
-require "stackprof"
-require "flamegraph"
 require "memory_profiler"
 
 require_relative "lib/lumberjack"
-logger = Lumberjack::Logger.new(File::NULL)
+
+type, implementation = ARGV[0].split(":")
+out = StringIO.new
+logger = (implementation == "logger") ? Logger.new(out) : Lumberjack::Logger.new(out)
 message = "foobar"
 
-if ARGV[0] == "ruby-prof"
+if type == "cpu"
   result = RubyProf.profile do
     1000.times { logger.info(message) }
   end
   printer = RubyProf::FlatPrinter.new(result)
   printer.print($stdout)
-elsif ARGV[0] == "memory"
+elsif type == "memory"
   MemoryProfiler.report do
     1000.times { logger.info(message) }
   end.pretty_print
-elsif ARGV[0] == "flamegraph"
-  Flamegraph.generate("flamegraph.html") do
-    1000.times { logger.info(message) }
-  end
 end
