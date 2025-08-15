@@ -4,6 +4,7 @@ require "rbconfig"
 require "time"
 require "logger"
 require "fiber"
+require "pathname"
 
 module Lumberjack
   LINE_SEPARATOR = ((RbConfig::CONFIG["host_os"] =~ /mswin/i) ? "\r\n" : "\n")
@@ -13,6 +14,7 @@ module Lumberjack
   require_relative "lumberjack/io_compatibility"
   require_relative "lumberjack/context_logger"
   require_relative "lumberjack/log_entry"
+  require_relative "lumberjack/log_entry_matcher"
   require_relative "lumberjack/device"
   require_relative "lumberjack/entry_formatter"
   require_relative "lumberjack/formatter"

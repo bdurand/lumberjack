@@ -42,31 +42,36 @@ module Lumberjack
     #
     # All other options are passed to the device constuctor.
     #
-    # @param [Lumberjack::Device, Object, Symbol, String] device The device to log to.
+    # @param device [Lumberjack::Device, Object, Symbol, String] The device to log to.
+    # @param shift_age [Integer, String, Symbol] If this is an integer greater than zero, then
+    #   log files will be rolled when they get to the size specified in shift_size and the number of
+    #   files to keep will be determined by this value. Otherwise it will be interpreted as a date
+    #   rolling value and must be one of "daily", "weekly", or "monthly". This parameter has no
+    #   effect unless the device parameter is a file path or file stream.
+    # @param shift_size [Integer] The size in bytes of the log files to before rolling them.
     # @param [Hash] options The options for the logger.
-    # @option options [Integer, Symbol, String] :level The logging level below which messages will be ignored.
-    # @option options [Lumberjack::Formatter] :formatter The formatter to use for outputting messages to the log.
-    # @option options [String] :datetime_format The format to use for log timestamps.
-    # @option options [Lumberjack::Formatter] :message_formatter The MessageFormatter to use for formatting log messages.
-    # @option options [Lumberjack::TagFormatter] :tag_formatter The TagFormatter to use for formatting tags.
-    # @option options [String] :progname The name of the program that will be recorded with each log entry.
-    # @option options [Numeric] :flush_seconds The maximum number of seconds between flush calls.
-    # @option options [Boolean] :roll If the log device is a file path, it will be a Device::DateRollingLogFile if this is set.
-    # @option options [Integer] :max_size If the log device is a file path, it will be a Device::SizeRollingLogFile if this is set.
+    # @param level [Integer, Symbol, String] The logging level below which messages will be ignored.
+    # @param progname [String] The name of the program that will be recorded with each log entry.
+    # @param formatter [Lumberjack::Formatter] The formatter to use for outputting messages to the log.
+    # @param datetime_format [String] The format to use for log timestamps.
+    # @param binmode [Boolean] Whether to open the log file in binary mode.
+    # @param shift_period_suffix [String] The suffix to use for the shifted log file names.
+    # @param template [String] The template to use for serializing log entries to a string.
+    # @param message_formatter [Lumberjack::Formatter] The MessageFormatter to use for formatting log messages.
+    # @param tag_formatter [Lumberjack::TagFormatter] The TagFormatter to use for formatting tags.
+    # @param flush_seconds [Numeric] The maximum number of seconds between automatic calls to flush the logs.
     def initialize(logdev, shift_age = 0, shift_size = 1048576,
       level: DEBUG, progname: nil, formatter: nil, datetime_format: nil,
-      binmode: false, shift_period_suffix: "%Y%m%d", reraise_write_errors: [], skip_header: false,
-      message_formatter: nil, tag_formatter: nil, flush_seconds: nil, buffer_size: 0, template: nil)
+      binmode: false, shift_period_suffix: "%Y%m%d",
+      template: nil, message_formatter: nil, tag_formatter: nil, flush_seconds: nil,
+      **kwargs)
       init_fiber_locals!
 
-      @logdev = open_device(logdev,
-        datetime_format: datetime_format,
-        binmode: binmode,
-        shift_period_suffix: shift_period_suffix,
-        reraise_write_errors: reraise_write_errors,
-        skip_header: skip_header,
-        buffer_size: buffer_size,
-        template: template)
+      # Include standard args that affect devices with the optional kwargs which may
+      # contain device specific options.
+      device_options = kwargs.merge(shift_age: shift_age, shift_size: shift_size, binmode: binmode, shift_period_suffix: shift_period_suffix)
+      device_options[:template] = template unless template.nil?
+      @logdev = open_device(logdev, device_options)
 
       @context = Context.new
       self.level = level || DEBUG
@@ -240,6 +245,10 @@ module Lumberjack
       true
     end
 
+    def to_s
+      "<Lumberjack::Logger:#{object_id} device: #{device.inspect}>"
+    end
+
     private
 
     def default_context
@@ -257,23 +266,18 @@ module Lumberjack
 
     # Open a logging device.
     def open_device(device, options) # :nodoc:
-      if device.nil?
-        nil
+      device = device.to_s if device.is_a?(Pathname)
+
+      if device.nil? || device == :null
+        Device::Null.new
+      elsif device == :test
+        Device::Test.new
       elsif device.is_a?(Device)
         device
-      elsif device.respond_to?(:write) && device.respond_to?(:flush)
+      elsif device.respond_to?(:write) && !device.respond_to?(:path)
         Device::Writer.new(device, options)
-      elsif device == :null
-        Device::Null.new
       else
-        device = device.to_s
-        if options[:roll]
-          Device::DateRollingLogFile.new(device, options)
-        elsif options[:max_size]
-          Device::SizeRollingLogFile.new(device, options)
-        else
-          Device::LogFile.new(device, options)
-        end
+        Device::File.new(device, options)
       end
     end
 
