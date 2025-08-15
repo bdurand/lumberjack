@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Lumberjack::Logger#untag!` and `Lumberjack::Logger#untag!` to remove global tags from a logger.
 - Added `Lumberjack::Logger#context?` as a replacement for `Lumberjack::Logger.in_tag_context?`.
 - Added IO compatibility methods for logging. Calling `logger.write`, `logger.puts`, `logger.print`, or `logger.printf` will write log messages with a severity level of UNKNOWN.
+- Added `Lumberjack::Device::Test` class for use in testing logging functionality. This device will buffer log entries and has `match?` and `include?` methods that can be used for assertions in tests.
 
 ### Changed
 
@@ -23,12 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `LumberJack::Logger#context` now yields or returns a `Lumberjack::Context` rather than a `Lumberjack::TagContext`.
 - `Lumberjack::Logger#tag` now returns a `Lumberjack::ContextLogger` object when called without a block. This allows for chaining methods on the logger while still having the tags applied.
 - `Lumberjack::Logger#add_entry` does not check the logger level and will add the entry regardless of the severity. This method is an internal API method and is now documented as such.
+- Logging to files will now use the standard library `Logger::LogDevice` class for file output and rolling.
 
 ### Removed
 
 - Removed Rails integration code (`tagged`, `silence`, `log_at` methods on `Lumberjack::Logger`). Rails support is now moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem.
 - Removed deprecated unit of work id code. These have been replaced with tags.
 - Removed deprecated support for setting global tags with `Lumberjack::Logger#tag`. Now calling `tag` outside of a block or context will be ignored. Use `tag!` to set default tags on a logger.
+- Removed the devices that handled logging to files (`Lumberjack::Device::LogFile`, `Lumberjack::Device::RollingLogFile`, `Lumberjack::Device::DateRollingLogFile`, and `Lumberjack::Device::SizeRollingLogFile`) since file logging is now handled by the standard library `Logger::LogDevice` class.
 - Removed support for Ruby versions < 2.5.
 
 ## 1.4.0

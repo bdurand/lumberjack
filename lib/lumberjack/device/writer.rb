@@ -21,21 +21,30 @@ module Lumberjack
         def initialize
           @values = []
           @size = 0
+          @lock = Mutex.new
         end
 
         def <<(string)
-          @values << string
-          @size += string.size
+          @lock.synchronize do
+            @values << string
+            @size += string.length
+          end
         end
 
         def empty?
           @values.empty?
         end
 
-        def pop!
+        def pop!(&before_flush)
           return nil if @values.empty?
-          popped = @values
-          clear
+
+          popped = nil
+          @lock.synchronize do
+            before_flush&.call
+            popped = @values
+            clear
+          end
+
           popped
         end
 
@@ -63,11 +72,14 @@ module Lumberjack
       # @param [IO] stream The stream to write log entries to.
       # @param [Hash] options The options for the device.
       def initialize(stream, options = {})
-        @lock = Mutex.new
         @stream = stream
         @stream.sync = true if @stream.respond_to?(:sync=)
+
         @buffer = Buffer.new
         @buffer_size = options[:buffer_size] || 0
+
+        @binmode = options[:binmode]
+
         template = options[:template] || DEFAULT_FIRST_LINE_TEMPLATE
         if template.respond_to?(:call)
           @template = template
@@ -95,17 +107,15 @@ module Lumberjack
         string = (entry.is_a?(LogEntry) ? @template.call(entry) : entry)
         return if string.nil?
 
-        string = string.strip
-        return if string.length == 0
-
-        unless string.encoding == Encoding::UTF_8
+        if !@binmode && string.encoding != Encoding::UTF_8
           string = string.encode("UTF-8", invalid: :replace, undef: :replace)
         end
 
+        string = string.strip
+        return if string.length == 0
+
         if buffer_size > 1
-          @lock.synchronize do
-            @buffer << string
-          end
+          @buffer << string
           flush if @buffer.size >= buffer_size
         else
           flush if respond_to?(:before_flush, true)
@@ -125,12 +135,10 @@ module Lumberjack
       #
       # @return [void]
       def flush
-        lines = nil
-        @lock.synchronize do
-          before_flush if respond_to?(:before_flush, true)
-          lines = @buffer.pop!
-        end
+        lines = @buffer.pop! { before_flush if respond_to?(:before_flush, true) }
         write_to_stream(lines) if lines
+
+        @stream.flush
       end
 
       # Get the datetime format.
@@ -170,39 +178,33 @@ module Lumberjack
       def write_to_stream(lines)
         return if lines.empty?
 
-        # Create a string with the line separator so that writing the line with the separator is atomic.
-        lines = lines.first if lines.is_a?(Array) && lines.size == 1
-        out = if lines.is_a?(Array)
-          "#{lines.join(Lumberjack::LINE_SEPARATOR)}#{Lumberjack::LINE_SEPARATOR}"
+        if lines.is_a?(Array)
+          lines.each do |line|
+            write_line(line)
+          end
         else
-          "#{lines}#{Lumberjack::LINE_SEPARATOR}"
+          write_line(lines)
         end
+      end
 
+      def write_line(line)
+        out = "#{line}#{Lumberjack::LINE_SEPARATOR}"
         begin
           begin
             stream.write(out)
           rescue IOError => e
-            # This condition can happen if another thread closed the stream in the `before_flush` call.
-            # Synchronizing will handle the race condition, but since it's an exceptional case we don't
-            # want to lock the thread on every stream write call.
-            @lock.synchronize do
-              if stream.closed?
-                raise e
-              else
-                stream.write(out)
-              end
-            end
-          end
-          begin
-            stream.flush
-          rescue
-            nil
+            raise e if stream.closed?
+
+            stream.write(out)
           end
         rescue => e
-          $stderr.write("#{e.class.name}: #{e.message}#{" at " + e.backtrace.first if e.backtrace}")
+          $stderr.write(error_message(e))
           $stderr.write(out)
-          $stderr.flush
         end
+      end
+
+      def error_message(e)
+        "#{e.class.name}: #{e.message}#{" at " + e.backtrace.first if e.backtrace}#{Lumberjack::LINE_SEPARATOR}"
       end
     end
   end
