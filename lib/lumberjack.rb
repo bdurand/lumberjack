@@ -10,9 +10,9 @@ module Lumberjack
   LINE_SEPARATOR = ((RbConfig::CONFIG["host_os"] =~ /mswin/i) ? "\r\n" : "\n")
 
   require_relative "lumberjack/context"
+  require_relative "lumberjack/context_logger"
   require_relative "lumberjack/fiber_locals"
   require_relative "lumberjack/io_compatibility"
-  require_relative "lumberjack/context_logger"
   require_relative "lumberjack/log_entry"
   require_relative "lumberjack/log_entry_matcher"
   require_relative "lumberjack/device"
