@@ -9,3 +9,8 @@ gem "appraisal"
 gem "standard", require: false
 gem "simplecov", require: false
 gem "yard"
+
+group :development do
+  gem "ruby-prof"
+  gem "memory_profiler"
+end

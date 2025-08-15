@@ -59,7 +59,7 @@ jobs:
           bundle config set gemfile "gemfiles/${{ matrix.appraisal }}.gemfile"
       - name: Install gems
         run: |
-          bundle update
+          bundle install --without development
       - name: Run Tests
         run: bundle exec rake
       - name: standardrb

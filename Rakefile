@@ -37,3 +37,55 @@ namespace :appraisals do
 end
 
 require "standard/rake"
+
+def profile_cpu(implementation)
+  require "ruby-prof"
+  require_relative "lib/lumberjack"
+
+  out = StringIO.new
+  logger = (implementation == :logger) ? Logger.new(out) : Lumberjack::Logger.new(out)
+  message = "foobar"
+
+  result = RubyProf.profile do
+    1000.times { logger.info(message) }
+  end
+  printer = RubyProf::FlatPrinter.new(result)
+  printer.print($stdout)
+end
+
+def profile_memory(implementation)
+  require "memory_profiler"
+  require_relative "lib/lumberjack"
+
+  out = StringIO.new
+  logger = (implementation == :logger) ? Logger.new(out) : Lumberjack::Logger.new(out)
+  message = "foobar"
+
+  MemoryProfiler.report do
+    1000.times { logger.info(message) }
+  end.pretty_print
+end
+
+namespace :profile do
+  desc "Profile Lumberjack::Logger CPU usage"
+  task :cpu do |t, args|
+    profile_cpu(:lumberjack)
+  end
+
+  desc "Profile Lumberjack::Logger memory usage"
+  task :memory do |t, args|
+    profile_memory(:lumberjack)
+  end
+
+  namespace :logger do
+    desc "Profile ::Logger CPU usage"
+    task :cpu do |t, args|
+      profile_cpu(:logger)
+    end
+
+    desc "Profile ::Logger memory usage"
+    task :memory do |t, args|
+      profile_memory(:logger)
+    end
+  end
+end
