@@ -4,12 +4,29 @@ module Lumberjack
   # A context is used to store tags that are then added to all log entries within a block.
   class Context
     attr_reader :tags
+    attr_reader :level
+    attr_reader :progname
 
     # @param parent_context [Context] A parent context to inherit tags from.
     def initialize(parent_context = nil)
       @tags = {}
-      @tags.merge!(parent_context.tags) if parent_context
-      @tag_context = TagContext.new(@tags)
+      @level = nil
+      @progname = nil
+
+      if parent_context
+        @tags.merge!(parent_context.tags)
+        self.level = parent_context.level
+        self.progname = parent_context.progname
+      end
+    end
+
+    def level=(value)
+      value = Lumberjack::Severity.coerce(value) unless value.nil?
+      @level = value
+    end
+
+    def progname=(value)
+      @progname = value&.to_s&.freeze
     end
 
     # Set tags on the context.
@@ -17,7 +34,7 @@ module Lumberjack
     # @param tags [Hash] The tags to set.
     # @return [void]
     def tag(tags)
-      @tag_context.tag(tags)
+      tag_context.tag(tags)
     end
 
     # Get a context tag.
@@ -25,7 +42,7 @@ module Lumberjack
     # @param key [String, Symbol] The tag key.
     # @return [Object] The tag value.
     def [](key)
-      @tag_context[key]
+      tag_context[key]
     end
 
     # Set a context tag.
@@ -34,7 +51,12 @@ module Lumberjack
     # @param value [Object] The tag value.
     # @return [void]
     def []=(key, value)
-      @tag_context[key] = value
+      tag_context[key] = value
+    end
+
+    # Remove all tags from the context.
+    def clear_tags
+      @tags.clear
     end
 
     # Remove tags from the context.
@@ -42,7 +64,7 @@ module Lumberjack
     # @param keys [Array<String, Symbol>] The tag keys to remove.
     # @return [void]
     def delete(*keys)
-      @tag_context.delete(*keys)
+      tag_context.delete(*keys)
     end
 
     # Clear all the context data.
@@ -50,6 +72,14 @@ module Lumberjack
     # @return [void]
     def reset
       @tags.clear
+      @level = nil
+      @progname = nil
+    end
+
+    private
+
+    def tag_context
+      TagContext.new(@tags)
     end
   end
 end

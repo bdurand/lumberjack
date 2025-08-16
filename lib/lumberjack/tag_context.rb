@@ -34,7 +34,7 @@ module Lumberjack
       @tags.each do |key, value|
         if key.start_with?(prefix_key)
           # Remove the prefix to get the relative key
-          relative_key = key[prefix_key.length..-1]
+          relative_key = key[prefix_key.length..]
           matching_tags[relative_key] = value
         end
       end

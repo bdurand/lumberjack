@@ -40,9 +40,11 @@ module Lumberjack
 
     def initialize
       @class_formatters = {}
-      @module_formatters = {}
+      @has_string_formatter = false
+      @has_numeric_formatter = false
+      @has_boolean_formatter = false
+
       structured_formatter = StructuredFormatter.new(self)
-      add([String, Numeric, TrueClass, FalseClass], :object)
       add(Object, InspectFormatter.new)
       add(Exception, :exception)
       add(Enumerable, structured_formatter)
@@ -114,14 +116,12 @@ module Lumberjack
         end
 
         Array(klass).each do |k|
-          if k.instance_of?(Module)
-            @module_formatters[k] = formatter
-          else
-            k = k.name if k.is_a?(Class)
-            @class_formatters[k] = formatter
-          end
+          @class_formatters[k.to_s] = formatter
         end
       end
+
+      set_optimized_flags!
+
       self
     end
 
@@ -137,13 +137,11 @@ module Lumberjack
     # @return [self] Returns itself so that remove statements can be chained together.
     def remove(klass)
       Array(klass).each do |k|
-        if k.instance_of?(Module)
-          @module_formatters.delete(k)
-        else
-          k = k.name if k.is_a?(Class)
-          @class_formatters.delete(k)
-        end
+        @class_formatters.delete(k.to_s)
       end
+
+      set_optimized_flags!
+
       self
     end
 
@@ -152,7 +150,8 @@ module Lumberjack
     # @return [self] Returns itself so that clear statements can be chained together.
     def clear
       @class_formatters.clear
-      @module_formatters.clear
+      set_optimized_flags!
+
       self
     end
 
@@ -160,7 +159,7 @@ module Lumberjack
     #
     # @return [Boolean] true if there are no registered formatters, false otherwise.
     def empty?
-      @class_formatters.empty? && @module_formatters.empty?
+      @class_formatters.empty?
     end
 
     # Format a message object by applying all formatters attached to it.
@@ -168,6 +167,21 @@ module Lumberjack
     # @param message [Object] The message object to format.
     # @return [Object] The formatted object.
     def format(message)
+      # These primitive types are the most common in logs and so are optimized here
+      # for the normal case where a custom formatter has not been defined.
+      case message
+      when String
+        return message unless @has_string_formatter
+      when Integer, Float
+        return message unless @has_numeric_formatter
+      when Numeric
+        if defined?(BigDecimal) && message.is_a?(BigDecimal)
+          return message unless @has_numeric_formatter
+        end
+      when true, false
+        return message unless @has_boolean_formatter
+      end
+
       formatter = formatter_for(message.class)
       if formatter&.respond_to?(:call)
         formatter.call(message)
@@ -193,21 +207,17 @@ module Lumberjack
     #
     # @api private
     def formatter_for(klass)
-      return nil if empty?
+      return nil if @class_formatters.empty?
 
-      check_modules = true
-      until klass.nil?
-        formatter = @class_formatters[klass.name]
-        return formatter if formatter
+      formatter = nil
+      klass.ancestors.detect { |ancestor| formatter = @class_formatters[ancestor.name] }
+      formatter
+    end
 
-        if check_modules
-          _, formatter = @module_formatters.detect { |mod, f| klass.include?(mod) }
-          check_modules = false
-          return formatter if formatter
-        end
-
-        klass = klass.superclass
-      end
+    def set_optimized_flags!
+      @has_string_formatter = @class_formatters.include?("String")
+      @has_numeric_formatter = @class_formatters.slice("Integer", "Float", "BigDecimal", "Numeric").any?
+      @has_boolean_formatter = @class_formatters.include?("TrueClass") || @class_formatters.include?("FalseClass")
     end
   end
 end

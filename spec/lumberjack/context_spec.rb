@@ -1,6 +1,42 @@
 require "spec_helper"
 
 RSpec.describe Lumberjack::Context do
+  describe "#level" do
+    it "should have a level" do
+      context = Lumberjack::Context.new
+      expect(context.level).to be_nil
+      context.level = :info
+      expect(context.level).to eq(Logger::INFO)
+      context.level = nil
+      expect(context.level).to be_nil
+    end
+
+    it "should inherit the parent context's level" do
+      parent = Lumberjack::Context.new
+      parent.level = Logger::WARN
+      context = Lumberjack::Context.new(parent)
+      expect(context.level).to eq(Logger::WARN)
+    end
+  end
+
+  describe "#progname" do
+    it "should have a progname" do
+      context = Lumberjack::Context.new
+      expect(context.progname).to be_nil
+      context.progname = :test
+      expect(context.progname).to eq("test")
+      context.progname = nil
+      expect(context.progname).to be_nil
+    end
+
+    it "should inherit the parent context's progname" do
+      parent = Lumberjack::Context.new
+      parent.progname = "parent"
+      context = Lumberjack::Context.new(parent)
+      expect(context.progname).to eq("parent")
+    end
+  end
+
   describe "#tag" do
     it "should have tags" do
       context = Lumberjack::Context.new
@@ -56,6 +92,19 @@ RSpec.describe Lumberjack::Context do
       expect(context.tags).to eq({"foo" => "bar", "baz" => "boo", "qux" => "quux"})
       context.delete(:foo, :baz)
       expect(context.tags).to eq({"qux" => "quux"})
+    end
+  end
+
+  describe "#reset" do
+    it "clears all tags and context data" do
+      context = Lumberjack::Context.new
+      context.tag(foo: "bar", baz: "boo")
+      context.level = :info
+      context.progname = "test"
+      context.reset
+      expect(context.tags).to eq({})
+      expect(context.level).to be_nil
+      expect(context.progname).to be_nil
     end
   end
 end

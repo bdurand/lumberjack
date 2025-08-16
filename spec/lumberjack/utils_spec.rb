@@ -117,12 +117,15 @@ describe Lumberjack::Utils do
 
   describe ".deprecated" do
     around do |example|
-      original_value = ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"]
+      original_verbose = $VERBOSE
+      original_deprecated = Warning[:deprecated]
       begin
-        ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = "false"
+        $VERBOSE = false
+        Warning[:deprecated] = true
         example.run
       ensure
-        ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = original_value
+        $VERBOSE = original_verbose
+        Warning[:deprecated] = original_deprecated
       end
     end
 

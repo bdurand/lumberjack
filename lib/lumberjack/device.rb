@@ -5,12 +5,10 @@ module Lumberjack
   # may implement the +close+ and +flush+ methods if applicable.
   class Device
     require_relative "device/writer"
-    require_relative "device/log_file"
-    require_relative "device/rolling_log_file"
-    require_relative "device/date_rolling_log_file"
-    require_relative "device/size_rolling_log_file"
+    require_relative "device/file"
     require_relative "device/multi"
     require_relative "device/null"
+    require_relative "device/test"
 
     # Subclasses must implement this method to write a LogEntry.
     #
