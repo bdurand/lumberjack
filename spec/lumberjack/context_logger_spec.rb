@@ -431,7 +431,7 @@ describe Lumberjack::ContextLogger do
       it "logs an entry as #{severity}" do
         logger.public_send(severity, "Message")
         expect(logger.entries.first).to eq({
-          severity: Lumberjack::Logger.const_get(severity.to_s.upcase),
+          severity: Lumberjack::Severity.coerce(severity),
           message: "Message",
           progname: nil,
           tags: nil
