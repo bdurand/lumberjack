@@ -421,6 +421,38 @@ describe Lumberjack::ContextLogger do
     end
   end
 
+  describe "#local_logger" do
+    it "returns a local logger that has an isolated context from the current logger" do
+      local_logger = logger.local_logger
+      expect(local_logger.level).to eq logger.level
+      local_logger.level = :warn
+      expect(local_logger.level).to_not eq logger.level
+
+      expect(local_logger.progname).to eq logger.progname
+      local_logger.progname = "LocalLogger"
+      expect(local_logger.progname).to_not eq logger.progname
+
+      expect(local_logger.tags).to eq logger.tags
+      local_logger.tag!(foo: "bar")
+      expect(local_logger.tags).to_not eq logger.tags
+    end
+
+    it "can set the level on the local logger" do
+      local_logger = logger.local_logger(level: :warn)
+      expect(local_logger.level).to eq(Logger::WARN)
+    end
+
+    it "can set the progname on the local logger" do
+      local_logger = logger.local_logger(progname: "LocalLogger")
+      expect(local_logger.progname).to eq("LocalLogger")
+    end
+
+    it "can set tags on the local logger" do
+      local_logger = logger.local_logger(tags: {foo: "bar"})
+      expect(local_logger.tags).to eq({"foo" => "bar"})
+    end
+  end
+
   [:fatal, :error, :warn, :info, :debug, :unknown, :trace].each do |severity|
     describe "##{severity}" do
       it "logs an entry as #{severity}" do

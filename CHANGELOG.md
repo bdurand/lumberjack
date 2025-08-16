@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tag formatters can now add class formatters by class name using the `add_class` method. This allows setting a class formatter before the class has been loaded.
 - A tag format can now be passed to the `Lumberjack::Template` class to specify how to format tag name/value pairs. The default is "[%s:%s]".
 - Added `TRACE` logging level for logging at an even lower level than `DEBUG`. `Lumberjack::Logger#trace` can be used to log messages at this level.
+- Added `Lumberjack::LocalLogger` which is a wrapper around a logger with a separate context. A local logger has a parent logger which it will write it's log entries through. It will inherit the level, progname, and tags from a parent logger, but has its own local context isolated from the parent logger. You can change the level, progname, and add tags on the local logger without impacting the parent logger.
 
 ### Changed
 
@@ -27,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The severity label for log entries with an unknown level is now ANY instead of UNKNOWN.
 - Changing logger level or progname inside a context block will now only be in effect inside the block.
 - `LumberJack::Logger#context` now yields a `Lumberjack::Context` rather than a `Lumberjack::TagContext`. It must be called with a block and can no longer be used to return the current context.
-- `Lumberjack::Logger#tag` now returns a `Lumberjack::ContextLogger` object when called without a block. This allows for chaining methods on the logger while still having the tags applied.
+- `Lumberjack::Logger#tag` now returns a `Lumberjack::ContextLogger` object when called without a block. This allows for chaining methods on the logger while still having the tags applied. If there is a local context, a new `Lumberjack::LocalLogger` will be returned with the tags applied.
 - `Lumberjack::Logger#add_entry` does not check the logger level and will add the entry regardless of the severity. This method is an internal API method and is now documented as such.
 - Logging to files will now use the standard library `Logger::LogDevice` class for file output and rolling.
 
