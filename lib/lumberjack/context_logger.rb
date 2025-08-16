@@ -305,11 +305,9 @@ module Lumberjack
           ctx.tag(tags)
           block.call(ctx)
         end
-      elsif local_context
-        local_context.tag(tags)
-        self
       else
-        local_logger(tags: tags)
+        local_context&.tag(tags)
+        self
       end
     end
 
@@ -342,7 +340,7 @@ module Lumberjack
       logger = LocalLogger.new(self)
       logger.level = level if level
       logger.progname = progname if progname
-      logger.tag!(tags) if tags && !tags.empty?
+      logger.tag!(tags) if tags
       logger
     end
 

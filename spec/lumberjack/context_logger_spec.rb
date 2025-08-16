@@ -269,11 +269,9 @@ describe Lumberjack::ContextLogger do
       end
     end
 
-    it "returns a new local logger with the tags if there is no current context" do
-      new_logger = logger.tag(foo: "bar")
-      expect(new_logger.tags).to eq({"foo" => "bar"})
-      expect(new_logger).to_not eq(logger)
-      expect(new_logger).to be_a(Lumberjack::LocalLogger)
+    it "returns self without applying tags if there is no current context" do
+      expect(logger.tag(foo: "bar")).to equal(logger)
+      expect(logger.tags).to be_empty
     end
   end
 
