@@ -74,15 +74,17 @@ module Lumberjack
       # logs.include(level: :warn, message: /something happened/, tags: {duration: Float})
       # ```
       #
-      # @param message [String, Regexp] The message to match against the log entries.
-      # @param severity [String, Symbol, Integer] The log level to match against the log entries.
-      # @param tags [Hash] A hash of tag names to values to match against the log entries. The tags
+      # @param options [Hash] The options to match against the log entries.
+      # @option options [String, Regexp] :message The message to match against the log entries.
+      # @option options [String, Symbol, Integer] :severity The log level to match against the log entries.
+      # @option options [Hash] :tags A hash of tag names to values to match against the log entries. The tags
       #   will match nested tags using dot notation (e.g. `foo.bar` will match a tag with the structure
       #   `{foo: {bar: "value"}}`).
-      # @param progname[String, Regexp] The program name to match against the log entries.
+      # @option options [String, Regexp] :progname The program name to match against the log entries.
       # @return [Boolean] True if any entries match the specified filters, false otherwise.
-      def include?(message: nil, severity: nil, tags: nil, progname: nil)
-        !!match(message: message, severity: severity, tags: tags, progname: progname)
+      def include?(options)
+        options = options.transform_keys(&:to_sym)
+        !!match(**options)
       end
 
       # Return the first entry that matches the specified filters.
