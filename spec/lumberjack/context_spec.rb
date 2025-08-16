@@ -40,7 +40,7 @@ RSpec.describe Lumberjack::Context do
   describe "#tag" do
     it "should have tags" do
       context = Lumberjack::Context.new
-      expect(context.tags).to eq({})
+      expect(context.tags).to be_nil
       context.tag(foo: "bar", baz: "boo")
       expect(context.tags).to eq({"foo" => "bar", "baz" => "boo"})
       context[:stuff] = "nonsense"

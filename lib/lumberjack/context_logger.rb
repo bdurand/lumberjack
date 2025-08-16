@@ -305,13 +305,9 @@ module Lumberjack
           ctx.tag(tags)
           block.call(ctx)
         end
-      elsif local_context
-        local_context.tag(tags)
-        self
       else
-        local_logger = LocalLogger.new(self)
-        local_logger.tag!(tags)
-        local_logger
+        local_context&.tag(tags)
+        self
       end
     end
 
@@ -338,6 +334,14 @@ module Lumberjack
       with_fiber_local(:logger_context, new_context) do
         block.call(new_context)
       end
+    end
+
+    def local_logger(level: nil, progname: nil, tags: nil)
+      logger = LocalLogger.new(self)
+      logger.level = level if level
+      logger.progname = progname if progname
+      logger.tag!(tags) if tags
+      logger
     end
 
     # Remove a tag from the current context block.

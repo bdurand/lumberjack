@@ -9,12 +9,12 @@ module Lumberjack
 
     # @param parent_context [Context] A parent context to inherit tags from.
     def initialize(parent_context = nil)
-      @tags = {}
+      @tags = nil
       @level = nil
       @progname = nil
 
       if parent_context
-        @tags.merge!(parent_context.tags)
+        @tags = parent_context.tags.dup if parent_context.tags
         self.level = parent_context.level
         self.progname = parent_context.progname
       end
@@ -56,7 +56,7 @@ module Lumberjack
 
     # Remove all tags from the context.
     def clear_tags
-      @tags.clear
+      @tags&.clear
     end
 
     # Remove tags from the context.
@@ -71,7 +71,7 @@ module Lumberjack
     #
     # @return [void]
     def reset
-      @tags.clear
+      @tags&.clear
       @level = nil
       @progname = nil
     end
@@ -79,6 +79,7 @@ module Lumberjack
     private
 
     def tag_context
+      @tags ||= {}
       TagContext.new(@tags)
     end
   end
