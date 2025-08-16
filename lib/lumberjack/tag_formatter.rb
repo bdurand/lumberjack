@@ -5,13 +5,15 @@ module Lumberjack
   # name specific formatters. Formatters can be either `Lumberjack::Formatter`
   # objects or any object that responds to `call`.
   #
-  # tag_formatter = Lumberjack::TagFormatter.new.default(Lumberjack::Formatter.new)
-  # tag_formatter.add(["password", "email"]) { |value| "***" }
-  # tag_formatter.add("finished_at", Lumberjack::Formatter::DateTimeFormatter.new("%Y-%m-%dT%H:%m:%S%z"))
+  # @example
+  #   tag_formatter = Lumberjack::TagFormatter.new.default(Lumberjack::Formatter.new)
+  #   tag_formatter.add(["password", "email"]) { |value| "***" }
+  #   tag_formatter.add("finished_at", Lumberjack::Formatter::DateTimeFormatter.new("%Y-%m-%dT%H:%m:%S%z"))
+  #   tag_formatter.add(Enumerable) { |value| value.join(", ") }
   class TagFormatter
     def initialize
-      @formatters = {}
-      @class_formatters = {}
+      @tag_formatters = {}
+      @class_formatter = Formatter.empty
       @default_formatter = nil
     end
 
@@ -36,14 +38,8 @@ module Lumberjack
       self
     end
 
-    # Add a formatter for specific tag names or object classes. This can either be a Lumberjack::Formatter
-    # or an object that responds to `call` or a block. The formatter will be applied if it matches either a tag name
-    # or if the tag value is an instance of a registered class. Tag name formatters will take precedence
-    # over class formatters. The default formatter will not be applied to a value if a tag formatter
-    # is applied to it.
-    #
-    # Name formatters can be applied to nested hashes using dot syntax. For example, if you add a formatter
-    # for "foo.bar", it will be applied to the value of the "bar" key in the "foo" tag if that value is a hash.
+    # Add a formatter for specific tag names or object classes. This is a convenience method and will call
+    # either `add_class` or `add_tag_name` as appropriate.
     #
     # Class formatters will be applied recursively to nested hashes and arrays.
     #
@@ -56,19 +52,65 @@ module Lumberjack
     # @example
     #  tag_formatter.add("password", &:redact)
     def add(names_or_classes, formatter = nil, &block)
-      formatter ||= block
-      formatter = dereference_formatter(formatter)
-      if formatter.nil?
-        remove(key)
-      else
-        Array(names_or_classes).each do |key|
-          if key.is_a?(Module)
-            @class_formatters[key] = formatter
-          else
-            @formatters[key.to_s] = formatter
-          end
+      Array(names_or_classes).each do |obj|
+        if obj.is_a?(Module)
+          add_class(obj, formatter, &block)
+        else
+          add_tag(obj, formatter, &block)
         end
       end
+
+      self
+    end
+
+    # Add a formatter for specific object classes. This can either be a Lumberjack::Formatter
+    # or an object that responds to `call` or a block. The formatter will be applied if the tag value
+    # is an instance of a registered class.
+    #
+    # @param classes_or_names [String, Module, Array<String, Module>] The class names or modules
+    #   to apply the formatter to.
+    # @param formatter [Lumberjack::Formatter, #call, nil] The formatter to use.
+    #    If this is nil, then the block will be used as the formatter.
+    # @return [Lumberjack::TagFormatter] self
+    def add_class(classes_or_names, formatter = nil, &block)
+      formatter ||= block
+      formatter = dereference_formatter(formatter)
+
+      Array(classes_or_names).each do |class_or_name|
+        class_name = class_or_name.to_s
+        if formatter.nil?
+          @class_formatter.remove(class_name)
+        else
+          @class_formatter.add(class_name, formatter)
+        end
+      end
+
+      self
+    end
+
+    # Add a formatter for specific tag names. Tag formatters can be applied to nested hashes using dot syntax.
+    # For example, if you add a formatter for "foo.bar", it will be applied to the value of the "bar" key in
+    # the "foo" tag if that value is a hash.
+    #
+    # Tag formatters will take precedence over class formatters.
+    #
+    # @param tag_names [String, Module, Array<String, Module>] The tag names to apply the formatter to.
+    # @param formatter [Lumberjack::Formatter, #call, nil] The formatter to use.
+    #    If this is nil, then the block will be used as the formatter.
+    # @return [Lumberjack::TagFormatter] self
+    def add_tag(tag_names, formatter = nil, &block)
+      formatter ||= block
+      formatter = dereference_formatter(formatter)
+
+      Array(tag_names).each do |tag_name|
+        tag_name = tag_name.to_s
+        if formatter.nil?
+          @tag_formatters.delete(tag_name)
+        else
+          @tag_formatters[tag_name] = formatter
+        end
+      end
+
       self
     end
 
@@ -79,9 +121,9 @@ module Lumberjack
     def remove(names_or_classes)
       Array(names_or_classes).each do |key|
         if key.is_a?(Module)
-          @class_formatters.delete(key)
+          @class_formatter.remove(key)
         else
-          @formatters.delete(key.to_s)
+          @tag_formatters.delete(key.to_s)
         end
       end
       self
@@ -92,12 +134,13 @@ module Lumberjack
     # @return [Lumberjack::TagFormatter] self
     def clear
       @default_formatter = nil
-      @formatters.clear
+      @tag_formatters.clear
+      @class_formatter.clear
       self
     end
 
     def empty?
-      @formatters.empty? && @class_formatters.empty? && @default_formatter.nil?
+      @tag_formatters.empty? && @class_formatter.empty? && @default_formatter.nil?
     end
 
     # Format a hash of tags using the formatters
@@ -128,9 +171,9 @@ module Lumberjack
       prefixed_name = prefix ? "#{prefix}#{name}" : name
       using_class_formatter = false
 
-      formatter = @formatters[prefixed_name]
+      formatter = @tag_formatters[prefixed_name]
       if formatter.nil? && (skip_classes.nil? || !skip_classes.include?(value.class))
-        formatter = class_formatter(value.class)
+        formatter = @class_formatter.formatter_for(value.class)
         using_class_formatter = true if formatter
       end
 
@@ -168,14 +211,6 @@ module Lumberjack
       else
         formatter
       end
-    end
-
-    def class_formatter(klass)
-      return nil if @class_formatters.empty?
-
-      formatter = nil
-      klass.ancestors.detect { |ancestor| formatter = @class_formatters[ancestor] }
-      formatter
     end
   end
 end
