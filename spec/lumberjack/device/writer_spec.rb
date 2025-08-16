@@ -8,22 +8,6 @@ RSpec.describe Lumberjack::Device::Writer do
   let(:stream) { StringIO.new }
   let(:entry) { Lumberjack::LogEntry.new(time, Logger::INFO, "test message", "app", 12345, "foo" => "ABCD") }
 
-  it "should buffer output and not write directly to the stream" do
-    device = Lumberjack::Device::Writer.new(stream, template: ":message", buffer_size: 32767)
-    device.write(entry)
-    expect(stream.string).to eq("")
-    device.flush
-    expect(stream.string).to eq("test message#{Lumberjack::LINE_SEPARATOR}")
-  end
-
-  it "should flush the buffer when it gets to the specified size" do
-    device = Lumberjack::Device::Writer.new(stream, buffer_size: 15, template: ":message")
-    device.write(entry)
-    expect(stream.string).to eq("")
-    device.write(entry)
-    expect(stream.string).to eq("test message#{Lumberjack::LINE_SEPARATOR}test message#{Lumberjack::LINE_SEPARATOR}")
-  end
-
   it "should sync the stream and flush it when the device is flushed" do
     # Create an IO like object that require flush to be called
     io = Object.new
@@ -58,24 +42,12 @@ RSpec.describe Lumberjack::Device::Writer do
 
     io.init
 
-    device = Lumberjack::Device::Writer.new(io, template: ":message", buffer_size: 32767)
+    device = Lumberjack::Device::Writer.new(io, template: ":message")
     device.write(entry)
     expect(io.string).to eq("")
     device.flush
     expect(io.string).to eq("test message#{Lumberjack::LINE_SEPARATOR}")
     expect(io.sync).to eq(true)
-  end
-
-  it "should be able to set the buffer size" do
-    device = Lumberjack::Device::Writer.new(stream, buffer_size: 15)
-    expect(device.buffer_size).to eq(15)
-    device.buffer_size = 100
-    expect(device.buffer_size).to eq(100)
-  end
-
-  it "should have a default buffer size of 0" do
-    device = Lumberjack::Device::Writer.new(stream)
-    expect(device.buffer_size).to eq(0)
   end
 
   it "should write entries out to the stream with a default template" do

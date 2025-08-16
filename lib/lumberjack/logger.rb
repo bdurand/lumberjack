@@ -12,22 +12,12 @@ module Lumberjack
   #
   # Log entries are written to a logging Device if their severity meets or exceeds the log level.
   #
-  # Devices may use buffers internally and the log entries are not guaranteed to be written until you call
-  # the +flush+ method. Sometimes this can result in problems when trying to track down extraordinarily
-  # long running sections of code since it is likely that none of the messages logged before the long
-  # running code will appear in the log until the entire process finishes. You can set the +:flush_seconds+
-  # option on the constructor to force the device to be flushed periodically. This will create a new
-  # monitoring thread, but its use is highly recommended.
-  #
   # Each log entry records the log message and severity along with the time it was logged, the
   # program name, process id, and an optional hash of tags. The message will be converted to a string, but
   # otherwise, it is up to the device how these values are recorded. Messages are converted to strings
   # using a Formatter associated with the logger.
   class Logger < ::Logger
     include ContextLogger
-
-    # The time that the device was last flushed.
-    attr_reader :last_flushed_at
 
     # Create a new logger to log to a Device.
     #
@@ -62,12 +52,10 @@ module Lumberjack
     # @param template [String] The template to use for serializing log entries to a string.
     # @param message_formatter [Lumberjack::Formatter] The MessageFormatter to use for formatting log messages.
     # @param tag_formatter [Lumberjack::TagFormatter] The TagFormatter to use for formatting tags.
-    # @param flush_seconds [Numeric] The maximum number of seconds between automatic calls to flush the logs.
     def initialize(logdev, shift_age = 0, shift_size = 1048576,
       level: DEBUG, progname: nil, formatter: nil, datetime_format: nil,
       binmode: false, shift_period_suffix: "%Y%m%d",
-      template: nil, message_formatter: nil, tag_formatter: nil, flush_seconds: nil,
-      **kwargs)
+      template: nil, message_formatter: nil, tag_formatter: nil, **kwargs)
       init_fiber_locals!
 
       # Include standard args that affect devices with the optional kwargs which may
@@ -85,9 +73,6 @@ module Lumberjack
       self.datetime_format = datetime_format if datetime_format
 
       @closed = false # TODO
-
-      @last_flushed_at = Time.now
-      create_flusher_thread(flush_seconds.to_f) if flush_seconds.to_f > 0
     end
 
     # Get the logging device that is used to write log entries.
@@ -147,7 +132,6 @@ module Lumberjack
     # @return [void]
     def flush
       device.flush
-      @last_flushed_at = Time.now
       nil
     end
 
@@ -322,25 +306,6 @@ module Lumberjack
       end
 
       positional_arg_count == 4 && !has_forbidden_args
-    end
-
-    # Create a thread that will periodically call flush.
-    def create_flusher_thread(flush_seconds) # :nodoc:
-      if flush_seconds > 0
-        begin
-          logger = self
-          Thread.new do
-            until closed?
-              begin
-                sleep(flush_seconds)
-                logger.flush if Time.now - logger.last_flushed_at >= flush_seconds
-              rescue => e
-                warn("Error flushing log: #{e.inspect}")
-              end
-            end
-          end
-        end
-      end
     end
   end
 end

@@ -38,54 +38,38 @@ end
 
 require "standard/rake"
 
-def profile_cpu(implementation)
-  require "ruby-prof"
-  require_relative "lib/lumberjack"
-
-  out = StringIO.new
-  logger = (implementation == :logger) ? Logger.new(out) : Lumberjack::Logger.new(out)
-  message = "foobar"
-
-  result = RubyProf.profile do
-    1000.times { logger.info(message) }
-  end
-  printer = RubyProf::FlatPrinter.new(result)
-  printer.print($stdout)
-end
-
-def profile_memory(implementation)
-  require "memory_profiler"
-  require_relative "lib/lumberjack"
-
-  out = StringIO.new
-  logger = (implementation == :logger) ? Logger.new(out) : Lumberjack::Logger.new(out)
-  message = "foobar"
-
-  MemoryProfiler.report do
-    1000.times { logger.info(message) }
-  end.pretty_print
-end
-
 namespace :profile do
-  desc "Profile Lumberjack::Logger CPU usage"
+  desc "Profile logger CPU usage. Set LOGGER=Logger to profile the standard libary logger. Set LOG_LEVEL=warn to profile with a higher log level."
   task :cpu do |t, args|
-    profile_cpu(:lumberjack)
+    require "ruby-prof"
+    require_relative "lib/lumberjack"
+
+    out = StringIO.new
+    logger_class = (ENV["LOGGER"] == "Logger") ? Logger : Lumberjack::Logger
+    log_level = ENV.fetch("LOG_LEVEL", "debug")
+    logger = logger_class.new(out, level: log_level)
+    message = "foobar"
+
+    result = RubyProf.profile do
+      1000.times { logger.info(message) }
+    end
+    printer = RubyProf::FlatPrinter.new(result)
+    printer.print($stdout)
   end
 
-  desc "Profile Lumberjack::Logger memory usage"
+  desc "Profile logger memory usage. Set LOGGER=Logger to profile the standard libary logger. Set LOG_LEVEL=warn to profile with a higher log level."
   task :memory do |t, args|
-    profile_memory(:lumberjack)
-  end
+    require "memory_profiler"
+    require_relative "lib/lumberjack"
 
-  namespace :logger do
-    desc "Profile ::Logger CPU usage"
-    task :cpu do |t, args|
-      profile_cpu(:logger)
-    end
+    out = StringIO.new
+    logger_class = (ENV["LOGGER"] == "Logger") ? Logger : Lumberjack::Logger
+    log_level = ENV.fetch("LOG_LEVEL", "debug")
+    logger = logger_class.new(out, level: log_level)
+    message = "foobar"
 
-    desc "Profile ::Logger memory usage"
-    task :memory do |t, args|
-      profile_memory(:logger)
-    end
+    MemoryProfiler.report do
+      1000.times { logger.info(message) }
+    end.pretty_print
   end
 end

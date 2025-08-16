@@ -1,7 +1,14 @@
 # frozen_string_literal: true
 
+require_relative "fiber_locals"
+require_relative "io_compatibility"
+require_relative "severity"
+
 module Lumberjack
   module ContextLogger
+    # Constant used for setting trace log level.
+    TRACE = Severity::TRACE
+
     class << self
       def included(base)
         base.include(FiberLocals) unless base.include?(FiberLocals)
@@ -218,6 +225,33 @@ module Lumberjack
     # @return [void]
     def debug!
       self.level = Logger::DEBUG
+    end
+
+    # Log a +TRACE+ message. The message can be passed in either the +message+ argument or in a block.
+    # Trace logs are a level lower than debug and are generally used to log code execution paths for
+    # low level debugging.
+    #
+    # @param [Object] message_or_progname_or_tags The message to log or progname
+    #   if the message is passed in a block.
+    # @param [String, Hash] progname_or_tags The name of the program that is logging the message or tags
+    #   if the message is passed in a block.
+    # @return [void]
+    def trace(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
+      call_add_entry(TRACE, message_or_progname_or_tags, progname_or_tags, &block)
+    end
+
+    # Return +true+ if +TRACE+ messages are being logged.
+    #
+    # @return [Boolean]
+    def trace?
+      level <= TRACE
+    end
+
+    # Set the log level to trace.
+    #
+    # @return [void]
+    def trace!
+      self.level = TRACE
     end
 
     # Log a message when the severity is not known. Unknown messages will always appear in the log.

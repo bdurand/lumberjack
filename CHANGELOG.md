@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added IO compatibility methods for logging. Calling `logger.write`, `logger.puts`, `logger.print`, or `logger.printf` will write log messages with a severity level of UNKNOWN.
 - Added `Lumberjack::Device::Test` class for use in testing logging functionality. This device will buffer log entries and has `match?` and `include?` methods that can be used for assertions in tests.
 - Added support for standard library `Logger::Formatter`. This is for compatibility with the standard library `Logger`. If a standard library logger is passed to `Lumberjack::Logger` as the formatter, it will override the template when writing to a stream. Tags are not available in the output when using a standard library formatter.
+- Added `TRACE` logging level for logging at an even lower level than `DEBUG`. `Lumberjack::Logger#trace` can be used to log messages at this level.
 
 ### Changed
 
@@ -33,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed deprecated unit of work id code. These have been replaced with tags.
 - Removed deprecated support for setting global tags with `Lumberjack::Logger#tag`. Now calling `tag` outside of a block or context will be ignored. Use `tag!` to set default tags on a logger.
 - Removed the devices that handled logging to files (`Lumberjack::Device::LogFile`, `Lumberjack::Device::RollingLogFile`, `Lumberjack::Device::DateRollingLogFile`, and `Lumberjack::Device::SizeRollingLogFile`) since file logging is now handled by the standard library `Logger::LogDevice` class.
+- Removed internal buffer from the `Lumberjack::Device::Writer` class. This functionality was more useful in the days of slower I/O operations when logs were written to spinning hard disks. The functionality is no longer as useful and is not worth the overhead. The `Lumberjack::Logger.last_flushed_at` method has also been removed.
 - Removed support for Ruby versions < 2.5.
 
 ## 1.4.0
