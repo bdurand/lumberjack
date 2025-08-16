@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added IO compatibility methods for logging. Calling `logger.write`, `logger.puts`, `logger.print`, or `logger.printf` will write log messages with a severity level of UNKNOWN.
 - Added `Lumberjack::Device::Test` class for use in testing logging functionality. This device will buffer log entries and has `match?` and `include?` methods that can be used for assertions in tests.
 - Added support for standard library `Logger::Formatter`. This is for compatibility with the standard library `Logger`. If a standard library logger is passed to `Lumberjack::Logger` as the formatter, it will override the template when writing to a stream. Tags are not available in the output when using a standard library formatter.
+- Added `TRACE` logging level for logging at an even lower level than `DEBUG`. `Lumberjack::Logger#trace` can be used to log messages at this level.
 
 ### Changed
 
