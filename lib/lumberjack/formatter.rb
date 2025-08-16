@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "bigdecimal"
 module Lumberjack
   # This class controls the conversion of log entry messages into a loggable format. This allows you
   # to log any object you want and have the logging system deal with converting it into a string.
@@ -169,9 +170,14 @@ module Lumberjack
     def format(message)
       # These primitive types are the most common in logs and so are optimized here
       # for the normal case where a custom formatter has not been defined.
-      return message if !@has_string_formatter && message.is_a?(String)
-      return message if !@has_numeric_formatter && (message.is_a?(Integer) || message.is_a?(Float) || (defined?(BigDecimal) && message.is_a?(BigDecimal)))
-      return message if !@has_boolean_formatter && (message == true || message == false)
+      case message
+      when String
+        return message unless @has_string_formatter
+      when Integer, Float, BigDecimal
+        return message unless @has_numeric_formatter
+      when true, false
+        return message unless @has_boolean_formatter
+      end
 
       formatter = formatter_for(message.class)
       if formatter&.respond_to?(:call)
