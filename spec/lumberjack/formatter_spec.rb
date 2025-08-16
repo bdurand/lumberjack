@@ -8,7 +8,10 @@ RSpec.describe Lumberjack::Formatter do
   describe "optimized formatters for primative types" do
     let(:formatter) { Lumberjack::Formatter.empty.add(Object, :inspect) }
 
-    it "should have an optimized set of formatters that return self for primative types" do
+  describe "optimized formatters for primitive types" do
+    let(:formatter) { Lumberjack::Formatter.empty.add(Object, :inspect) }
+
+    it "should have an optimized set of formatters that return self for primitive types" do
       expect(formatter.format("foo")).to eq("foo")
       expect(formatter.format(1)).to eq(1)
       expect(formatter.format(2.1)).to eq(2.1)
