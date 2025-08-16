@@ -27,7 +27,7 @@ module Lumberjack
       # @return [Integer] The severity level.
       def label_to_level(label)
         label = label.to_s.upcase
-        SEVERITY_LABELS.index(label) || ((label == TRACE_LABEL) ? Logger::TRACE : Logger::UNKNOWN)
+        SEVERITY_LABELS.index(label) || ((label == TRACE_LABEL) ? TRACE : Logger::UNKNOWN)
       end
 
       # Coerce a value to a severity level.
