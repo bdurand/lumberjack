@@ -91,7 +91,7 @@ module Lumberjack
     end
 
     def formatter=(value)
-      @formatter = build_entry_formatter(formatter, nil, nil)
+      @formatter = build_entry_formatter(value, nil, nil)
     end
 
     # Get the timestamp format on the device if it has one.

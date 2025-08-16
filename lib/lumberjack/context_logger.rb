@@ -330,6 +330,10 @@ module Lumberjack
     # @return [Object] The result of the block.
     # @yield [Context]
     def context(&block)
+      unless block_given?
+        raise ArgumentError, "A block must be provided to the context method"
+      end
+
       new_context = Context.new(current_context)
       with_fiber_local(:logger_context, new_context) do
         block.call(new_context)
