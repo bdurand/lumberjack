@@ -16,9 +16,16 @@ module Lumberjack
 
     def add_entry(severity, message, progname = nil, tags = nil)
       parent_logger.with_level(level || Logger::DEBUG) do
-        progname ||= self.progname
         tags = merge_tags(tags, local_tags)
-        parent_logger.add_entry(severity, message, progname, tags)
+        progname ||= self.progname
+
+        if parent_logger.is_a?(ContextLogger)
+          parent_logger.add_entry(severity, message, progname, tags)
+        else
+          parent_logger.tag(tags) do
+            parent_logger.add(severity, message, progname)
+          end
+        end
       end
     end
 

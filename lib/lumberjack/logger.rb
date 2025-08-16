@@ -29,8 +29,6 @@ module Lumberjack
     # The time that the device was last flushed.
     attr_reader :last_flushed_at
 
-    attr_accessor :formatter
-
     # Create a new logger to log to a Device.
     #
     # The +device+ argument can be in any one of several formats.
@@ -105,6 +103,10 @@ module Lumberjack
     # @return [void]
     def device=(device)
       @logdev = device.nil? ? nil : open_device(device, {})
+    end
+
+    def formatter=(value)
+      @formatter = build_entry_formatter(formatter, nil, nil)
     end
 
     # Get the timestamp format on the device if it has one.
@@ -243,8 +245,9 @@ module Lumberjack
       true
     end
 
-    def to_s
-      "<Lumberjack::Logger:#{object_id} device: #{device.inspect}>"
+    def inspect
+      formatted_object_id = object_id.to_s(16).rjust(16, "0")
+      "#<Lumberjack::Logger:0x#{formatted_object_id} level:#{Severity.level_to_label(level)} device:#{device.class.name} progname:#{progname.inspect} tags:#{tags.inspect}>"
     end
 
     private

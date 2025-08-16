@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The default log level is now DEBUG instead of INFO.
 - The severity label for log entries with an unknown level is now ANY instead of UNKNOWN.
 - Changing logger level or progname inside a context block will now only be in effect inside the block.
-- `LumberJack::Logger#context` now yields or returns a `Lumberjack::Context` rather than a `Lumberjack::TagContext`.
+- `LumberJack::Logger#context` now yields a `Lumberjack::Context` rather than a `Lumberjack::TagContext`. It must be called with a block and can no longer be used to return the current context.
 - `Lumberjack::Logger#tag` now returns a `Lumberjack::ContextLogger` object when called without a block. This allows for chaining methods on the logger while still having the tags applied.
 - `Lumberjack::Logger#add_entry` does not check the logger level and will add the entry regardless of the severity. This method is an internal API method and is now documented as such.
 - Logging to files will now use the standard library `Logger::LogDevice` class for file output and rolling.

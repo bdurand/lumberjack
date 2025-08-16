@@ -44,6 +44,10 @@ module Lumberjack
       end
     end
 
+    # Set the logger progname for the current context. This is the name of the program that is logging.
+    #
+    # @param value [String, nil]
+    # @return [void]
     def progname=(value)
       value = value&.to_s&.freeze
 
@@ -51,6 +55,9 @@ module Lumberjack
       ctx.progname = value if ctx
     end
 
+    # Get the current progname.
+    #
+    # @return [String, nil]
     def progname
       current_context&.progname || default_context&.progname
     end
@@ -286,19 +293,12 @@ module Lumberjack
     # the block exits.
     #
     # @param [Proc] block The block to execute with the tag context.
-    # @return [TagContext] If no block is passed, then a Lumberjack::TagContext is returned that can be used
-    #   to interact with the tags (add, remove, etc.).
-    # @yield [TagContext] If a block is passed, it will be yielded a TagContext object that can be used to
-    #   add or remove tags within the context.
+    # @return [Object] The result of the block.
+    # @yield [Context]
     def context(&block)
-      current_context = fiber_local_value(:logger_context)
-      if block
-        new_context = Context.new(current_context)
-        with_fiber_local(:logger_context, new_context) do
-          block.call(new_context)
-        end
-      else
-        current_context || Context.new
+      new_context = Context.new(current_context)
+      with_fiber_local(:logger_context, new_context) do
+        block.call(new_context)
       end
     end
 
@@ -428,6 +428,8 @@ module Lumberjack
       end
 
       message = message.call if message.is_a?(Proc)
+      return if (message.nil? || message == "") && (tags.nil? || tags.empty?)
+
       add_entry(severity, message, progname, tags)
     end
 

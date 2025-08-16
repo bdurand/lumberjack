@@ -201,11 +201,6 @@ describe Lumberjack::ContextLogger do
       expect(result).to eq(:foobar)
     end
 
-    it "returns the current context without a block" do
-      context = logger.context
-      expect(context).to be_a(Lumberjack::Context)
-    end
-
     it "yields the context" do
       logger.context do |ctx|
         expect(ctx).to be_a(Lumberjack::Context)
@@ -483,6 +478,24 @@ describe Lumberjack::ContextLogger do
           logger.public_send(severity) { raise NotImplementedError }
           expect(logger.entries).to be_empty
         end
+      end
+
+      it "does not log nil entries even if there are context tags" do
+        logger.tag(foo: "bar") do
+          logger.public_send(severity, nil)
+          logger.public_send(severity, "", {})
+        end
+        expect(logger.entries).to be_empty
+      end
+
+      it "does log nil if there are explicit tags" do
+        logger.public_send(severity, nil, {foo: "bar"})
+        expect(logger.entries).to include({
+          severity: Lumberjack::Severity.coerce(severity),
+          message: nil,
+          progname: nil,
+          tags: {foo: "bar"}
+        })
       end
     end
   end
