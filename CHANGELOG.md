@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Classes can now define their own formatting in logs by implementing the `to_log_format` method. If an object responds to this method, it will be called in lieu of looking up the formatter by class. This allows a pattern of defining log formatting along with the code rather than in a an initializer.
 - Tag formatters can now add class formatters by class name using the `add_class` method. This allows setting a class formatter before the class has been loaded.
 - A tag format can now be passed to the `Lumberjack::Template` class to specify how to format tag name/value pairs. The default is "[%s:%s]".
+- Added `TRACE` logging level for logging at an even lower level than `DEBUG`. `Lumberjack::Logger#trace` can be used to log messages at this level.
 
 ### Changed
 
@@ -36,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed deprecated unit of work id code. These have been replaced with tags.
 - Removed deprecated support for setting global tags with `Lumberjack::Logger#tag`. Now calling `tag` outside of a block or context will be ignored. Use `tag!` to set default tags on a logger.
 - Removed the devices that handled logging to files (`Lumberjack::Device::LogFile`, `Lumberjack::Device::RollingLogFile`, `Lumberjack::Device::DateRollingLogFile`, and `Lumberjack::Device::SizeRollingLogFile`) since file logging is now handled by the standard library `Logger::LogDevice` class.
+- Removed internal buffer from the `Lumberjack::Device::Writer` class. This functionality was more useful in the days of slower I/O operations when logs were written to spinning hard disks. The functionality is no longer as useful and is not worth the overhead. The `Lumberjack::Logger.last_flushed_at` method has also been removed.
 - Removed support for Ruby versions < 2.5.
 
 ## 1.4.0

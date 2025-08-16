@@ -105,11 +105,6 @@ RSpec.describe Lumberjack::Logger do
       logger = Lumberjack::Logger.new(:null, progname: "app")
       expect(logger.progname).to eq("app")
     end
-
-    it "should create a thread to flush the device" do
-      expect(Thread).to receive(:new)
-      Lumberjack::Logger.new(:null, flush_seconds: 10)
-    end
   end
 
   describe "#set_progname" do
@@ -207,47 +202,22 @@ RSpec.describe Lumberjack::Logger do
     end
   end
 
-  describe "flushing" do
-    it "should autoflush the buffer if it hasn't been flushed in a specified number of seconds" do
+  describe "#close" do
+    it "should close the device" do
       out = StringIO.new
-      logger = Lumberjack::Logger.new(out, flush_seconds: 0.1, level: Logger::INFO, template: ":message", buffer_size: 32767)
-      logger.info("message 1")
-      logger.info("message 2")
-      expect(out.string).to eq("")
-      sleep(0.15)
-      expect(out.string.split(Lumberjack::LINE_SEPARATOR)).to eq(["message 1", "message 2"])
-      logger.info("message 3")
-      expect(out.string).not_to include("message 3")
-      sleep(0.15)
-      expect(out.string.split(Lumberjack::LINE_SEPARATOR)).to eq(["message 1", "message 2", "message 3"])
-    end
-
-    it "should write the log entries to the device on flush and update the last flushed time" do
-      out = StringIO.new
-      logger = Lumberjack::Logger.new(out, level: Logger::INFO, template: ":message", buffer_size: 32767)
-      logger.info("message 1")
-      expect(out.string).to eq("")
-      last_flushed_at = logger.last_flushed_at
-      logger.flush
-      expect(out.string.split(Lumberjack::LINE_SEPARATOR)).to eq(["message 1"])
-      expect(logger.last_flushed_at).to be >= last_flushed_at
-    end
-
-    it "should flush the buffer and close the devices" do
-      out = StringIO.new
-      logger = Lumberjack::Logger.new(out, level: Logger::INFO, template: ":message", buffer_size: 32767)
-      logger.info("message 1")
-      expect(out.string).to eq("")
+      logger = Lumberjack::Logger.new(out, level: Logger::INFO, template: ":message")
+      expect(logger.device).to receive(:flush).at_least(:once)
       expect(logger.closed?).to eq false
       logger.close
-      expect(out.string.split(Lumberjack::LINE_SEPARATOR)).to eq(["message 1"])
       expect(out).to be_closed
       expect(logger.closed?).to eq true
     end
+  end
 
+  describe "#reopen" do
     it "should reopen the devices" do
       out = StringIO.new
-      logger = Lumberjack::Logger.new(out, level: Logger::INFO, template: ":message", buffer_size: 32767)
+      logger = Lumberjack::Logger.new(out, level: Logger::INFO, template: ":message")
       logger.close
       expect(logger.device).to receive(:reopen).and_call_original
       logger.reopen
@@ -257,7 +227,7 @@ RSpec.describe Lumberjack::Logger do
 
   describe "logging methods" do
     let(:out) { StringIO.new }
-    let(:device) { Lumberjack::Device::Writer.new(out, buffer_size: 0, template: "[:time :severity :progname(:pid)] :message :tags") }
+    let(:device) { Lumberjack::Device::Writer.new(out, template: "[:time :severity :progname(:pid)] :message :tags") }
     let(:logger) { Lumberjack::Logger.new(device, level: Logger::INFO, progname: "app") }
     let(:n) { Lumberjack::LINE_SEPARATOR }
 
@@ -431,14 +401,14 @@ RSpec.describe Lumberjack::Logger do
 
     describe "message" do
       it "should apply the default formatter to the message" do
-        logger = Lumberjack::Logger.new(out, buffer_size: 0, template: ":message")
+        logger = Lumberjack::Logger.new(out, template: ":message")
         logger.formatter.add(String) { |msg| msg.upcase }
         logger.info("test")
         expect(out.string.chomp).to eq "TEST"
       end
 
       it "should apply the message formatter instead of the default formatter if it applies" do
-        logger = Lumberjack::Logger.new(out, buffer_size: 0, template: ":message")
+        logger = Lumberjack::Logger.new(out, template: ":message")
         logger.formatter.add(String) { |msg| msg.upcase }
         logger.message_formatter.add(String) { |msg| msg.reverse }
         logger.info("test")
@@ -446,7 +416,7 @@ RSpec.describe Lumberjack::Logger do
       end
 
       it "should copy tags from the message if the formatter returns a Lumberjack::Formatter::TaggedMessage" do
-        logger = Lumberjack::Logger.new(out, buffer_size: 0, template: ":message :tags")
+        logger = Lumberjack::Logger.new(out, template: ":message :tags")
         logger.formatter.add(String) { |msg| Lumberjack::Formatter::TaggedMessage.new(msg.upcase, tag: msg.downcase) }
         logger.info("Test")
         expect(out.string.chomp).to eq "TEST [tag:test]"
@@ -454,7 +424,7 @@ RSpec.describe Lumberjack::Logger do
     end
 
     describe "#tag_globally" do
-      let(:device) { Lumberjack::Device::Writer.new(out, buffer_size: 0, template: ":message - :count - :tags") }
+      let(:device) { Lumberjack::Device::Writer.new(out, template: ":message - :count - :tags") }
 
       it "should be able to add global tags to the logger" do
         logger.tag_globally(count: 1, foo: "bar")
@@ -467,7 +437,7 @@ RSpec.describe Lumberjack::Logger do
     end
 
     describe "#remove_tag" do
-      let(:device) { Lumberjack::Device::Writer.new(out, buffer_size: 0, template: ":message - :count - :tags") }
+      let(:device) { Lumberjack::Device::Writer.new(out, template: ":message - :count - :tags") }
 
       it "should remove context tags in a context block and global tags outside of one" do
         logger.tag!(foo: "bar", wip: "wap")

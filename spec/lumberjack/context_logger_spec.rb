@@ -426,12 +426,12 @@ describe Lumberjack::ContextLogger do
     end
   end
 
-  [:fatal, :error, :warn, :info, :debug, :unknown].each do |severity|
+  [:fatal, :error, :warn, :info, :debug, :unknown, :trace].each do |severity|
     describe "##{severity}" do
       it "logs an entry as #{severity}" do
         logger.public_send(severity, "Message")
         expect(logger.entries.first).to eq({
-          severity: Logger.const_get(severity.to_s.upcase),
+          severity: Lumberjack::Severity.coerce(severity),
           message: "Message",
           progname: nil,
           tags: nil

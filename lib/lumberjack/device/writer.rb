@@ -2,56 +2,10 @@
 
 module Lumberjack
   class Device
-    # This logging device writes log entries as strings to an IO stream. By default, messages will be buffered
-    # and written to the stream in a batch when the buffer is full or when +flush+ is called.
-    #
-    # Subclasses can implement a +before_flush+ method if they have logic to execute before flushing the log.
-    # If it is implemented, it will be called before every flush inside a mutex lock.
+    # This logging device writes log entries as strings to an IO stream. Output is written as a string
+    # formatted by the template passed in.
     class Writer < Device
       EDGE_WHITESPACE_PATTERN = /\A\s|[ \t\f\v][\r\n]*\z/
-
-      # The size of the internal buffer. Defaults to 32K.
-      attr_reader :buffer_size
-
-      # Internal buffer to batch writes to the stream.
-      class Buffer # :nodoc:
-        attr_reader :size
-
-        def initialize
-          @values = []
-          @size = 0
-          @lock = Mutex.new
-        end
-
-        def <<(string)
-          @lock.synchronize do
-            @values << string
-            @size += string.length
-          end
-        end
-
-        def empty?
-          @values.empty?
-        end
-
-        def pop!(&before_flush)
-          return nil if @values.empty?
-
-          popped = nil
-          @lock.synchronize do
-            before_flush&.call
-            popped = @values
-            clear
-          end
-
-          popped
-        end
-
-        def clear
-          @values = []
-          @size = 0
-        end
-      end
 
       # Create a new device to write log entries to a stream. Entries are converted to strings
       # using a Template. The template can be specified using the :template option. This can
@@ -66,16 +20,11 @@ module Lumberjack
       # The default template is "[:time :severity :progname(:pid)] :message"
       # with additional lines formatted as "\n  :message".
       #
-      # The size of the internal buffer in bytes can be set by providing :buffer_size (defaults to 32K).
-      #
       # @param [IO] stream The stream to write log entries to.
       # @param [Hash] options The options for the device.
       def initialize(stream, options = {})
         @stream = stream
         @stream.sync = true if @stream.respond_to?(:sync=)
-
-        @buffer = Buffer.new
-        @buffer_size = options[:buffer_size] || 0
 
         @binmode = options[:binmode]
 
@@ -89,16 +38,6 @@ module Lumberjack
             Template.new(template, additional_lines: options[:additional_lines], time_format: options[:time_format], tag_format: options[:tag_format])
           end
         end
-      end
-
-      # Set the buffer size in bytes. The device will only be physically written to when the buffer size
-      # is exceeded.
-      #
-      # @param [Integer] value The size of the buffer in bytes.
-      # @return [void]
-      def buffer_size=(value)
-        @buffer_size = value
-        flush
       end
 
       # Write an entry to the stream. The entry will be converted into a string using the defined template.
@@ -116,13 +55,7 @@ module Lumberjack
         string = string.strip if string.match?(EDGE_WHITESPACE_PATTERN)
         return if string.length == 0 || string == Lumberjack::LINE_SEPARATOR
 
-        if buffer_size > 1
-          @buffer << string
-          flush if @buffer.size >= buffer_size
-        else
-          before_flush if respond_to?(:before_flush, true)
-          write_to_stream(string)
-        end
+        write_to_stream(string)
       end
 
       # Close the underlying stream.
@@ -137,8 +70,6 @@ module Lumberjack
       #
       # @return [void]
       def flush
-        lines = @buffer.pop! { before_flush if respond_to?(:before_flush, true) }
-        write_to_stream(lines) if lines
         stream.flush if stream.respond_to?(:flush)
       end
 
@@ -176,21 +107,7 @@ module Lumberjack
 
       private
 
-      def write_to_stream(lines)
-        return if lines.empty?
-
-        if lines.is_a?(Array)
-          lines.each do |line|
-            write_line(line)
-          end
-        else
-          write_line(lines)
-        end
-
-        stream.flush if stream.respond_to?(:flush)
-      end
-
-      def write_line(line)
+      def write_to_stream(line)
         out = line.end_with?(Lumberjack::LINE_SEPARATOR) ? line : "#{line}#{Lumberjack::LINE_SEPARATOR}"
         begin
           begin

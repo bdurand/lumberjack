@@ -5,9 +5,6 @@ require "spec_helper"
 RSpec.describe Lumberjack::Formatter do
   let(:formatter) { Lumberjack::Formatter.new }
 
-  describe "optimized formatters for primative types" do
-    let(:formatter) { Lumberjack::Formatter.empty.add(Object, :inspect) }
-
   describe "optimized formatters for primitive types" do
     let(:formatter) { Lumberjack::Formatter.empty.add(Object, :inspect) }
 
