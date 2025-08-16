@@ -5,6 +5,22 @@ require "spec_helper"
 RSpec.describe Lumberjack::Formatter do
   let(:formatter) { Lumberjack::Formatter.new }
 
+  describe "optimized formatters for primative types" do
+    let(:formatter) { Lumberjack::Formatter.empty.add(Object, :inspect) }
+
+    it "should have an optimized set of formatters that return self for primative types" do
+      expect(formatter.format("foo")).to eq("foo")
+      expect(formatter.format(1)).to eq(1)
+      expect(formatter.format(2.1)).to eq(2.1)
+      expect(formatter.format(true)).to eq(true)
+      expect(formatter.format(false)).to eq(false)
+      expect(formatter.format(:foo)).to eq(":foo")
+    end
+
+    it "should be able to override the optimized formatters" do
+    end
+  end
+
   it "should have a default set of formatters" do
     expect(formatter.format("abc")).to eq("abc")
     expect(formatter.format([1, 2, 3])).to eq([1, 2, 3])
@@ -43,18 +59,29 @@ RSpec.describe Lumberjack::Formatter do
   end
 
   it "should be able to remove a formatter for a class" do
-    formatter.remove(String)
-    expect(formatter.format("abc")).to eq("\"abc\"")
+    formatter = Lumberjack::Formatter.empty
+    formatter.add(Symbol, :inspect)
+    expect(formatter.format(:foo)).to eq(":foo")
+    formatter.remove(Symbol)
+    expect(formatter.format(:foo)).to eq(:foo)
   end
 
   it "should be able to remove a formatter for a class" do
-    formatter.remove("String")
-    expect(formatter.format("abc")).to eq("\"abc\"")
+    formatter = Lumberjack::Formatter.empty
+    formatter.add([Symbol, Array], :inspect)
+    expect(formatter.format(:foo)).to eq(":foo")
+    formatter.remove([Symbol, Array])
+    expect(formatter.format(:foo)).to eq(:foo)
   end
 
   it "should be able to remove multiple formatters" do
-    formatter.remove([String, Numeric])
-    expect(formatter.format("abc")).to eq("\"abc\"")
+    formatter = Lumberjack::Formatter.empty
+    formatter.add([Symbol, Array], :inspect)
+    expect(formatter.format(:foo)).to eq(":foo")
+    expect(formatter.format([1, 2, 3])).to eq([1, 2, 3].inspect)
+    formatter.remove([Symbol, Array])
+    expect(formatter.format(:foo)).to eq(:foo)
+    expect(formatter.format([1, 2, 3])).to eq([1, 2, 3])
   end
 
   it "should be able to chain add and remove calls" do

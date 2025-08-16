@@ -40,8 +40,11 @@ module Lumberjack
 
     def initialize
       @class_formatters = {}
+      @has_string_formatter = false
+      @has_numeric_formatter = false
+      @has_boolean_formatter = false
+
       structured_formatter = StructuredFormatter.new(self)
-      add([String, Numeric, TrueClass, FalseClass], :object)
       add(Object, InspectFormatter.new)
       add(Exception, :exception)
       add(Enumerable, structured_formatter)
@@ -116,6 +119,9 @@ module Lumberjack
           @class_formatters[k.to_s] = formatter
         end
       end
+
+      set_optimized_flags!
+
       self
     end
 
@@ -133,6 +139,9 @@ module Lumberjack
       Array(klass).each do |k|
         @class_formatters.delete(k.to_s)
       end
+
+      set_optimized_flags!
+
       self
     end
 
@@ -141,6 +150,8 @@ module Lumberjack
     # @return [self] Returns itself so that clear statements can be chained together.
     def clear
       @class_formatters.clear
+      set_optimized_flags!
+
       self
     end
 
@@ -156,6 +167,12 @@ module Lumberjack
     # @param message [Object] The message object to format.
     # @return [Object] The formatted object.
     def format(message)
+      # These primitive types are the most common in logs and so are optimized here
+      # for the normal case where a custom formatter has not been defined.
+      return message if !@has_string_formatter && message.is_a?(String)
+      return message if !@has_numeric_formatter && (message.is_a?(Integer) || message.is_a?(Float) || (defined?(BigDecimal) && message.is_a?(BigDecimal)))
+      return message if !@has_boolean_formatter && (message == true || message == false)
+
       formatter = formatter_for(message.class)
       if formatter&.respond_to?(:call)
         formatter.call(message)
@@ -186,6 +203,12 @@ module Lumberjack
       formatter = nil
       klass.ancestors.detect { |ancestor| formatter = @class_formatters[ancestor.name] }
       formatter
+    end
+
+    def set_optimized_flags!
+      @has_string_formatter = @class_formatters.include?("String")
+      @has_numeric_formatter = @class_formatters.slice("Integer", "Float", "BigDecimal", "Numeric").any?
+      @has_boolean_formatter = @class_formatters.include?("TrueClass") || @class_formatters.include?("FalseClass")
     end
   end
 end

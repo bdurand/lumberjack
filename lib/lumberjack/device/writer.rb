@@ -8,8 +8,7 @@ module Lumberjack
     # Subclasses can implement a +before_flush+ method if they have logic to execute before flushing the log.
     # If it is implemented, it will be called before every flush inside a mutex lock.
     class Writer < Device
-      DEFAULT_FIRST_LINE_TEMPLATE = "[:time :severity :progname(:pid)] :message :tags"
-      DEFAULT_ADDITIONAL_LINES_TEMPLATE = "#{Lumberjack::LINE_SEPARATOR}> :message"
+      EDGE_WHITESPACE_PATTERN = /\A\s|[ \t\f\v][\r\n]*\z/
 
       # The size of the internal buffer. Defaults to 32K.
       attr_reader :buffer_size
@@ -83,12 +82,11 @@ module Lumberjack
         if options[:standard_logger_formatter]
           @template = Template::StandardFormatterTemplate.new(options[:standard_logger_formatter])
         else
-          template = options[:template] || DEFAULT_FIRST_LINE_TEMPLATE
-          if template.respond_to?(:call)
-            @template = template
+          template = options[:template]
+          @template = if template.respond_to?(:call)
+            template
           else
-            additional_lines = options[:additional_lines] || DEFAULT_ADDITIONAL_LINES_TEMPLATE
-            @template = Template.new(template, additional_lines: additional_lines, time_format: options[:time_format])
+            Template.new(template, additional_lines: options[:additional_lines], time_format: options[:time_format], tag_format: options[:tag_format])
           end
         end
       end
@@ -115,8 +113,8 @@ module Lumberjack
           string = string.encode("UTF-8", invalid: :replace, undef: :replace)
         end
 
-        string = string.strip
-        return if string.length == 0
+        string = string.strip if string.match?(EDGE_WHITESPACE_PATTERN)
+        return if string.length == 0 || string == Lumberjack::LINE_SEPARATOR
 
         if buffer_size > 1
           @buffer << string
@@ -193,7 +191,7 @@ module Lumberjack
       end
 
       def write_line(line)
-        out = "#{line}#{Lumberjack::LINE_SEPARATOR}"
+        out = line.end_with?(Lumberjack::LINE_SEPARATOR) ? line : "#{line}#{Lumberjack::LINE_SEPARATOR}"
         begin
           begin
             stream.write(out)
