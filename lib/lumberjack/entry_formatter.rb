@@ -79,7 +79,11 @@ module Lumberjack
     # @return [Array<Object, Hash>] The formatted message and tags.
     def format(message, tags)
       message = message.call if message.is_a?(Proc)
-      message = message_formatter.format(message) if message_formatter
+      if message.respond_to?(:to_log_format, true) && message.method(:to_log_format).parameters.empty?
+        message = message.to_log_format
+      elsif message_formatter
+        message = message_formatter.format(message)
+      end
 
       message_tags = nil
       if message.is_a?(Formatter::TaggedMessage)
