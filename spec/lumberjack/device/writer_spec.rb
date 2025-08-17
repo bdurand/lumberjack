@@ -61,6 +61,11 @@ RSpec.describe Lumberjack::Device::Writer do
       device = Lumberjack::Device::Writer.new(io)
       expect(device.path).to eq("/path/to/logfile.log")
     end
+
+    it "returns nil if the stream does not have a path" do
+      device = Lumberjack::Device::Writer.new(StringIO.new)
+      expect(device.path).to be_nil
+    end
   end
 
   it "should write entries out to the stream with a default template" do

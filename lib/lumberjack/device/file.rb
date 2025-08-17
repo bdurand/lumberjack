@@ -16,5 +16,9 @@ module Lumberjack
 
       super(logdev, options)
     end
+
+    def path
+      stream.filename
+    end
   end
 end
