@@ -16,6 +16,19 @@ RSpec.describe Lumberjack::IOCompatibility do
     ])
   end
 
+  it "writes to the log using the default severity" do
+    logger.default_severity = Logger::INFO
+    logger.write("Hello, world")
+    expect(logger.entries).to eq([
+      {
+        message: "Hello, world",
+        severity: Logger::INFO,
+        progname: nil,
+        tags: nil
+      }
+    ])
+  end
+
   it "can puts to the log" do
     logger.puts("Hello", "world")
     expect(logger.entries).to eq([
