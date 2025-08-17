@@ -271,7 +271,22 @@ module Lumberjack
     # @param [Object] msg The message to log.
     # @return [void]
     def <<(msg)
-      add_entry(Logger::UNKNOWN, msg)
+      add_entry(default_severity, msg)
+    end
+
+    # The default severity for log entries written with the << operator. Defaults to Logger::UNKNOWN.
+    #
+    # @return [Integer] The default severity level.
+    def default_severity
+      @default_severity ||= Logger::UNKNOWN
+    end
+
+    # Set a default severity that is used when adding messages with the << operator.
+    #
+    # @param [Integer, String, Symbol] severity The default severity level.
+    # @return [void]
+    def default_severity=(severity)
+      @default_severity = Severity.coerce(severity)
     end
 
     # Set a hash of tags on logger. If a block is given, the tags will only be set
