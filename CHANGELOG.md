@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Lumberjack::Logger#tag` now returns a `Lumberjack::ContextLogger` object when called without a block. This allows for chaining methods on the logger while still having the tags applied.
 - `Lumberjack::Logger#add_entry` does not check the logger level and will add the entry regardless of the severity. This method is an internal API method and is now documented as such.
 - Logging to files will now use the standard library `Logger::LogDevice` class for file output and rolling.
-- The `Lumberjack::Device::Writer` class now takes an `autoflush` option to enable synchronous I/O. Previously, this was the default.
+- The `Lumberjack::Device::Writer` class now takes an `autoflush` option. Setting it to false will disable synchronous I/O.
 
 ### Removed
 

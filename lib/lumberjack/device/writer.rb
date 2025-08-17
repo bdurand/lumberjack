@@ -24,7 +24,7 @@ module Lumberjack
       # @param [Hash] options The options for the device.
       def initialize(stream, options = {})
         @stream = stream
-        @stream.sync = true if @stream.respond_to?(:sync=) && options[:autoflush]
+        @stream.sync = true if @stream.respond_to?(:sync=) && options[:autoflush] != false
 
         @binmode = options[:binmode]
 

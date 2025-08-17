@@ -41,16 +41,16 @@ RSpec.describe Lumberjack::Device::Writer do
     expect(io.string).to eq("test message#{Lumberjack::LINE_SEPARATOR}")
   end
 
-  it "does not set io sync by default" do
+  it "sets io sync by default" do
     io = io_class.new
     Lumberjack::Device::Writer.new(io)
-    expect(io.sync).to be false
+    expect(io.sync).to be true
   end
 
-  it "sets io sync if autoflush is true" do
+  it "disables io sync if autoflush is false" do
     io = io_class.new
-    Lumberjack::Device::Writer.new(io, autoflush: true)
-    expect(io.sync).to be true
+    Lumberjack::Device::Writer.new(io, autoflush: false)
+    expect(io.sync).to be false
   end
 
   it "should write entries out to the stream with a default template" do
