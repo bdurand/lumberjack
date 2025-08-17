@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-describe Lumberjack::Utils do
+RSpec.describe Lumberjack::Utils do
   describe ".hostname" do
     it "returns the hostname in UTF-8 encoding" do
       expect(Lumberjack::Utils.hostname).to be_a(String)

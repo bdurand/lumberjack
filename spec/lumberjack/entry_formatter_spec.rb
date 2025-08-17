@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-describe Lumberjack::EntryFormatter do
+RSpec.describe Lumberjack::EntryFormatter do
   describe "building formatters" do
     it "starts with a default message formatter and no tag formatter" do
       entry_formatter = Lumberjack::EntryFormatter.new

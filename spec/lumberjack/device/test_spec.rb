@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-describe Lumberjack::Device::Test do
+RSpec.describe Lumberjack::Device::Test do
   let(:device) { Lumberjack::Device::Test.new }
 
   describe "#max_entries" do

@@ -8,46 +8,49 @@ RSpec.describe Lumberjack::Device::Writer do
   let(:stream) { StringIO.new }
   let(:entry) { Lumberjack::LogEntry.new(time, Logger::INFO, "test message", "app", 12345, "foo" => "ABCD") }
 
+  let(:io_class) do
+    Class.new do
+      attr_reader :string
+      attr_accessor :sync
+
+      def initialize
+        @string = +""
+        @buffer = +""
+        @sync = false
+      end
+
+      def write(string)
+        @buffer << string
+      end
+
+      def flush
+        @string << @buffer
+        @buffer = +""
+      end
+    end
+  end
+
   it "should sync the stream and flush it when the device is flushed" do
     # Create an IO like object that require flush to be called
-    io = Object.new
-    # rubocop:disable Style/TrivialAccessors
-    def io.init
-      @string = +""
-      @buffer = +""
-      @sync = false
-    end
-
-    def io.write(string)
-      @buffer << string
-    end
-
-    def io.flush
-      @string << @buffer
-      @buffer = +""
-    end
-
-    def io.string
-      @string
-    end
-
-    def io.sync=(val)
-      @sync = val
-    end
-
-    def io.sync
-      @sync
-    end
-    # rubocop:enable Style/TrivialAccessors
-
-    io.init
+    io = io_class.new
 
     device = Lumberjack::Device::Writer.new(io, template: ":message")
     device.write(entry)
     expect(io.string).to eq("")
     device.flush
     expect(io.string).to eq("test message#{Lumberjack::LINE_SEPARATOR}")
-    expect(io.sync).to eq(true)
+  end
+
+  it "does not set io sync by default" do
+    io = io_class.new
+    Lumberjack::Device::Writer.new(io)
+    expect(io.sync).to be false
+  end
+
+  it "sets io sync if autoflush is true" do
+    io = io_class.new
+    Lumberjack::Device::Writer.new(io, autoflush: true)
+    expect(io.sync).to be true
   end
 
   it "should write entries out to the stream with a default template" do
