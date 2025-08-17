@@ -71,5 +71,10 @@ module Lumberjack
     def closed?
       false
     end
+
+    # @api private
+    def tty?
+      false
+    end
   end
 end

@@ -89,4 +89,8 @@ RSpec.describe Lumberjack::IOCompatibility do
   it "responds to closed?" do
     expect(logger.closed?).to be false
   end
+
+  it "is not a tty?" do
+    expect(logger.tty?).to be false
+  end
 end
