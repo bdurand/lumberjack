@@ -37,6 +37,17 @@ RSpec.describe Lumberjack::Context do
     end
   end
 
+  describe "#default_severity" do
+    it "should have a default severity" do
+      context = Lumberjack::Context.new
+      expect(context.default_severity).to be_nil
+      context.default_severity = :info
+      expect(context.default_severity).to eq(Logger::INFO)
+      context.default_severity = nil
+      expect(context.default_severity).to be_nil
+    end
+  end
+
   describe "#tag" do
     it "should have tags" do
       context = Lumberjack::Context.new

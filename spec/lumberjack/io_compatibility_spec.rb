@@ -3,7 +3,8 @@
 require "spec_helper"
 
 RSpec.describe Lumberjack::IOCompatibility do
-  let(:logger) { TestContextLogger.new }
+  let(:logger) { TestContextLogger.new(Lumberjack::Context.new) }
+
   it "can write to the log" do
     logger.write("Hello, world")
     expect(logger.entries).to eq([
@@ -87,5 +88,9 @@ RSpec.describe Lumberjack::IOCompatibility do
 
   it "responds to closed?" do
     expect(logger.closed?).to be false
+  end
+
+  it "is not a tty?" do
+    expect(logger.tty?).to be false
   end
 end

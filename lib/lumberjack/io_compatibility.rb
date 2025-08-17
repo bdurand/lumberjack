@@ -71,5 +71,18 @@ module Lumberjack
     def closed?
       false
     end
+
+    # Needed for IO compatibility.
+    #
+    # @api private
+    def tty?
+      false
+    end
+
+    # Needed for IO compatibility.
+    #
+    # @api private
+    def set_encoding(_encoding)
+    end
   end
 end
