@@ -119,4 +119,46 @@ RSpec.describe Lumberjack::LogEntry do
       expect(entry.nested_tags).to eq({})
     end
   end
+
+  describe "==" do
+    let(:entry) { Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo" => "bar") }
+    it "is equal to a log entry with the same attributes" do
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname, entry.pid, entry.tags)
+      expect(entry).to eq(other_entry)
+    end
+
+    it "is not equal to another class type" do
+      expect(entry).not_to eq("not a log entry")
+    end
+
+    it "is not equal to an entry with a different time" do
+      other_entry = Lumberjack::LogEntry.new(entry.time + 1, entry.severity, entry.message, entry.progname, entry.pid, entry.tags)
+      expect(entry).not_to eq(other_entry)
+    end
+
+    it "is not equal to an entry with a different severity" do
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity + 1, entry.message, entry.progname, entry.pid, entry.tags)
+      expect(entry).not_to eq(other_entry)
+    end
+
+    it "is not equal to an entry with a different message" do
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message + " altered", entry.progname, entry.pid, entry.tags)
+      expect(entry).not_to eq(other_entry)
+    end
+
+    it "is not equal to an entry with a different progname" do
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname + " altered", entry.pid, entry.tags)
+      expect(entry).not_to eq(other_entry)
+    end
+
+    it "is not equal to an entry with a different pid" do
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname, entry.pid + 1, entry.tags)
+      expect(entry).not_to eq(other_entry)
+    end
+
+    it "is not equal to an entry with different tags" do
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname, entry.pid, {"foo" => "baz"})
+      expect(entry).not_to eq(other_entry)
+    end
+  end
 end

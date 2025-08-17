@@ -140,4 +140,10 @@ RSpec.describe Lumberjack::Utils do
       expect { Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :bar } }.not_to output.to_stderr
     end
   end
+
+  describe ".current_line" do
+    it "returns the line of code that calls the method" do
+      expect(Lumberjack::Utils.current_line).to start_with("#{__FILE__}:#{__LINE__}")
+    end
+  end
 end

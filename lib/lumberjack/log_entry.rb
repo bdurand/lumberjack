@@ -37,6 +37,18 @@ module Lumberjack
       to_s
     end
 
+    def ==(other)
+      return true if equal?(other)
+      return false unless other.is_a?(LogEntry)
+
+      time == other.time &&
+        severity == other.severity &&
+        message == other.message &&
+        progname == other.progname &&
+        pid == other.pid &&
+        tags == other.tags
+    end
+
     # Return the tag with the specified name.
     #
     # @param name [String, Symbol] The tag name.

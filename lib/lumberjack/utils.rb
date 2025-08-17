@@ -53,6 +53,17 @@ module Lumberjack
         @hostname
       end
 
+      # Get the current line of code that calls this method. This can be useful for debugging
+      # purposes in your logs to record the line of code that is calling the logger.
+      #
+      # @return [String] The line of code that called this method.
+      #
+      # @example
+      #   logger.info("Something happened", code: Lumberjack::Utils.current_line)
+      def current_line
+        caller_locations(1, 1)[0].to_s
+      end
+
       # Set the hostname to a specific value. If this is not specified, it will use the system hostname.
       #
       # @param hostname [String]
