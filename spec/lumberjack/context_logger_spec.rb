@@ -371,7 +371,7 @@ RSpec.describe Lumberjack::ContextLogger do
         expect(logger_with_default_context.tags["foo"]).to eq("two")
 
         logger_with_default_context.tag(foo: "three") do
-          expect(logger.tag_value("foo")).to eq("three")
+          expect(logger_with_default_context.tag_value("foo")).to eq("three")
         end
       end
     end
@@ -382,9 +382,9 @@ RSpec.describe Lumberjack::ContextLogger do
       Lumberjack.tag(foo: "bar") do
         logger_with_default_context.tag!(baz: "qux")
         logger_with_default_context.tag(bip: "bap") do
-          expect(logger.tag_value("foo")).to eq("bar")
-          expect(logger.tag_value("baz")).to eq("qux")
-          expect(logger.tag_value("bip")).to eq("bap")
+          expect(logger_with_default_context.tag_value("foo")).to eq("bar")
+          expect(logger_with_default_context.tag_value("baz")).to eq("qux")
+          expect(logger_with_default_context.tag_value("bip")).to eq("bap")
         end
       end
     end
