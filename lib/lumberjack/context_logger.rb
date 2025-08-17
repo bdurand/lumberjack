@@ -81,6 +81,23 @@ module Lumberjack
       end
     end
 
+    # Get the default severity used when writing log messages directly to a stream.
+    #
+    # @return [Integer] The default severity level.
+    def default_severity
+      current_context&.default_severity || default_context&.default_severity || Logger::UNKNOWN
+    end
+
+    # Set the default severity used when writing log messages directly to a stream
+    # for the current context.
+    #
+    # @param [Integer, Symbol, String] value The default severity level.
+    # @return [void]
+    def default_severity=(value)
+      ctx = current_context
+      ctx.default_severity = value if ctx
+    end
+
     # ::Logger compatible method to add a log entry.
     #
     # @param [Integer, Symbol, String] severity The severity of the message.
@@ -272,21 +289,6 @@ module Lumberjack
     # @return [void]
     def <<(msg)
       add_entry(default_severity, msg)
-    end
-
-    # The default severity for log entries written with the << operator. Defaults to Logger::UNKNOWN.
-    #
-    # @return [Integer] The default severity level.
-    def default_severity
-      @default_severity ||= Logger::UNKNOWN
-    end
-
-    # Set a default severity that is used when adding messages with the << operator.
-    #
-    # @param [Integer, String, Symbol] severity The default severity level.
-    # @return [void]
-    def default_severity=(severity)
-      @default_severity = Severity.coerce(severity)
     end
 
     # Set a hash of tags on logger. If a block is given, the tags will only be set
