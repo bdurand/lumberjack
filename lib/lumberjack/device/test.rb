@@ -14,12 +14,17 @@ module Lumberjack
     class Test < Device
       attr_accessor :max_entries
 
+      # Options passed to the constructor. These don't serve any purpose but can be used
+      # in tests to verify that options are passed through correctly when creating devices.
+      attr_reader :options
+
       # @param options [Hash] The options for the test device.
       # @option max_entries [Integer] The maximum number of entries to capture. Defaults to 1000.
       def initialize(options = {})
         @buffer = []
         @max_entries = options[:max_entries] || 1000
         @lock = Mutex.new
+        @options = options.dup
       end
 
       def write(entry)

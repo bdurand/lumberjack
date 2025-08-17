@@ -161,6 +161,17 @@ RSpec.describe Lumberjack::ContextLogger do
         tags: nil
       })
     end
+
+    it "will use the default severity to log the message" do
+      logger.default_severity = Logger::INFO
+      logger << "Test message"
+      expect(logger.entries.last).to eq({
+        severity: Logger::INFO,
+        message: "Test message",
+        progname: nil,
+        tags: nil
+      })
+    end
   end
 
   describe "#context" do

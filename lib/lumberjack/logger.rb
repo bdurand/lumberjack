@@ -256,7 +256,7 @@ module Lumberjack
       if device.nil? || device == :null
         Device::Null.new
       elsif device == :test
-        Device::Test.new
+        Device::Test.new(options)
       elsif device.is_a?(Device)
         device
       elsif device.respond_to?(:write) && !device.respond_to?(:path)

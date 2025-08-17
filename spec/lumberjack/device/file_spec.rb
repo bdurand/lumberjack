@@ -16,4 +16,15 @@ RSpec.describe Lumberjack::Device::File do
     expect(Logger::LogDevice).to receive(:new).with(out, shift_age: 10).and_call_original
     Lumberjack::Device::File.new(out, template: ":severity :message", shift_age: 10)
   end
+
+  it "exposes the file path for the underlying stream" do
+    file = Tempfile.new("lumberjack_test")
+    file.close
+    begin
+      device = Lumberjack::Device::File.new(file)
+      expect(device.path).to eq(file.path)
+    ensure
+      file.unlink
+    end
+  end
 end

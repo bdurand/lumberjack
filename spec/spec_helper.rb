@@ -5,6 +5,7 @@ require "logger"
 require "stringio"
 require "fileutils"
 require "timecop"
+require "tempfile"
 
 begin
   require "simplecov"
@@ -38,7 +39,7 @@ RSpec.configure do |config|
 end
 
 def tmp_dir
-  File.expand_path("../tmp", __FILE__)
+  File.join(Dir.tmpdir, "lumberjack_test")
 end
 
 def create_tmp_dir

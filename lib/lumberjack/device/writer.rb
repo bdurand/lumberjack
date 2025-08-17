@@ -94,7 +94,14 @@ module Lumberjack
       #
       # @return [IO] The underlying stream.
       def dev
-        @stream
+        stream
+      end
+
+      # Get the file path for the underlying stream.
+      #
+      # @return [String, nil] The file path for the underlying stream, or nil if not available.
+      def path
+        stream.path if stream.respond_to?(:path)
       end
 
       protected
