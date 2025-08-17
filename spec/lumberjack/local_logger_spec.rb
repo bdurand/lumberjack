@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-describe Lumberjack::LocalLogger do
+RSpec.describe Lumberjack::LocalLogger do
   let(:logger) { TestContextLogger.new(Lumberjack::Context.new) }
 
   it "logs to the parent logger" do

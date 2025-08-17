@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-describe Lumberjack::IOCompatibility do
+RSpec.describe Lumberjack::IOCompatibility do
   let(:logger) { TestContextLogger.new }
   it "can write to the log" do
     logger.write("Hello, world")

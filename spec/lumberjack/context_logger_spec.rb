@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-describe Lumberjack::ContextLogger do
+RSpec.describe Lumberjack::ContextLogger do
   let(:logger) { TestContextLogger.new }
   let(:logger_with_default_context) { TestContextLogger.new(default_context) }
   let(:default_context) { Lumberjack::Context.new }

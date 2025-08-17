@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-describe Lumberjack::Device::File do
+RSpec.describe Lumberjack::Device::File do
   let(:out) { StringIO.new }
 
   it "wraps a ::Logger::LogDevice" do

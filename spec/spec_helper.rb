@@ -21,7 +21,10 @@ require_relative "../lib/lumberjack"
 
 RSpec.configure do |config|
   config.warnings = true
+  config.disable_monkey_patching!
+  config.default_formatter = "doc" if config.files_to_run.one?
   config.order = :random
+  Kernel.srand config.seed
 
   config.around(:each, :suppress_warnings) do |example|
     save_val = ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"]

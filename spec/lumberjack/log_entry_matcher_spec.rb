@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-describe Lumberjack::LogEntryMatcher do
+RSpec.describe Lumberjack::LogEntryMatcher do
   describe "#match?" do
     let(:entry) { Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test message", "AppName", Process.pid, tags) }
     let(:tags) { {} }
