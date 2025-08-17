@@ -12,6 +12,7 @@ RSpec.describe Lumberjack::Device::Writer do
     Class.new do
       attr_reader :string
       attr_accessor :sync
+      attr_accessor :path
 
       def initialize
         @string = +""
@@ -51,6 +52,15 @@ RSpec.describe Lumberjack::Device::Writer do
     io = io_class.new
     Lumberjack::Device::Writer.new(io, autoflush: false)
     expect(io.sync).to be false
+  end
+
+  describe "#path" do
+    it "can get the file path for the underlying stream" do
+      io = io_class.new
+      io.path = "/path/to/logfile.log"
+      device = Lumberjack::Device::Writer.new(io)
+      expect(device.path).to eq("/path/to/logfile.log")
+    end
   end
 
   it "should write entries out to the stream with a default template" do
