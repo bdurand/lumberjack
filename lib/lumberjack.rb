@@ -42,23 +42,20 @@ module Lumberjack
     # Otherwise, it will return the current context. If one doesn't exist, it will return a new one
     # but that context will not be in any scope.
     #
-    # @return [Lumberjack::Context] The current context if called without a block.
+    # @return [Object] The result
+    #   of the block
     def context(&block)
-      current_context = @global_contexts[Fiber.current.object_id]
-      if block
-        use_context(Context.new(current_context), &block)
-      else
-        current_context || Context.new
-      end
+      use_context(Context.new(current_context), &block)
     end
 
     # Set the context to use within a block.
     #
     # @param [Lumberjack::Context] context The context to use within the block.
     # @return [Object] The result of the block.
+    # @api private
     def use_context(context, &block)
       fiber_id = Fiber.current.object_id
-      current_context = @global_contexts[fiber_id]
+      ctx = @global_contexts[fiber_id]
       begin
         @global_contexts_mutex.synchronize do
           @global_contexts[fiber_id] = (context || Context.new)
@@ -66,10 +63,10 @@ module Lumberjack
         yield
       ensure
         @global_contexts_mutex.synchronize do
-          if current_context.nil?
+          if ctx.nil?
             @global_contexts.delete(fiber_id)
           else
-            @global_contexts[fiber_id] = current_context
+            @global_contexts[fiber_id] = ctx
           end
         end
       end
@@ -82,21 +79,33 @@ module Lumberjack
       !!@global_contexts[Fiber.current.object_id]
     end
 
-    # Return the tags from the current context or nil if there are no tags.
+    # Return tags that will be applied to all Lumberjack loggers.
     #
     # @return [Hash, nil]
     def context_tags
-      context = @global_contexts[Fiber.current.object_id]
-      context&.tags
+      current_context&.tags
     end
 
     # Set tags on the current context
     #
-    # @param [Hash] tags The tags to set.
+    # @param tags [Hash] The tags to set.
+    # @param block [Proc] optional context block in which to set the tags.
     # @return [void]
-    def tag(tags)
-      context = @global_contexts[Fiber.current.object_id]
-      context&.tag(tags)
+    def tag(tags, &block)
+      if block
+        context do
+          current_context.tag(tags)
+          block.call
+        end
+      else
+        current_context&.tag(tags)
+      end
+    end
+
+    private
+
+    def current_context
+      @global_contexts[Fiber.current.object_id]
     end
   end
 end
