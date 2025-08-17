@@ -33,7 +33,7 @@ module Lumberjack
         @lock.synchronize do
           @buffer << entry
 
-          while @buffer.size > @max_entries
+          while @buffer.size > max_entries
             @buffer.shift
           end
         end
