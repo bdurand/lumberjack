@@ -6,12 +6,14 @@ module Lumberjack
     attr_reader :tags
     attr_reader :level
     attr_reader :progname
+    attr_reader :default_severity
 
     # @param parent_context [Context] A parent context to inherit tags from.
     def initialize(parent_context = nil)
       @tags = nil
       @level = nil
       @progname = nil
+      @default_severity = nil
 
       if parent_context
         @tags = parent_context.tags.dup if parent_context.tags
@@ -21,7 +23,7 @@ module Lumberjack
     end
 
     def level=(value)
-      value = Lumberjack::Severity.coerce(value) unless value.nil?
+      value = Severity.coerce(value) unless value.nil?
       @level = value
     end
 
@@ -65,6 +67,11 @@ module Lumberjack
     # @return [void]
     def delete(*keys)
       tag_context.delete(*keys)
+    end
+
+    def default_severity=(value)
+      value = Severity.coerce(value) unless value.nil?
+      @default_severity = value
     end
 
     # Clear all the context data.

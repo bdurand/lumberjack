@@ -163,7 +163,8 @@ RSpec.describe Lumberjack::ContextLogger do
     end
 
     it "will use the default severity to log the message" do
-      logger.default_severity = Logger::INFO
+      logger = TestContextLogger.new(Lumberjack::Context.new)
+      logger.default_severity = :info
       logger << "Test message"
       expect(logger.entries.last).to eq({
         severity: Logger::INFO,
