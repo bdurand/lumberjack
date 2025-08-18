@@ -87,7 +87,7 @@ module Lumberjack
 
     def attributes_helper
       @attributes ||= {}
-      TagContext.new(@attributes)
+      AttributesHelper.new(@attributes)
     end
   end
 end

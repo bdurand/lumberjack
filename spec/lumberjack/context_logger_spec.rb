@@ -60,7 +60,7 @@ RSpec.describe Lumberjack::ContextLogger do
         expect(logger.level).to be_nil
       end
 
-      fiber_2 = Fiber.new do
+      Fiber.new do
         logger.with_level(Logger::WARN) do
           expect(logger.level).to eq(Logger::WARN)
           fiber_1.resume
@@ -106,7 +106,7 @@ RSpec.describe Lumberjack::ContextLogger do
         expect(logger.progname).to be_nil
       end
 
-      fiber_2 = Fiber.new do
+      Fiber.new do
         logger.with_progname("AnotherProgname") do
           expect(logger.progname).to eq("AnotherProgname")
           fiber_1.resume

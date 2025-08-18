@@ -54,14 +54,14 @@ module Lumberjack
     # @param name [String, Symbol] The attribute name.
     # @return [Object, nil] The attribute value or nil if the attribute does not exist.
     def [](name)
-      TagContext.new(attributes)[name]
+      AttributesHelper.new(attributes)[name]
     end
 
     # Alias method for #[] to provide backward compatibility with version 1.x API. This
     # method will eventually be removed.
     #
     # @return [Hash]
-    # @api deprecated
+    # @deprecated Use {#[]} instead.
     def tag(name)
       self[name]
     end
@@ -82,7 +82,7 @@ module Lumberjack
     # This method will eventually be removed.
     #
     # @return [Hash]
-    # @api deprecated
+    # @deprecated Use {#nested_attributes} instead.
     def nested_tags
       nested_attributes
     end

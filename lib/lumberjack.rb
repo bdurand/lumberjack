@@ -9,6 +9,8 @@ require "pathname"
 module Lumberjack
   LINE_SEPARATOR = ((RbConfig::CONFIG["host_os"] =~ /mswin/i) ? "\r\n" : "\n")
 
+  require_relative "lumberjack/attribute_formatter"
+  require_relative "lumberjack/attributes_helper"
   require_relative "lumberjack/context"
   require_relative "lumberjack/context_logger"
   require_relative "lumberjack/fiber_locals"
@@ -22,11 +24,13 @@ module Lumberjack
   require_relative "lumberjack/logger"
   require_relative "lumberjack/rack"
   require_relative "lumberjack/severity"
-  require_relative "lumberjack/tags"
-  require_relative "lumberjack/tag_context"
-  require_relative "lumberjack/tag_formatter"
   require_relative "lumberjack/template"
   require_relative "lumberjack/utils"
+
+  # Deprecated
+  require_relative "lumberjack/tag_context"
+  require_relative "lumberjack/tag_formatter"
+  require_relative "lumberjack/tags"
 
   @global_contexts = {}
   @global_contexts_mutex = Mutex.new
@@ -90,7 +94,7 @@ module Lumberjack
     # This method will eventually be removed.
     #
     # @return [Hash, nil]
-    # @api deprecated
+    # @deprecated Use {#context_attributes}
     def context_tags
       context_attributes
     end

@@ -51,7 +51,7 @@ module Lumberjack
     # @param shift_period_suffix [String] The suffix to use for the shifted log file names.
     # @param template [String] The template to use for serializing log entries to a string.
     # @param message_formatter [Lumberjack::Formatter] The MessageFormatter to use for formatting log messages.
-    # @param attribute_formatter [Lumberjack::TagFormatter] The TagFormatter to use for formatting attributes.
+    # @param attribute_formatter [Lumberjack::AttributeFormatter] The AttributeFormatter to use for formatting attributes.
     def initialize(logdev, shift_age = 0, shift_size = 1048576,
       level: DEBUG, progname: nil, formatter: nil, datetime_format: nil,
       binmode: false, shift_period_suffix: "%Y%m%d",
@@ -64,7 +64,7 @@ module Lumberjack
       device_options[:template] = template unless template.nil?
       device_options[:standard_logger_formatter] = formatter if standard_logger_formatter?(formatter)
 
-      # @api deprecated
+      # @deprecated Use {#attribute_formatter} instead.
       attribute_formatter ||= device_options.delete(:tag_formatter)
 
       @logdev = open_device(logdev, device_options)
@@ -178,13 +178,19 @@ module Lumberjack
 
     # Use tag! instead
     #
-    # @api deprecated
-    alias_method :tag_globally, :tag!
+    # @return [void]
+    # @deprecated Use {#tag!} instead.
+    def tag_globally(tags)
+      tag!(tags)
+    end
 
     # Use context? instead
     #
-    # @api deprecated
-    alias_method :in_tag_context?, :context?
+    # @return [Boolean]
+    # @deprecated Use {#context?} instead.
+    def in_tag_context?
+      context?
+    end
 
     # Remove a tag from the current context block. If this is called inside a context block,
     # the attributes will only be removed for the duration of that block. Otherwise they will be removed
@@ -192,10 +198,10 @@ module Lumberjack
     #
     # @param [Array<String, Symbol>] tag_names The attributes to remove.
     # @return [void]
-    # @api deprecated Use untag or untag! instead.
+    # @deprecated Use untag or untag! instead.
     def remove_tag(*tag_names)
       attributes = current_context&.attributes
-      TagContext.new(attributes).delete(*tag_names) if attributes
+      AttributesHelper.new(attributes).delete(*tag_names) if attributes
     end
 
     # Add an entry to the log.

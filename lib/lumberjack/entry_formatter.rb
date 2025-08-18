@@ -67,7 +67,7 @@ module Lumberjack
     #     add("status") { |obj| "Status: #{obj}" } # Adds to the attribute formatter
     #   end
     def attributes(&block)
-      @attribute_formatter ||= Lumberjack::TagFormatter.new
+      @attribute_formatter ||= Lumberjack::AttributeFormatter.new
       attribute_formatter.instance_exec(&block) if block
       self
     end
@@ -93,7 +93,7 @@ module Lumberjack
       message_attributes = Utils.flatten_attributes(message_attributes) if message_attributes
 
       attributes = merge_attributes(attributes, message_attributes) if message_attributes
-      attributes = Tags.expand_runtime_values(attributes)
+      attributes = AttributesHelper.expand_runtime_values(attributes)
       attributes = attribute_formatter.format(attributes) if attributes && attribute_formatter
 
       [message, attributes]

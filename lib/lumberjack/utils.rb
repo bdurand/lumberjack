@@ -128,7 +128,7 @@ module Lumberjack
       # be removed
       #
       # @return [Hash]
-      # @api deprecated
+      # @deprecated Use {#flatten_attributes} instead.
       def flatten_tags(tag_hash)
         flatten_attributes(tag_hash)
       end
@@ -152,7 +152,7 @@ module Lumberjack
       # be removed
       #
       # @return [Hash]
-      # @api deprecated
+      # @deprecated Use {#expand_attributes} instead.
       def expand_tags(tags)
         expand_attributes(tags)
       end

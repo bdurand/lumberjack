@@ -367,7 +367,7 @@ module Lumberjack
     # @return [void]
     def untag(*attribute_names)
       attributes = local_context&.attributes
-      TagContext.new(attributes).delete(*attribute_names) if attributes
+      AttributesHelper.new(attributes).delete(*attribute_names) if attributes
       nil
     end
 
@@ -377,7 +377,7 @@ module Lumberjack
     # @return [void]
     def untag!(*attribute_names)
       attributes = default_context&.attributes
-      TagContext.new(attributes).delete(*attribute_names) if attributes
+      AttributesHelper.new(attributes).delete(*attribute_names) if attributes
       nil
     end
 
@@ -393,7 +393,7 @@ module Lumberjack
     # method will eventually be removed.
     #
     # @return [Hash]
-    # @api deprecated
+    # @deprecated Use {#attributes} instead
     def tags
       attributes
     end
@@ -404,14 +404,14 @@ module Lumberjack
     # @return [Object, nil] The value of the attribute or nil if the attribute does not exist.
     def attribute_value(name)
       name = name.join(".") if name.is_a?(Array)
-      TagContext.new(attributes)[name]
+      AttributesHelper.new(attributes)[name]
     end
 
     # Alias method for #attribute_value to provide backward compatibility with version 1.x API. This
     # method will eventually be removed.
     #
     # @return [Hash]
-    # @api deprecated
+    # @deprecated Use {#attribute_value} instead
     def tag_value(name)
       attribute_value(name)
     end
