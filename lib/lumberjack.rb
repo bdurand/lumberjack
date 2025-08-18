@@ -86,28 +86,29 @@ module Lumberjack
       current_context&.attributes
     end
 
+    # Alias for context_attributes to provide API compatibility with version 1.x.
+    # This method will eventually be removed.
+    #
+    # @return [Hash, nil]
+    # @api deprecated
     def context_tags
       context_attributes
     end
 
-    # Set attributes on the current context
+    # Tag all loggers with attributes on the current context
     #
     # @param attributes [Hash] The attributes to set.
     # @param block [Proc] optional context block in which to set the attributes.
     # @return [void]
-    def assign_attributes(attributes, &block)
+    def tag(attributes, &block)
       if block
         context do
-          current_context.tag(attributes)
+          current_context.assign_attributes(attributes)
           block.call
         end
       else
-        current_context&.tag(attributes)
+        current_context&.assign_attributes(attributes)
       end
-    end
-
-    def tag(tags, &block)
-      assign_attributes(tags, &block)
     end
 
     private

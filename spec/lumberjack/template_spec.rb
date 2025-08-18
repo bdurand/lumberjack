@@ -66,8 +66,8 @@ RSpec.describe Lumberjack::Template do
       expect(template.call(entry)).to eq("here - test - 1 - [tag:a]#{Lumberjack::LINE_SEPARATOR}")
     end
 
-    it "can customize the tag format" do
-      template = Lumberjack::Template.new(":message - :foo - :attributes", tag_format: "(%s=%s)")
+    it "can customize the attribute format" do
+      template = Lumberjack::Template.new(":message - :foo - :attributes", attribute_format: "(%s=%s)")
       entry = Lumberjack::LogEntry.new(time, Logger::INFO, "here", "app", 12345, "foo" => "bar", "tag" => "a")
       expect(template.call(entry)).to eq("here - bar - (tag=a)#{Lumberjack::LINE_SEPARATOR}")
     end

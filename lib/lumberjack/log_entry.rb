@@ -49,14 +49,19 @@ module Lumberjack
         attributes == other.attributes
     end
 
-    # Return the tag with the specified name.
+    # Return the attribute with the specified name.
     #
-    # @param name [String, Symbol] The tag name.
-    # @return [Object, nil] The tag value or nil if the tag does not exist.
+    # @param name [String, Symbol] The attribute name.
+    # @return [Object, nil] The attribute value or nil if the attribute does not exist.
     def [](name)
       TagContext.new(attributes)[name]
     end
 
+    # Alias method for #[] to provide backward compatibility with version 1.x API. This
+    # method will eventually be removed.
+    #
+    # @return [Hash]
+    # @api deprecated
     def tag(name)
       self[name]
     end
@@ -73,6 +78,11 @@ module Lumberjack
       Utils.expand_attributes(attributes)
     end
 
+    # Alias for nested_attributes to provide API compatibility with version 1.x.
+    # This method will eventually be removed.
+    #
+    # @return [Hash]
+    # @api deprecated
     def nested_tags
       nested_attributes
     end

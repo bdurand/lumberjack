@@ -20,7 +20,7 @@ RSpec.describe Lumberjack::TagContext do
   describe "#tag" do
     it "should have attributes" do
       expect(tag_context.to_h).to eq({})
-      tag_context.tag(foo: "bar", baz: "boo")
+      tag_context.update(foo: "bar", baz: "boo")
       expect(tag_context.to_h).to eq({"foo" => "bar", "baz" => "boo"})
       tag_context[:stuff] = "nonsense"
       expect(tag_context.to_h).to eq({"foo" => "bar", "baz" => "boo", "stuff" => "nonsense"})
@@ -28,10 +28,10 @@ RSpec.describe Lumberjack::TagContext do
     end
 
     it "should flatten attributes" do
-      tag_context.tag(foo: {bar: "baz", far: "qux"})
+      tag_context.update(foo: {bar: "baz", far: "qux"})
       expect(tag_context.to_h).to eq({"foo.bar" => "baz", "foo.far" => "qux"})
 
-      tag_context.tag("foo.bip" => "bop", "foo.far" => "foe") do
+      tag_context.update("foo.bip" => "bop", "foo.far" => "foe") do
         expect(tag_context.to_h).to eq({"foo.bar" => "baz", "foo.bip" => "bop", "foo.far" => "foe"})
       end
     end
@@ -50,12 +50,12 @@ RSpec.describe Lumberjack::TagContext do
     end
 
     it "returns a hash with subattributes" do
-      tag_context.tag(foo: {bar: "baz", far: "qux"})
+      tag_context.update(foo: {bar: "baz", far: "qux"})
       expect(tag_context[:foo]).to eq({"bar" => "baz", "far" => "qux"})
     end
 
     it "returns has deeply nested attributes" do
-      tag_context.tag(a: {b: {c: {d: 4, e: 5}, f: 6}, g: 7})
+      tag_context.update(a: {b: {c: {d: 4, e: 5}, f: 6}, g: 7})
       expect(tag_context[:a]).to eq({"b.c.d" => 4, "b.c.e" => 5, "b.f" => 6, "g" => 7})
       expect(tag_context["a.b"]).to eq({"c.d" => 4, "c.e" => 5, "f" => 6})
     end
@@ -72,7 +72,7 @@ RSpec.describe Lumberjack::TagContext do
     end
 
     it "removes subattributes" do
-      tag_context.tag(foo: {bar: "baz", far: "qux"})
+      tag_context.update(foo: {bar: "baz", far: "qux"})
       expect(tag_context.to_h).to eq({"foo.bar" => "baz", "foo.far" => "qux"})
       tag_context.delete(:foo)
       expect(tag_context.to_h).to eq({})

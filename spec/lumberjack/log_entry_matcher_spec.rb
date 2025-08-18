@@ -79,43 +79,43 @@ RSpec.describe Lumberjack::LogEntryMatcher do
     end
 
     describe "attributes filter" do
-      it "matches if the tag is equal" do
+      it "matches if the attribute is equal" do
         attributes["key"] = "value"
         matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: "value"})
         expect(matcher.match?(entry)).to be true
       end
 
-      it "does not match if the tag is not equal" do
+      it "does not match if the attribute is not equal" do
         attributes["key"] = "value"
         matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: "different"})
         expect(matcher.match?(entry)).to be false
       end
 
-      it "matches if the tag matches a pattern" do
+      it "matches if the attribute matches a pattern" do
         attributes["key"] = "value"
         matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: /val/})
         expect(matcher.match?(entry)).to be true
       end
 
-      it "does not match if the tag does not match the pattern" do
+      it "does not match if the attribute does not match the pattern" do
         attributes["key"] = "value"
         matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: /different/})
         expect(matcher.match?(entry)).to be false
       end
 
-      it "matches if the tag matches the class" do
+      it "matches if the attribute matches the class" do
         attributes["key"] = 14
         matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: Integer})
         expect(matcher.match?(entry)).to be true
       end
 
-      it "does not match if the tag does not match the class" do
+      it "does not match if the attribute does not match the class" do
         attributes["key"] = 14
         matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: String})
         expect(matcher.match?(entry)).to be false
       end
 
-      it "does not match if the tag does not exist" do
+      it "does not match if the attribute does not exist" do
         attributes["key"] = "value"
         matcher = Lumberjack::LogEntryMatcher.new(attributes: {other_key: "nonexistent"})
         expect(matcher.match?(entry)).to be false
@@ -135,19 +135,19 @@ RSpec.describe Lumberjack::LogEntryMatcher do
         expect(matcher.match?(entry)).to be false
       end
 
-      it "matches a nil only if the tag does not exist" do
+      it "matches a nil only if the attribute does not exist" do
         attributes["key"] = "value"
         expect(Lumberjack::LogEntryMatcher.new(attributes: {key: nil}).match?(entry)).to be false
         expect(Lumberjack::LogEntryMatcher.new(attributes: {other_key: nil}).match?(entry)).to be true
       end
 
-      it "matches an empty array only if the tag does not exist" do
+      it "matches an empty array only if the attribute does not exist" do
         attributes["key"] = "value"
         expect(Lumberjack::LogEntryMatcher.new(attributes: {key: []}).match?(entry)).to be false
         expect(Lumberjack::LogEntryMatcher.new(attributes: {other_key: []}).match?(entry)).to be true
       end
 
-      it "matches dot notation on tag filters" do
+      it "matches dot notation on attribute filters" do
         attributes["foo.bar.baz"] = "boo"
         expect(Lumberjack::LogEntryMatcher.new(attributes: {"foo.bar" => {"baz" => "boo"}}).match?(entry)).to be true
         expect(Lumberjack::LogEntryMatcher.new(attributes: {"foo.bar" => {"baz" => "bip"}}).match?(entry)).to be false
@@ -155,7 +155,7 @@ RSpec.describe Lumberjack::LogEntryMatcher do
         expect(Lumberjack::LogEntryMatcher.new(attributes: {"foo.bar" => String}).match?(entry)).to be false
       end
 
-      it "matches nested tag filters" do
+      it "matches nested attribute filters" do
         attributes["foo.bar.baz"] = "boo"
         attributes["foo.bar.bip"] = "bop"
         expect(Lumberjack::LogEntryMatcher.new(attributes: {foo: {bar: {baz: "boo"}}}).match?(entry)).to be true

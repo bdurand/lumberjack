@@ -291,7 +291,7 @@ module Lumberjack
       add_entry(default_severity, msg)
     end
 
-    # Set a hash of attributes on logger. If a block is given, the attributes will only be set
+    # Tag the logger with a set of attributes. If a block is given, the attributes will only be set
     # for the duration of the block. Otherwise the attributes will be applied on the current
     # logger context for the duration of the current context. If there is no current context,
     # then a new logger object will be returned with those attributes set on it.
@@ -301,45 +301,45 @@ module Lumberjack
     #   Otherwise it returns a Lumberjack::ContextLogger with the attributes set.
     #
     # @example
-    #   # Only applies the tag inside the block
+    #   # Only applies the attributes inside the block
     #   logger.tag(foo: "bar") do
     #     logger.info("message")
     #   end
     #
     # @example
-    #   # Only applies the tag inside the context block
+    #   # Only applies the attributes inside the context block
     #   logger.context do
     #     logger.tag(foo: "bar")
     #     logger.info("message")
     #   end
     #
     # @example
-    #   # Returns a new logger with the tag set on it
+    #   # Returns a new logger with the attributes set on it
     #   logger.tag(foo: "bar").info("message")
     def tag(attributes, &block)
       if block
         context do |ctx|
-          ctx.tag(attributes)
+          ctx.assign_attributes(attributes)
           block.call(ctx)
         end
       else
-        local_context&.tag(attributes)
+        local_context&.assign_attributes(attributes)
         self
       end
     end
 
-    # Add persistent attributes to the logger. These attributes will be included on every log entry and are
-    # not tied to a context block. If the logger does not support global attributes, then these will be
-    # ignored.
+    # Tags the logger with a set of persistent attributes. These attributes will be included on every log
+    # entry and are not tied to a context block. If the logger does not have a default context, then
+    # these will be ignored.
     def tag!(attributes)
-      default_context&.tag(attributes)
+      default_context&.assign_attributes(attributes)
       nil
     end
 
     # Set up a context block for the logger. All attributes added within the block will be cleared when
     # the block exits.
     #
-    # @param [Proc] block The block to execute with the tag context.
+    # @param [Proc] block The block to execute with the context.
     # @return [Object] The result of the block.
     # @yield [Context]
     def context(&block)
@@ -361,23 +361,23 @@ module Lumberjack
       logger
     end
 
-    # Remove a tag from the current context block.
+    # Remove attributes from the current context block.
     #
-    # @param [Array<String, Symbol>] tag_names The attributes to remove.
+    # @param [Array<String, Symbol>] attribute_names The attributes to remove.
     # @return [void]
-    def untag(*tag_names)
+    def untag(*attribute_names)
       attributes = local_context&.attributes
-      TagContext.new(attributes).delete(*tag_names) if attributes
+      TagContext.new(attributes).delete(*attribute_names) if attributes
       nil
     end
 
-    # Remove a tag from the default context for the logger.
+    # Remove attributes from the default context for the logger.
     #
-    # @param [Array<String, Symbol>] tag_names The attributes to remove.
+    # @param [Array<String, Symbol>] attribute_names The attributes to remove.
     # @return [void]
-    def untag!(*tag_names)
+    def untag!(*attribute_names)
       attributes = default_context&.attributes
-      TagContext.new(attributes).delete(*tag_names) if attributes
+      TagContext.new(attributes).delete(*attribute_names) if attributes
       nil
     end
 
@@ -389,21 +389,35 @@ module Lumberjack
       merge_all_attributes || {}
     end
 
+    # Alias method for #attributes to provide backward compatibility with version 1.x API. This
+    # method will eventually be removed.
+    #
+    # @return [Hash]
+    # @api deprecated
     def tags
       attributes
     end
 
-    # Get the value of a tag by name from the current tag context.
+    # Get the value of an attribute by name from the current context.
     #
-    # @param [String, Symbol] name The name of the tag to get.
-    # @return [Object, nil] The value of the tag or nil if the tag does not exist.
-    def tag_value(name)
+    # @param [String, Symbol] name The name of the attribute to get.
+    # @return [Object, nil] The value of the attribute or nil if the attribute does not exist.
+    def attribute_value(name)
       name = name.join(".") if name.is_a?(Array)
       TagContext.new(attributes)[name]
     end
 
+    # Alias method for #attribute_value to provide backward compatibility with version 1.x API. This
+    # method will eventually be removed.
+    #
+    # @return [Hash]
+    # @api deprecated
+    def tag_value(name)
+      attribute_value(name)
+    end
+
     # Remove all attributes on the current logger and logging context within a block.
-    # You can still set new block scoped attributes within theuntagged block and provide
+    # You can still set new block scoped attributes within the untagged block and provide
     # attributes on individual log methods.
     #
     # @return [void]

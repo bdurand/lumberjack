@@ -48,11 +48,11 @@ RSpec.describe Lumberjack::Context do
     end
   end
 
-  describe "#tag" do
+  describe "#assign_attributes" do
     it "should have attributes" do
       context = Lumberjack::Context.new
       expect(context.attributes).to be_nil
-      context.tag(foo: "bar", baz: "boo")
+      context.assign_attributes(foo: "bar", baz: "boo")
       expect(context.attributes).to eq({"foo" => "bar", "baz" => "boo"})
       context[:stuff] = "nonsense"
       expect(context.attributes).to eq({"foo" => "bar", "baz" => "boo", "stuff" => "nonsense"})
@@ -61,26 +61,26 @@ RSpec.describe Lumberjack::Context do
 
     it "should inherit attributes from a parent context" do
       parent = Lumberjack::Context.new
-      parent.tag(foo: "bar", baz: "boo")
+      parent.assign_attributes(foo: "bar", baz: "boo")
       context = Lumberjack::Context.new(parent)
-      context.tag(foo: "other", stuff: "nonsense")
+      context.assign_attributes(foo: "other", stuff: "nonsense")
       expect(context.attributes).to eq({"foo" => "other", "baz" => "boo", "stuff" => "nonsense"})
       expect(parent.attributes).to eq({"foo" => "bar", "baz" => "boo"})
     end
 
     it "should flatten attributes" do
       context = Lumberjack::Context.new
-      context.tag(foo: {bar: "baz", far: "qux"})
+      context.assign_attributes(foo: {bar: "baz", far: "qux"})
       expect(context.attributes).to eq({"foo.bar" => "baz", "foo.far" => "qux"})
 
-      context.tag("foo.bip" => "bop", "foo.far" => "foe") do
+      context.assign_attributes("foo.bip" => "bop", "foo.far" => "foe") do
         expect(context.attributes).to eq({"foo.bar" => "baz", "foo.bip" => "bop", "foo.far" => "foe"})
       end
     end
   end
 
   describe "#[]" do
-    it "sets and gets a tag value" do
+    it "sets and gets an attribute value" do
       context = Lumberjack::Context.new
       context[:foo] = "bar"
       expect(context[:foo]).to eq("bar")
@@ -109,7 +109,7 @@ RSpec.describe Lumberjack::Context do
   describe "#reset" do
     it "clears all attributes and context data" do
       context = Lumberjack::Context.new
-      context.tag(foo: "bar", baz: "boo")
+      context.assign_attributes(foo: "bar", baz: "boo")
       context.level = :info
       context.progname = "test"
       context.reset

@@ -36,17 +36,17 @@ module Lumberjack
 
       filter.all? do |name, value_filter|
         name = name.to_s
-        tag_values = attributes[name]
-        if tag_values.is_a?(Hash)
+        attribute_values = attributes[name]
+        if attribute_values.is_a?(Hash)
           if value_filter.is_a?(Hash)
-            match_attributes?(tag_values, value_filter)
+            match_attributes?(attribute_values, value_filter)
           else
-            match_filter?(tag_values, value_filter)
+            match_filter?(attribute_values, value_filter)
           end
         elsif value_filter.nil? || (value_filter.is_a?(Enumerable) && value_filter.empty?)
-          tag_values.nil? || (tag_values.is_a?(Array) && tag_values.empty?)
+          attribute_values.nil? || (attribute_values.is_a?(Array) && attribute_values.empty?)
         elsif attributes.include?(name)
-          match_filter?(tag_values, value_filter)
+          match_filter?(attribute_values, value_filter)
         else
           false
         end

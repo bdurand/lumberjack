@@ -9,8 +9,8 @@ module Lumberjack
     # like the request id, host, etc.
     class Context
       # @param [Object] app The rack application.
-      # @param [Hash] env_attributes A hash of attributes to set from the request environment. If a tag value is
-      #   a Proc, it will be called with the request `env` as an argument to allow dynamic tag values
+      # @param [Hash] env_attributes A hash of attributes to set from the request environment. If an attribute value is
+      #   a Proc, it will be called with the request `env` as an argument to allow dynamic attribute values
       #   based on request data.
       def initialize(app, env_attributes = nil)
         @app = app
@@ -30,7 +30,7 @@ module Lumberjack
         attributes = @env_attributes.transform_values do |value|
           value.is_a?(Proc) ? value.call(env) : value
         end
-        Lumberjack.assign_attributes(attributes)
+        Lumberjack.tag(attributes)
       end
     end
   end

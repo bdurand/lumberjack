@@ -27,10 +27,6 @@ module Lumberjack
         @attributes = attributes || {}
       end
 
-      def tags
-        attributes
-      end
-
       def to_s
         inspect
       end

@@ -111,9 +111,9 @@ module Lumberjack
         str.dup.force_encoding("ASCII-8BIT").encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
       end
 
-      # Flatten a tag hash to a single level hash with dot notation for nested keys.
+      # Flatten an attribute hash to a single level hash with dot notation for nested keys.
       #
-      # @param tag_hash [Hash] The hash to flatten.
+      # @param attr_hash [Hash] The hash to flatten.
       # @return [Hash<String, Object>] The flattened hash.
       # @example
       #   expand_attributes(user: {id: 123, name: "Alice"}, action: "login")})
@@ -124,6 +124,11 @@ module Lumberjack
         flatten_hash_recursive(attr_hash)
       end
 
+      # Alias to flatten_attributes for compatibility with the 1.x API. This method will eventually
+      # be removed
+      #
+      # @return [Hash]
+      # @api deprecated
       def flatten_tags(tag_hash)
         flatten_attributes(tag_hash)
       end
@@ -143,6 +148,11 @@ module Lumberjack
         expand_dot_notation_hash(attributes)
       end
 
+      # Alias to expand_attributes for compatibility with the 1.x API. This method will eventually
+      # be removed
+      #
+      # @return [Hash]
+      # @api deprecated
       def expand_tags(tags)
         expand_attributes(tags)
       end

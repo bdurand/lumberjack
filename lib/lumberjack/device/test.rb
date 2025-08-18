@@ -69,7 +69,7 @@ module Lumberjack
       # to perform a partial or pattern match. You can also supply any matcher value available
       # in your test library (i.e. in rspec you could use `anything` or `instance_of(Error)`, etc.).
       #
-      # For attributes, you can specify a hash of tag names to values to match. You can use
+      # For attributes, you can specify a hash of attribute names to values to match. You can use
       # regular expression or matchers as the values here as well. attributes can also be nested to match
       # nested attributes.
       #
@@ -82,8 +82,8 @@ module Lumberjack
       # @param options [Hash] The options to match against the log entries.
       # @option options [String, Regexp] :message The message to match against the log entries.
       # @option options [String, Symbol, Integer] :severity The log level to match against the log entries.
-      # @option options [Hash] :attributes A hash of tag names to values to match against the log entries. The attributes
-      #   will match nested attributes using dot notation (e.g. `foo.bar` will match a tag with the structure
+      # @option options [Hash] :attributes A hash of attribute names to values to match against the log entries. The attributes
+      #   will match nested attributes using dot notation (e.g. `foo.bar` will match an attribute with the structure
       #   `{foo: {bar: "value"}}`).
       # @option options [String, Regexp] :progname The program name to match against the log entries.
       # @return [Boolean] True if any entries match the specified filters, false otherwise.
@@ -96,7 +96,7 @@ module Lumberjack
       #
       # @param message [String, Regexp, nil] The message to match against the log entries.
       # @param severity [String, Symbol, Integer, nil] The log level to match against the log entries.
-      # @param attributes [Hash, nil] A hash of tag names to values to match against the log entries.
+      # @param attributes [Hash, nil] A hash of attribute names to values to match against the log entries.
       # @param progname [String, nil] The program name to match against the log entries.
       # @return [Lumberjack::LogEntry, nil] The log entry that most closely matches the filters, or nil if no entry meets minimum criteria.
       def match(message: nil, severity: nil, attributes: nil, progname: nil)

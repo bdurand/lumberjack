@@ -49,8 +49,8 @@ module Lumberjack
 
     # Set a context attribute.
     #
-    # @param key [String, Symbol] The tag key.
-    # @param value [Object] The tag value.
+    # @param key [String, Symbol] The attribute name.
+    # @param value [Object] The attribute value.
     # @return [void]
     def []=(key, value)
       attributes_helper[key] = value
@@ -81,14 +81,6 @@ module Lumberjack
       @attributes&.clear
       @level = nil
       @progname = nil
-    end
-
-    def tags
-      @attributes
-    end
-
-    def tag(tags)
-      assign_attributes(tags)
     end
 
     private

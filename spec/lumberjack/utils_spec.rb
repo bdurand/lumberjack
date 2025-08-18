@@ -50,18 +50,18 @@ RSpec.describe Lumberjack::Utils do
   end
 
   describe ".flatten_attributes" do
-    it "flattens a nested tag hash" do
-      tag_hash = {"user" => {"id" => 123, "name" => "Alice"}, "action" => "login"}
-      expect(Lumberjack::Utils.flatten_attributes(tag_hash)).to eq(
+    it "flattens a nested attribute hash" do
+      attribute_hash = {"user" => {"id" => 123, "name" => "Alice"}, "action" => "login"}
+      expect(Lumberjack::Utils.flatten_attributes(attribute_hash)).to eq(
         "user.id" => 123,
         "user.name" => "Alice",
         "action" => "login"
       )
     end
 
-    it "flattens a deeply nested tag hash" do
-      tag_hash = {"a" => {"b" => {"c" => 3, "d" => 4}}, "e" => 5}
-      expect(Lumberjack::Utils.flatten_attributes(tag_hash)).to eq(
+    it "flattens a deeply nested attribute hash" do
+      attribute_hash = {"a" => {"b" => {"c" => 3, "d" => 4}}, "e" => 5}
+      expect(Lumberjack::Utils.flatten_attributes(attribute_hash)).to eq(
         "a.b.c" => 3,
         "a.b.d" => 4,
         "e" => 5
@@ -73,8 +73,8 @@ RSpec.describe Lumberjack::Utils do
     end
 
     it "handles mixing dot notation with nested attributes with dot notation attributes first" do
-      tag_hash = {"user.id" => 123, user: {"name" => "Alice"}, "user.action": "login"} # rubocop:disable Style/HashSyntax
-      expect(Lumberjack::Utils.flatten_attributes(tag_hash)).to eq(
+      attribute_hash = {"user.id" => 123, user: {"name" => "Alice"}, "user.action": "login"} # rubocop:disable Style/HashSyntax
+      expect(Lumberjack::Utils.flatten_attributes(attribute_hash)).to eq(
         "user.id" => 123,
         "user.name" => "Alice",
         "user.action" => "login"
@@ -82,8 +82,8 @@ RSpec.describe Lumberjack::Utils do
     end
 
     it "handles mixing dot notation with structured attributes first" do
-      tag_hash = {user: {id: 123, name: "Alice"}, "user.action": "login"}
-      expect(Lumberjack::Utils.flatten_attributes(tag_hash)).to eq(
+      attribute_hash = {user: {id: 123, name: "Alice"}, "user.action": "login"}
+      expect(Lumberjack::Utils.flatten_attributes(attribute_hash)).to eq(
         "user.id" => 123,
         "user.name" => "Alice",
         "user.action" => "login"
@@ -93,23 +93,23 @@ RSpec.describe Lumberjack::Utils do
 
   describe ".expand_attributes" do
     it "expands a hash with nested hashes and dot notation keys" do
-      tag_hash = {"user.id" => 123, "user.name" => "Alice", "action" => "login"}
-      expect(Lumberjack::Utils.expand_attributes(tag_hash)).to eq(
+      attribute_hash = {"user.id" => 123, "user.name" => "Alice", "action" => "login"}
+      expect(Lumberjack::Utils.expand_attributes(attribute_hash)).to eq(
         "user" => {"id" => 123, "name" => "Alice"},
         "action" => "login"
       )
     end
 
     it "handles mixed dot notation and nested hashes with dot notation attributes first" do
-      tag_hash = {"user.id" => 123, user: {"name" => "Alice"}, "user.action": "login"} # rubocop:disable Style/HashSyntax
-      expect(Lumberjack::Utils.expand_attributes(tag_hash)).to eq(
+      attribute_hash = {"user.id" => 123, user: {"name" => "Alice"}, "user.action": "login"} # rubocop:disable Style/HashSyntax
+      expect(Lumberjack::Utils.expand_attributes(attribute_hash)).to eq(
         "user" => {"id" => 123, "name" => "Alice", "action" => "login"}
       )
     end
 
     it "handles mix dot notation with structured attributes first" do
-      tag_hash = {user: {id: 123, name: "Alice"}, "user.action": "login"}
-      expect(Lumberjack::Utils.expand_attributes(tag_hash)).to eq(
+      attribute_hash = {user: {id: 123, name: "Alice"}, "user.action": "login"}
+      expect(Lumberjack::Utils.expand_attributes(attribute_hash)).to eq(
         "user" => {"id" => 123, "name" => "Alice", "action" => "login"}
       )
     end

@@ -33,7 +33,7 @@ RSpec.describe Lumberjack do
 
     it "should create a context based on passed in context" do
       context = Lumberjack::Context.new
-      context.tag(foo: "bar")
+      context.assign_attributes(foo: "bar")
       Lumberjack.use_context(context) do
         expect(Lumberjack.context_attributes).to eq("foo" => "bar")
       end

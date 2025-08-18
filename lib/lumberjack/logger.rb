@@ -63,7 +63,10 @@ module Lumberjack
       device_options = kwargs.merge(shift_age: shift_age, shift_size: shift_size, binmode: binmode, shift_period_suffix: shift_period_suffix)
       device_options[:template] = template unless template.nil?
       device_options[:standard_logger_formatter] = formatter if standard_logger_formatter?(formatter)
+
+      # @api deprecated
       attribute_formatter ||= device_options.delete(:tag_formatter)
+
       @logdev = open_device(logdev, device_options)
 
       @context = Context.new
@@ -173,19 +176,23 @@ module Lumberjack
       end
     end
 
-    # @deprecated Use tag! instead
+    # Use tag! instead
+    #
+    # @api deprecated
     alias_method :tag_globally, :tag!
 
-    # @deprecated Use context? instead
+    # Use context? instead
+    #
+    # @api deprecated
     alias_method :in_tag_context?, :context?
 
-    # Remove a tag from the current context block. If this is called inside a tag context,
+    # Remove a tag from the current context block. If this is called inside a context block,
     # the attributes will only be removed for the duration of that block. Otherwise they will be removed
     # from the global attributes.
     #
     # @param [Array<String, Symbol>] tag_names The attributes to remove.
     # @return [void]
-    # @deprecated Use untag or untag! instead.
+    # @api deprecated Use untag or untag! instead.
     def remove_tag(*tag_names)
       attributes = current_context&.attributes
       TagContext.new(attributes).delete(*tag_names) if attributes

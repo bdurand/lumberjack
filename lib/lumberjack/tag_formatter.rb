@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  # Class for formatting attributes. You can register a default formatter and tag
+  # Class for formatting attributes. You can register a default formatter and attribute
   # name specific formatters. Formatters can be either `Lumberjack::Formatter`
   # objects or any object that responds to `call`.
   #
@@ -17,7 +17,7 @@ module Lumberjack
       @default_formatter = nil
     end
 
-    # Add a default formatter applied to all tag values. This can either be a Lumberjack::Formatter
+    # Add a default formatter applied to all attribute values. This can either be a Lumberjack::Formatter
     # or an object that responds to `call` or a block.
     #
     # @param formatter [Lumberjack::Formatter, #call, nil] The formatter to use.
@@ -38,12 +38,12 @@ module Lumberjack
       self
     end
 
-    # Add a formatter for specific tag names or object classes. This is a convenience method and will call
-    # either `add_class` or `add_tag_name` as appropriate.
+    # Add a formatter for specific attribute names or object classes. This is a convenience method and will call
+    # either `add_class` or `add_attribute` as appropriate.
     #
     # Class formatters will be applied recursively to nested hashes and arrays.
     #
-    # @param names_or_classes [String, Module, Array<String, Module>] The tag names or object classes
+    # @param names_or_classes [String, Module, Array<String, Module>] The attribute names or object classes
     #   to apply the formatter to.
     # @param formatter [Lumberjack::Formatter, #call, nil] The formatter to use.
     #    If this is nil, then the block will be used as the formatter.
@@ -56,7 +56,7 @@ module Lumberjack
         if obj.is_a?(Module)
           add_class(obj, formatter, &block)
         else
-          add_tag(obj, formatter, &block)
+          add_attribute(obj, formatter, &block)
         end
       end
 
@@ -64,7 +64,7 @@ module Lumberjack
     end
 
     # Add a formatter for specific object classes. This can either be a Lumberjack::Formatter
-    # or an object that responds to `call` or a block. The formatter will be applied if the tag value
+    # or an object that responds to `call` or a block. The formatter will be applied if the attribute value
     # is an instance of a registered class.
     #
     # @param classes_or_names [String, Module, Array<String, Module>] The class names or modules
@@ -88,35 +88,34 @@ module Lumberjack
       self
     end
 
-    # Add a formatter for specific tag names. Tag formatters can be applied to nested hashes using dot syntax.
+    # Add a formatter for specific attribute names. Attribute formatters can be applied to nested hashes using dot syntax.
     # For example, if you add a formatter for "foo.bar", it will be applied to the value of the "bar" key in
-    # the "foo" tag if that value is a hash.
+    # the "foo" attribute if that value is a hash.
     #
-    # Tag formatters will take precedence over class formatters.
+    # Attribute formatters will take precedence over class formatters.
     #
-    # @param tag_names [String, Module, Array<String, Module>] The tag names to apply the formatter to.
+    # @param attribute_names [String, Module, Array<String, Module>] The attribute names to apply the formatter to.
     # @param formatter [Lumberjack::Formatter, #call, nil] The formatter to use.
     #    If this is nil, then the block will be used as the formatter.
     # @return [Lumberjack::TagFormatter] self
-    def add_tag(tag_names, formatter = nil, &block)
+    def add_attribute(attribute_names, formatter = nil, &block)
       formatter ||= block
       formatter = dereference_formatter(formatter)
 
-      Array(tag_names).each do |tag_name|
-        tag_name = tag_name.to_s
+      Array(attribute_names).collect(&:to_s).each do |attribute_name|
         if formatter.nil?
-          @attribute_formatters.delete(tag_name)
+          @attribute_formatters.delete(attribute_name)
         else
-          @attribute_formatters[tag_name] = formatter
+          @attribute_formatters[attribute_name] = formatter
         end
       end
 
       self
     end
 
-    # Remove formatters for specific tag names. The default formatter will still be applied.
+    # Remove formatters for specific attribute names. The default formatter will still be applied.
     #
-    # @param names_or_classes [String, Module, Array<String, Module>] The tag names or classes to remove the formatter from.
+    # @param names_or_classes [String, Module, Array<String, Module>] The attribute names or classes to remove the formatter from.
     # @return [Lumberjack::TagFormatter] self
     def remove(names_or_classes)
       Array(names_or_classes).each do |key|
@@ -161,13 +160,13 @@ module Lumberjack
 
       attributes.each do |name, value|
         name = name.to_s
-        formatted[name] = formatted_tag_value(name, value, skip_classes: skip_classes, prefix: prefix)
+        formatted[name] = formatted_attribute_value(name, value, skip_classes: skip_classes, prefix: prefix)
       end
 
       formatted
     end
 
-    def formatted_tag_value(name, value, skip_classes: nil, prefix: nil)
+    def formatted_attribute_value(name, value, skip_classes: nil, prefix: nil)
       prefixed_name = prefix ? "#{prefix}#{name}" : name
       using_class_formatter = false
 
@@ -196,7 +195,7 @@ module Lumberjack
           formated_attributes(formatted_value, skip_classes: skip_classes, prefix: sub_prefix)
         else
           formatted_value.collect do |item|
-            formatted_tag_value(nil, item, skip_classes: skip_classes, prefix: sub_prefix)
+            formatted_attribute_value(nil, item, skip_classes: skip_classes, prefix: sub_prefix)
           end
         end
       end

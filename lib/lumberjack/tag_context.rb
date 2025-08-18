@@ -7,7 +7,7 @@ module Lumberjack
       @attributes = attributes
     end
 
-    # Merge new attributes into the context attributes. Tag values will be flattened using dot notation
+    # Merge new attributes into the context attributes. Attribute values will be flattened using dot notation
     # on the keys. So `{ a: { b: 'c' } }` will become `{ 'a.b' => 'c' }`.
     #
     # If a block is given, then the attributes will only be added for the duration of the block.
@@ -16,10 +16,6 @@ module Lumberjack
     # @return [void]
     def update(attributes)
       @attributes.merge!(Utils.flatten_attributes(attributes))
-    end
-
-    def tag(tags)
-      update(tags)
     end
 
     # Get a attribute value.

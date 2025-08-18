@@ -28,9 +28,9 @@ RSpec.describe Lumberjack::TagFormatter do
     expect(attribute_formatter.format(attributes)).to eq({"foo" => '"bar"', "baz" => "boo!", "count" => "1!"})
   end
 
-  it "should be able to add tag formatters with add_tag" do
+  it "should be able to add attribute formatters with add_attribute" do
     attribute_formatter = Lumberjack::TagFormatter.new
-    attribute_formatter.add_tag("foo") { |val| {"bar" => val.to_s} }
+    attribute_formatter.add_attribute("foo") { |val| {"bar" => val.to_s} }
     expect(attribute_formatter.format({"foo" => 12})).to eq({"foo" => {"bar" => "12"}})
   end
 

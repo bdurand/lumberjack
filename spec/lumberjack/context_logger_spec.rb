@@ -371,39 +371,39 @@ RSpec.describe Lumberjack::ContextLogger do
         expect(logger_with_default_context.attributes["foo"]).to eq("two")
 
         logger_with_default_context.tag(foo: "three") do
-          expect(logger_with_default_context.tag_value("foo")).to eq("three")
+          expect(logger_with_default_context.attribute_value("foo")).to eq("three")
         end
       end
     end
   end
 
-  describe "#tag_value" do
+  describe "#attribute_value" do
     it "returns the value of a tag" do
       Lumberjack.tag(foo: "bar") do
         logger_with_default_context.tag!(baz: "qux")
         logger_with_default_context.tag(bip: "bap") do
-          expect(logger_with_default_context.tag_value("foo")).to eq("bar")
-          expect(logger_with_default_context.tag_value("baz")).to eq("qux")
-          expect(logger_with_default_context.tag_value("bip")).to eq("bap")
+          expect(logger_with_default_context.attribute_value("foo")).to eq("bar")
+          expect(logger_with_default_context.attribute_value("baz")).to eq("qux")
+          expect(logger_with_default_context.attribute_value("bip")).to eq("bap")
         end
       end
     end
 
     it "expands dot notation in tag names" do
       logger.tag(foo: {"bar.baz": "boo"}) do
-        expect(logger.tag_value("foo.bar.baz")).to eq("boo")
-        expect(logger.tag_value("foo.bar")).to eq("baz" => "boo")
+        expect(logger.attribute_value("foo.bar.baz")).to eq("boo")
+        expect(logger.attribute_value("foo.bar")).to eq("baz" => "boo")
       end
     end
 
     it "should expand tag name as a array to dot notation" do
       logger.tag("foo.bar" => "baz") do
-        expect(logger.tag_value([:foo, :bar])).to eq("baz")
+        expect(logger.attribute_value([:foo, :bar])).to eq("baz")
       end
     end
 
     it "should return nil for a non-existent tag" do
-      expect(logger.tag_value(:non_existent)).to be_nil
+      expect(logger.attribute_value(:non_existent)).to be_nil
     end
   end
 

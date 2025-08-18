@@ -23,9 +23,7 @@ module Lumberjack
 
     attr_accessor :attribute_formatter
 
-    def initialize(message_formatter: nil, attribute_formatter: nil, tag_formatter: nil)
-      attribute_formatter ||= tag_formatter
-
+    def initialize(message_formatter: nil, attribute_formatter: nil)
       if message_formatter.nil? || message_formatter == :default
         message_formatter = Lumberjack::Formatter.new
       elsif message_formatter == :none

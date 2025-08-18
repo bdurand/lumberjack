@@ -18,7 +18,7 @@ module Lumberjack
   class Template
     DEFAULT_FIRST_LINE_TEMPLATE = "[:time :severity :progname(:pid)] :message :attributes"
     DEFAULT_ADDITIONAL_LINES_TEMPLATE = "#{Lumberjack::LINE_SEPARATOR}> :message"
-    DEFAULT_TAG_FORMAT = "[%s:%s]"
+    DEFAULT_ATTRIBUTE_FORMAT = "[%s:%s]"
 
     class StandardFormatterTemplate < Template
       def initialize(formatter)
@@ -59,19 +59,19 @@ module Lumberjack
     # @param first_line [String] The template to use to format the first line of a message.
     # @param additional_lines [String] The template to use to format additional lines of a message.
     # @param time_format [String] The format to use to format the time.
-    # @param tag_format [String] The format to use to format attributes. The tag format must be a printf format
-    #   with exactly 2 arguments. The tag name will be the first argument while the second will be the tag
+    # @param attribute_format [String] The format to use to format attributes. The attribute format must be a printf format
+    #   with exactly 2 %s arguments. The attribute name will be the first argument while the second will be the attribute
     #   value. Attributes will include a space between them. The default is "[%s:%s]".
-    def initialize(first_line, additional_lines: nil, time_format: nil, tag_format: nil)
+    def initialize(first_line, additional_lines: nil, time_format: nil, attribute_format: nil)
       first_line ||= DEFAULT_FIRST_LINE_TEMPLATE
       @first_line_template, @first_line_attributes = compile("#{first_line.chomp}#{Lumberjack::LINE_SEPARATOR}")
 
       additional_lines ||= DEFAULT_ADDITIONAL_LINES_TEMPLATE
       @additional_line_template, @additional_line_attributes = compile(additional_lines)
 
-      @tag_template = tag_format || DEFAULT_TAG_FORMAT
-      unless @tag_template.scan("%s").size == 2
-        raise ArgumentError.new("tag_format must be a printf template with exactly two '%s' placeholders")
+      @attribute_template = attribute_format || DEFAULT_ATTRIBUTE_FORMAT
+      unless @attribute_template.scan("%s").size == 2
+        raise ArgumentError.new("attribute_format must be a printf template with exactly two '%s' placeholders")
       end
 
       # Formatting the time is relatively expensive, so only do it if it will be used
@@ -114,12 +114,12 @@ module Lumberjack
 
       formatted_time = @time_formatter.call(entry.time) if @template_include_time
       format_args = [formatted_time, entry.severity_label, entry.progname, entry.pid, first_line]
-      append_tag_args!(format_args, entry.attributes, @first_line_attributes)
+      append_attribute_args!(format_args, entry.attributes, @first_line_attributes)
       message = (@first_line_template % format_args)
 
       if additional_lines && !additional_lines.empty?
         format_args.slice!(5, format_args.size)
-        append_tag_args!(format_args, entry.attributes, @additional_line_attributes)
+        append_attribute_args!(format_args, entry.attributes, @additional_line_attributes)
 
         message_length = message.length
         message.chomp!(Lumberjack::LINE_SEPARATOR)
@@ -138,24 +138,24 @@ module Lumberjack
 
     private
 
-    def append_tag_args!(args, attributes, tag_vars)
+    def append_attribute_args!(args, attributes, attribute_vars)
       if attributes.nil? || attributes.size == 0
-        (tag_vars.length + 1).times { args << nil }
+        (attribute_vars.length + 1).times { args << nil }
         return
       end
 
       attributes_string = +""
       attributes.each do |name, value|
-        unless value.nil? || tag_vars.include?(name)
+        unless value.nil? || attribute_vars.include?(name)
           value = value.to_s
           value = value.gsub(Lumberjack::LINE_SEPARATOR, " ") if value.include?(Lumberjack::LINE_SEPARATOR)
           attributes_string << " "
-          attributes_string << @tag_template % [name, value]
+          attributes_string << @attribute_template % [name, value]
         end
       end
 
       args << attributes_string
-      tag_vars.each do |name|
+      attribute_vars.each do |name|
         args << attributes[name]
       end
     end
@@ -166,18 +166,18 @@ module Lumberjack
       template = template.gsub(/ :attributes\b/, ":attributes")
       template = template.gsub("%", "%%")
 
-      tag_vars = []
+      attribute_vars = []
       template = template.gsub(PLACEHOLDER_PATTERN) do |match|
         var_name = match.sub("{", "").sub("}", "")
         position = TEMPLATE_ARGUMENT_ORDER.index(var_name)
         if position
           "%#{position + 1}$s"
         else
-          tag_vars << var_name[1, var_name.length]
-          "%#{TEMPLATE_ARGUMENT_ORDER.size + tag_vars.size}$s"
+          attribute_vars << var_name[1, var_name.length]
+          "%#{TEMPLATE_ARGUMENT_ORDER.size + attribute_vars.size}$s"
         end
       end
-      [template, tag_vars]
+      [template, attribute_vars]
     end
   end
 end
