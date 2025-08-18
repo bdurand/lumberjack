@@ -8,7 +8,7 @@ module Lumberjack
       #
       # @param [Hash] hash The hash to transform.
       # @return [Hash] The hash with string keys.
-      # @deprecated
+      # @deprecated No longer supported
       def stringify_keys(hash)
         Utils.deprecated(:stringify_keys, "No longer supported") do
           return nil if hash.nil?

@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 2.0.0
 
+This is a major update with several breaking changes.
+
 ### Added
 
 - Added `Lumberjack::EntryFormatter` class to provide a unified interface for formatting log entry details. Going forward this is the preferred way to define log entry formatters. `Lumberjack::Logger#formatter` now returns an entry formatter.
@@ -46,6 +48,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed the devices that handled logging to files (`Lumberjack::Device::LogFile`, `Lumberjack::Device::RollingLogFile`, `Lumberjack::Device::DateRollingLogFile`, and `Lumberjack::Device::SizeRollingLogFile`) since file logging is now handled by the standard library `Logger::LogDevice` class.
 - Removed internal buffer from the `Lumberjack::Device::Writer` class. This functionality was more useful in the days of slower I/O operations when logs were written to spinning hard disks. The functionality is no longer as useful and is not worth the overhead. The `Lumberjack::Logger.last_flushed_at` method has also been removed.
 - Removed support for Ruby versions < 2.5.
+
+### Deprecated
+
+- "Tags" are now called "attributes" to better align with best practices. In logging parlance "tags" are generally an array of strings. The main interface to adding log attributes with `Lumberjack::Logger#tag` has not changed. In this case we are using "tag" as a verb as in "to tag a log entry with attributes". The public interfaces that used "tag" in the method names have all been deprecated and will be removed in a future release.
+  - `Lumberjack.context_tags`
+  - `Lumberjack::Logger#tags`
+  - `Lumberjack::Logger#tag_value`
+  - `Lumberjack::Logger#tag_formatter`
+  - `Lumberjack::Logger#in_tag_context?`
+  - `Lumberjack::Logger#tag_globally`
+  - `Lumberjack::Logger#remove_tag`
+  - `Lumberjack::LogEntry#tag`
+  - `Lumberjack::LogEntry#nested_tags`
+  - `Lumberjack::Logger::Utils.flatten_tags`
+  - `Lumberjack::Logger::Utils.expand_tags`
+  - `Lumberjack::Logger::TagContext`
+  - `Lumberjack::Logger::TagFormatter`
+  - `Lumberjack::Logger::Tags`
 
 ## 1.4.0
 
