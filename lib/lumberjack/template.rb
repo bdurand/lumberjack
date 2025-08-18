@@ -162,7 +162,7 @@ module Lumberjack
 
     # Compile the template string into a value that can be used with sprintf.
     def compile(template) # :nodoc:
-      template = template.gsub(/:tags\b/, ":attributes")
+      template = template.gsub(/:tags\b/, ":attributes") unless template.include?(":attributes")
       template = template.gsub(/ :attributes\b/, ":attributes")
       template = template.gsub(/%(?!%)/, "%%")
 

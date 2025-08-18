@@ -77,5 +77,11 @@ RSpec.describe Lumberjack::Template do
       entry = Lumberjack::LogEntry.new(time, Logger::INFO, "here", "app", 12345, "foo" => "bar", "tag" => "a")
       expect(template.call(entry)).to eq("here - bar - [tag:a]#{Lumberjack::LINE_SEPARATOR}")
     end
+
+    it "does not use :tags if :attributes exists" do
+      template = Lumberjack::Template.new(":message - :tags - :attributes")
+      entry = Lumberjack::LogEntry.new(time, Logger::INFO, "here", "app", 12345, "tags" => "a", "foo" => "bar")
+      expect(template.call(entry)).to eq("here - a - [foo:bar]#{Lumberjack::LINE_SEPARATOR}")
+    end
   end
 end
