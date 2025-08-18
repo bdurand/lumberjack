@@ -300,7 +300,7 @@ module Lumberjack
       elsif device.respond_to?(:write) && !device.respond_to?(:path)
         Device::Writer.new(device, options)
       else
-        Device::File.new(device, options)
+        Device::LoggerFile.new(device, options)
       end
     end
 

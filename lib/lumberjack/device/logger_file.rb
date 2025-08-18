@@ -3,7 +3,7 @@
 module Lumberjack
   # Wrapper around the ::Logger::LogDevice class in the standard library which handles rolling
   # log files by size or age.
-  class Device::File < Device::Writer
+  class Device::LoggerFile < Device::Writer
     def initialize(stream, options = {})
       # Filter options to only include keyword arguments supported by Logger::LogDevice#initialize
       supported_kwargs = ::Logger::LogDevice.instance_method(:initialize).parameters

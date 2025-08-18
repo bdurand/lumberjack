@@ -52,18 +52,18 @@ RSpec.describe Lumberjack::Logger do
 
     it "should open a file path in a device" do
       logger = Lumberjack::Logger.new(File.join(tmp_dir, "log_file_1.log"))
-      expect(logger.device.class).to eq(Lumberjack::Device::File)
+      expect(logger.device.class).to eq(Lumberjack::Device::LoggerFile)
     end
 
     it "should open a pathname in a device" do
       logger = Lumberjack::Logger.new(Pathname.new(File.join(tmp_dir, "log_file_1.log")))
-      expect(logger.device).to be_a(Lumberjack::Device::File)
+      expect(logger.device).to be_a(Lumberjack::Device::LoggerFile)
     end
 
     it "should open a File in a device" do
       file = File.new(File.join(tmp_dir, "log_file_1.log"), "w")
       logger = Lumberjack::Logger.new(file)
-      expect(logger.device.class).to eq(Lumberjack::Device::File)
+      expect(logger.device.class).to eq(Lumberjack::Device::LoggerFile)
     end
 
     it "should use the null device if the stream is :null" do

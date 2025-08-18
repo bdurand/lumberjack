@@ -5,7 +5,7 @@ module Lumberjack
   # may implement the +close+ and +flush+ methods if applicable.
   class Device
     require_relative "device/writer"
-    require_relative "device/file"
+    require_relative "device/logger_file"
     require_relative "device/multi"
     require_relative "device/null"
     require_relative "device/test"
