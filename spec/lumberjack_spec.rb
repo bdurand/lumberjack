@@ -4,10 +4,10 @@ require "spec_helper"
 
 RSpec.describe Lumberjack do
   describe "#context" do
-    it "should create a context with tags for a block" do
+    it "should create a context with attributes for a block" do
       Lumberjack.context do
         Lumberjack.tag(foo: "bar")
-        expect(Lumberjack.context_tags).to eq({"foo" => "bar"})
+        expect(Lumberjack.context_attributes).to eq({"foo" => "bar"})
       end
     end
 
@@ -35,7 +35,7 @@ RSpec.describe Lumberjack do
       context = Lumberjack::Context.new
       context.tag(foo: "bar")
       Lumberjack.use_context(context) do
-        expect(Lumberjack.context_tags).to eq("foo" => "bar")
+        expect(Lumberjack.context_attributes).to eq("foo" => "bar")
       end
     end
   end
@@ -43,22 +43,22 @@ RSpec.describe Lumberjack do
   describe "#tag" do
     it "does nothing when called outside of a context block" do
       Lumberjack.tag(foo: "bar")
-      expect(Lumberjack.context_tags).to be_nil
+      expect(Lumberjack.context_attributes).to be_nil
     end
 
-    it "sets tags on the current context when called inside a context block" do
+    it "sets attributes on the current context when called inside a context block" do
       Lumberjack.context do
         Lumberjack.tag(foo: "bar")
-        expect(Lumberjack.context_tags).to eq({"foo" => "bar"})
+        expect(Lumberjack.context_attributes).to eq({"foo" => "bar"})
       end
     end
 
-    it "sets tags in a new context block" do
-      expect(Lumberjack.context_tags).to be_nil
+    it "sets attributes in a new context block" do
+      expect(Lumberjack.context_attributes).to be_nil
       Lumberjack.tag(foo: "bar") do
-        expect(Lumberjack.context_tags).to eq({"foo" => "bar"})
+        expect(Lumberjack.context_attributes).to eq({"foo" => "bar"})
       end
-      expect(Lumberjack.context_tags).to be_nil
+      expect(Lumberjack.context_attributes).to be_nil
     end
 
     it "returns the result of the block" do
@@ -66,16 +66,16 @@ RSpec.describe Lumberjack do
       expect(result).to eq :foobar
     end
 
-    it "inherits tags from the parent context" do
+    it "inherits attributes from the parent context" do
       Lumberjack.tag(bip: "bap") do
         Lumberjack.tag(foo: "bar")
-        expect(Lumberjack.context_tags).to eq({"foo" => "bar", "bip" => "bap"})
+        expect(Lumberjack.context_attributes).to eq({"foo" => "bar", "bip" => "bap"})
         Lumberjack.tag(baz: "boo") do
-          expect(Lumberjack.context_tags).to eq({"foo" => "bar", "bip" => "bap", "baz" => "boo"})
+          expect(Lumberjack.context_attributes).to eq({"foo" => "bar", "bip" => "bap", "baz" => "boo"})
         end
-        expect(Lumberjack.context_tags).to eq({"foo" => "bar", "bip" => "bap"})
+        expect(Lumberjack.context_attributes).to eq({"foo" => "bar", "bip" => "bap"})
       end
-      expect(Lumberjack.context_tags).to be_nil
+      expect(Lumberjack.context_attributes).to be_nil
     end
   end
 end

@@ -4,8 +4,8 @@ require "spec_helper"
 
 RSpec.describe Lumberjack::LogEntryMatcher do
   describe "#match?" do
-    let(:entry) { Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test message", "AppName", Process.pid, tags) }
-    let(:tags) { {} }
+    let(:entry) { Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test message", "AppName", Process.pid, attributes) }
+    let(:attributes) { {} }
 
     describe "severity filter" do
       it "matches if the severity is equal" do
@@ -78,101 +78,101 @@ RSpec.describe Lumberjack::LogEntryMatcher do
       end
     end
 
-    describe "tags filter" do
+    describe "attributes filter" do
       it "matches if the tag is equal" do
-        tags["key"] = "value"
-        matcher = Lumberjack::LogEntryMatcher.new(tags: {key: "value"})
+        attributes["key"] = "value"
+        matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: "value"})
         expect(matcher.match?(entry)).to be true
       end
 
       it "does not match if the tag is not equal" do
-        tags["key"] = "value"
-        matcher = Lumberjack::LogEntryMatcher.new(tags: {key: "different"})
+        attributes["key"] = "value"
+        matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: "different"})
         expect(matcher.match?(entry)).to be false
       end
 
       it "matches if the tag matches a pattern" do
-        tags["key"] = "value"
-        matcher = Lumberjack::LogEntryMatcher.new(tags: {key: /val/})
+        attributes["key"] = "value"
+        matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: /val/})
         expect(matcher.match?(entry)).to be true
       end
 
       it "does not match if the tag does not match the pattern" do
-        tags["key"] = "value"
-        matcher = Lumberjack::LogEntryMatcher.new(tags: {key: /different/})
+        attributes["key"] = "value"
+        matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: /different/})
         expect(matcher.match?(entry)).to be false
       end
 
       it "matches if the tag matches the class" do
-        tags["key"] = 14
-        matcher = Lumberjack::LogEntryMatcher.new(tags: {key: Integer})
+        attributes["key"] = 14
+        matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: Integer})
         expect(matcher.match?(entry)).to be true
       end
 
       it "does not match if the tag does not match the class" do
-        tags["key"] = 14
-        matcher = Lumberjack::LogEntryMatcher.new(tags: {key: String})
+        attributes["key"] = 14
+        matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: String})
         expect(matcher.match?(entry)).to be false
       end
 
       it "does not match if the tag does not exist" do
-        tags["key"] = "value"
-        matcher = Lumberjack::LogEntryMatcher.new(tags: {other_key: "nonexistent"})
+        attributes["key"] = "value"
+        matcher = Lumberjack::LogEntryMatcher.new(attributes: {other_key: "nonexistent"})
         expect(matcher.match?(entry)).to be false
       end
 
-      it "matches if all tags match" do
-        tags["key_1"] = "value 1"
-        tags["key_2"] = "value 2"
-        matcher = Lumberjack::LogEntryMatcher.new(tags: {key_1: "value 1", key_2: "value 2"})
+      it "matches if all attributes match" do
+        attributes["key_1"] = "value 1"
+        attributes["key_2"] = "value 2"
+        matcher = Lumberjack::LogEntryMatcher.new(attributes: {key_1: "value 1", key_2: "value 2"})
         expect(matcher.match?(entry)).to be true
       end
 
       it "does not match if any values do not match" do
-        tags["key_1"] = "value 1"
-        tags["key_2"] = "value 2"
-        matcher = Lumberjack::LogEntryMatcher.new(tags: {key_1: "value 1", key_2: "different"})
+        attributes["key_1"] = "value 1"
+        attributes["key_2"] = "value 2"
+        matcher = Lumberjack::LogEntryMatcher.new(attributes: {key_1: "value 1", key_2: "different"})
         expect(matcher.match?(entry)).to be false
       end
 
       it "matches a nil only if the tag does not exist" do
-        tags["key"] = "value"
-        expect(Lumberjack::LogEntryMatcher.new(tags: {key: nil}).match?(entry)).to be false
-        expect(Lumberjack::LogEntryMatcher.new(tags: {other_key: nil}).match?(entry)).to be true
+        attributes["key"] = "value"
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {key: nil}).match?(entry)).to be false
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {other_key: nil}).match?(entry)).to be true
       end
 
       it "matches an empty array only if the tag does not exist" do
-        tags["key"] = "value"
-        expect(Lumberjack::LogEntryMatcher.new(tags: {key: []}).match?(entry)).to be false
-        expect(Lumberjack::LogEntryMatcher.new(tags: {other_key: []}).match?(entry)).to be true
+        attributes["key"] = "value"
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {key: []}).match?(entry)).to be false
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {other_key: []}).match?(entry)).to be true
       end
 
       it "matches dot notation on tag filters" do
-        tags["foo.bar.baz"] = "boo"
-        expect(Lumberjack::LogEntryMatcher.new(tags: {"foo.bar" => {"baz" => "boo"}}).match?(entry)).to be true
-        expect(Lumberjack::LogEntryMatcher.new(tags: {"foo.bar" => {"baz" => "bip"}}).match?(entry)).to be false
-        expect(Lumberjack::LogEntryMatcher.new(tags: {"foo.bar" => Hash}).match?(entry)).to be true
-        expect(Lumberjack::LogEntryMatcher.new(tags: {"foo.bar" => String}).match?(entry)).to be false
+        attributes["foo.bar.baz"] = "boo"
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {"foo.bar" => {"baz" => "boo"}}).match?(entry)).to be true
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {"foo.bar" => {"baz" => "bip"}}).match?(entry)).to be false
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {"foo.bar" => Hash}).match?(entry)).to be true
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {"foo.bar" => String}).match?(entry)).to be false
       end
 
       it "matches nested tag filters" do
-        tags["foo.bar.baz"] = "boo"
-        tags["foo.bar.bip"] = "bop"
-        expect(Lumberjack::LogEntryMatcher.new(tags: {foo: {bar: {baz: "boo"}}}).match?(entry)).to be true
-        expect(Lumberjack::LogEntryMatcher.new(tags: {foo: {bar: {baz: "boo", bip: /b/}}}).match?(entry)).to be true
-        expect(Lumberjack::LogEntryMatcher.new(tags: {foo: {bar: {baz: "boo", bip: /c/}}}).match?(entry)).to be false
-        expect(Lumberjack::LogEntryMatcher.new(tags: {foo: {"bar.baz": "boo"}}).match?(entry)).to be true
+        attributes["foo.bar.baz"] = "boo"
+        attributes["foo.bar.bip"] = "bop"
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {foo: {bar: {baz: "boo"}}}).match?(entry)).to be true
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {foo: {bar: {baz: "boo", bip: /b/}}}).match?(entry)).to be true
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {foo: {bar: {baz: "boo", bip: /c/}}}).match?(entry)).to be false
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {foo: {"bar.baz": "boo"}}).match?(entry)).to be true
       end
 
       it "should match arrays of hashes" do
-        tags["foo"] = [{bar: "baz"}, {bip: "bop"}]
-        expect(Lumberjack::LogEntryMatcher.new(tags: {foo: [{bar: "baz"}, {bip: "bop"}]}).match?(entry)).to be true
-        expect(Lumberjack::LogEntryMatcher.new(tags: {foo: [{bar: "baz"}]}).match?(entry)).to be false
+        attributes["foo"] = [{bar: "baz"}, {bip: "bop"}]
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {foo: [{bar: "baz"}, {bip: "bop"}]}).match?(entry)).to be true
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {foo: [{bar: "baz"}]}).match?(entry)).to be false
       end
 
-      it "does not match an entry with no tags" do
+      it "does not match an entry with no attributes" do
         entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test message", nil, nil, nil)
-        matcher = Lumberjack::LogEntryMatcher.new(tags: {key: "value"})
+        matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: "value"})
         expect(matcher.match?(entry)).to be false
       end
     end

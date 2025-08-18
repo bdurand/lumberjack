@@ -49,32 +49,32 @@ RSpec.describe Lumberjack::Context do
   end
 
   describe "#tag" do
-    it "should have tags" do
+    it "should have attributes" do
       context = Lumberjack::Context.new
-      expect(context.tags).to be_nil
+      expect(context.attributes).to be_nil
       context.tag(foo: "bar", baz: "boo")
-      expect(context.tags).to eq({"foo" => "bar", "baz" => "boo"})
+      expect(context.attributes).to eq({"foo" => "bar", "baz" => "boo"})
       context[:stuff] = "nonsense"
-      expect(context.tags).to eq({"foo" => "bar", "baz" => "boo", "stuff" => "nonsense"})
+      expect(context.attributes).to eq({"foo" => "bar", "baz" => "boo", "stuff" => "nonsense"})
       expect(context[:stuff]).to eq("nonsense")
     end
 
-    it "should inherit tags from a parent context" do
+    it "should inherit attributes from a parent context" do
       parent = Lumberjack::Context.new
       parent.tag(foo: "bar", baz: "boo")
       context = Lumberjack::Context.new(parent)
       context.tag(foo: "other", stuff: "nonsense")
-      expect(context.tags).to eq({"foo" => "other", "baz" => "boo", "stuff" => "nonsense"})
-      expect(parent.tags).to eq({"foo" => "bar", "baz" => "boo"})
+      expect(context.attributes).to eq({"foo" => "other", "baz" => "boo", "stuff" => "nonsense"})
+      expect(parent.attributes).to eq({"foo" => "bar", "baz" => "boo"})
     end
 
-    it "should flatten tags" do
+    it "should flatten attributes" do
       context = Lumberjack::Context.new
       context.tag(foo: {bar: "baz", far: "qux"})
-      expect(context.tags).to eq({"foo.bar" => "baz", "foo.far" => "qux"})
+      expect(context.attributes).to eq({"foo.bar" => "baz", "foo.far" => "qux"})
 
       context.tag("foo.bip" => "bop", "foo.far" => "foe") do
-        expect(context.tags).to eq({"foo.bar" => "baz", "foo.bip" => "bop", "foo.far" => "foe"})
+        expect(context.attributes).to eq({"foo.bar" => "baz", "foo.bip" => "bop", "foo.far" => "foe"})
       end
     end
   end
@@ -84,36 +84,36 @@ RSpec.describe Lumberjack::Context do
       context = Lumberjack::Context.new
       context[:foo] = "bar"
       expect(context[:foo]).to eq("bar")
-      expect(context.tags).to eq({"foo" => "bar"})
+      expect(context.attributes).to eq({"foo" => "bar"})
     end
 
-    it "flattens nested tags" do
+    it "flattens nested attributes" do
       context = Lumberjack::Context.new
       context[:foo] = {bar: "baz", far: "qux"}
-      expect(context.tags).to eq({"foo.bar" => "baz", "foo.far" => "qux"})
+      expect(context.attributes).to eq({"foo.bar" => "baz", "foo.far" => "qux"})
     end
   end
 
   describe "#delete" do
-    it "removes specified tags" do
+    it "removes specified attributes" do
       context = Lumberjack::Context.new
       context[:foo] = "bar"
       context[:baz] = "boo"
       context[:qux] = "quux"
-      expect(context.tags).to eq({"foo" => "bar", "baz" => "boo", "qux" => "quux"})
+      expect(context.attributes).to eq({"foo" => "bar", "baz" => "boo", "qux" => "quux"})
       context.delete(:foo, :baz)
-      expect(context.tags).to eq({"qux" => "quux"})
+      expect(context.attributes).to eq({"qux" => "quux"})
     end
   end
 
   describe "#reset" do
-    it "clears all tags and context data" do
+    it "clears all attributes and context data" do
       context = Lumberjack::Context.new
       context.tag(foo: "bar", baz: "boo")
       context.level = :info
       context.progname = "test"
       context.reset
-      expect(context.tags).to eq({})
+      expect(context.attributes).to eq({})
       expect(context.level).to be_nil
       expect(context.progname).to be_nil
     end

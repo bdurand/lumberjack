@@ -1,78 +1,82 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  # A tag context provides an interface for manipulating a tag hash.
+  # A attribute context provides an interface for manipulating a attribute hash.
   class TagContext
-    def initialize(tags)
-      @tags = tags
+    def initialize(attributes)
+      @attributes = attributes
     end
 
-    # Merge new tags into the context tags. Tag values will be flattened using dot notation
+    # Merge new attributes into the context attributes. Tag values will be flattened using dot notation
     # on the keys. So `{ a: { b: 'c' } }` will become `{ 'a.b' => 'c' }`.
     #
-    # If a block is given, then the tags will only be added for the duration of the block.
+    # If a block is given, then the attributes will only be added for the duration of the block.
     #
-    # @param tags [Hash] The tags to set.
+    # @param attributes [Hash] The attributes to set.
     # @return [void]
-    def tag(tags)
-      @tags.merge!(Utils.flatten_tags(tags))
+    def update(attributes)
+      @attributes.merge!(Utils.flatten_attributes(attributes))
     end
 
-    # Get a tag value.
+    def tag(tags)
+      update(tags)
+    end
+
+    # Get a attribute value.
     #
-    # @param name [String, Symbol] The tag key.
-    # @return [Object] The tag value.
+    # @param name [String, Symbol] The attribute key.
+    # @return [Object] The attribute value.
     def [](name)
-      return nil if @tags.empty?
+      return nil if @attributes.empty?
 
       name = name.to_s
-      return @tags[name] if @tags.include?(name)
+      return @attributes[name] if @attributes.include?(name)
 
       # Check for partial matches in dot notation and return the hash representing the partial match.
       prefix_key = "#{name}."
-      matching_tags = {}
-      @tags.each do |key, value|
+      matching_attributes = {}
+      @attributes.each do |key, value|
         if key.start_with?(prefix_key)
           # Remove the prefix to get the relative key
           relative_key = key[prefix_key.length..]
-          matching_tags[relative_key] = value
+          matching_attributes[relative_key] = value
         end
       end
 
-      return nil if matching_tags.empty?
-      matching_tags
+      return nil if matching_attributes.empty?
+      matching_attributes
     end
 
-    # Set a tag value.
+    # Set a attribute value.
     #
-    # @param name [String, Symbol] The tag name.
-    # @param value [Object] The tag value.
+    # @param name [String, Symbol] The attribute name.
+    # @param value [Object] The attribute value.
     # @return [void]
     def []=(name, value)
       if value.is_a?(Hash)
-        @tags.merge!(Utils.flatten_tags(name => value))
+        @attributes.merge!(Utils.flatten_attributes(name => value))
       else
-        @tags[name.to_s] = value
+        @attributes[name.to_s] = value
       end
     end
 
-    # Remove tags from the context.
+    # Remove attributes from the context.
     #
-    # @param names [Array<String, Symbol>] The tag names to remove.
+    # @param names [Array<String, Symbol>] The attribute names to remove.
     # @return [void]
     def delete(*names)
       names.each do |name|
         prefix_key = "#{name}."
-        @tags.delete_if { |k, _| k == name.to_s || k.start_with?(prefix_key) }
+        @attributes.delete_if { |k, _| k == name.to_s || k.start_with?(prefix_key) }
       end
       nil
     end
 
-    # Return a copy of the tags as a hash.
+    # Return a copy of the attributes as a hash.
     #
     # @return [Hash]
     def to_h
-      @tags.dup
+      @attributes.dup
     end
   end
 end

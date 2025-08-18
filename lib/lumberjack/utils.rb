@@ -116,27 +116,35 @@ module Lumberjack
       # @param tag_hash [Hash] The hash to flatten.
       # @return [Hash<String, Object>] The flattened hash.
       # @example
-      #   expand_tags(user: {id: 123, name: "Alice"}, action: "login")})
+      #   expand_attributes(user: {id: 123, name: "Alice"}, action: "login")})
       #   # => {"user.id" => 123, "user.name" => "Alice", "action" => "login"}
-      def flatten_tags(tag_hash)
-        return {} unless tag_hash.is_a?(Hash)
+      def flatten_attributes(attr_hash)
+        return {} unless attr_hash.is_a?(Hash)
 
-        flatten_hash_recursive(tag_hash)
+        flatten_hash_recursive(attr_hash)
       end
 
-      # Expand a hash of tags that may contain nested hashes or dot notation keys. Dot notation tags
+      def flatten_tags(tag_hash)
+        flatten_attributes(tag_hash)
+      end
+
+      # Expand a hash of attributes that may contain nested hashes or dot notation keys. Dot notation attributes
       # will be expanded into nested hashes.
       #
-      # @param tags [Hash] The hash of tags to expand.
+      # @param attributes [Hash] The hash of attributes to expand.
       # @return [Hash] The expanded hash with dot notation keys.
       #
       # @example
-      #   expand_tags({"user.id" => 123, "user.name" => "Alice", "action" => "login"})
+      #   expand_attributes({"user.id" => 123, "user.name" => "Alice", "action" => "login"})
       #   # => {"user" => {"id" => 123, "name" => "Alice"}, "action" => "login"}
-      def expand_tags(tags)
-        return {} unless tags.is_a?(Hash)
+      def expand_attributes(attributes)
+        return {} unless attributes.is_a?(Hash)
 
-        expand_dot_notation_hash(tags)
+        expand_dot_notation_hash(attributes)
+      end
+
+      def expand_tags(tags)
+        expand_attributes(tags)
       end
 
       private

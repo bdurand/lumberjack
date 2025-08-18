@@ -7,14 +7,16 @@ module Lumberjack
   # * :time
   # * :severity
   # * :progname
-  # * :tags
+  # * :attributes
   # * :message
   #
-  # Any other words prefixed with a colon will be substituted with the value of the tag with that name.
-  # If your tag name contains characters other than alpha numerics and the underscore, you must surround it
+  # Any other words prefixed with a colon will be substituted with the value of the attribute with that name.
+  # If your attribute name contains characters other than alpha numerics and the underscore, you must surround it
   # with curly brackets: `:{http.request-id}`.
+  #
+  # For backward compatibility with version 1.x you can use the `:tag` placeholder instead of `:attributes`.
   class Template
-    DEFAULT_FIRST_LINE_TEMPLATE = "[:time :severity :progname(:pid)] :message :tags"
+    DEFAULT_FIRST_LINE_TEMPLATE = "[:time :severity :progname(:pid)] :message :attributes"
     DEFAULT_ADDITIONAL_LINES_TEMPLATE = "#{Lumberjack::LINE_SEPARATOR}> :message"
     DEFAULT_TAG_FORMAT = "[%s:%s]"
 
@@ -36,7 +38,7 @@ module Lumberjack
       end
     end
 
-    TEMPLATE_ARGUMENT_ORDER = %w[:time :severity :progname :pid :message :tags].freeze
+    TEMPLATE_ARGUMENT_ORDER = %w[:time :severity :progname :pid :message :attributes].freeze
     MILLISECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%3N"
     MICROSECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%6N"
     PLACEHOLDER_PATTERN = /:(([a-z0-9_]+)|({[^}]+}))/i
@@ -57,15 +59,15 @@ module Lumberjack
     # @param first_line [String] The template to use to format the first line of a message.
     # @param additional_lines [String] The template to use to format additional lines of a message.
     # @param time_format [String] The format to use to format the time.
-    # @param tag_format [String] The format to use to format tags. The tag format must be a printf format
+    # @param tag_format [String] The format to use to format attributes. The tag format must be a printf format
     #   with exactly 2 arguments. The tag name will be the first argument while the second will be the tag
-    #   value. Tags will include a space between them. The default is "[%s:%s]".
+    #   value. Attributes will include a space between them. The default is "[%s:%s]".
     def initialize(first_line, additional_lines: nil, time_format: nil, tag_format: nil)
       first_line ||= DEFAULT_FIRST_LINE_TEMPLATE
-      @first_line_template, @first_line_tags = compile("#{first_line.chomp}#{Lumberjack::LINE_SEPARATOR}")
+      @first_line_template, @first_line_attributes = compile("#{first_line.chomp}#{Lumberjack::LINE_SEPARATOR}")
 
       additional_lines ||= DEFAULT_ADDITIONAL_LINES_TEMPLATE
-      @additional_line_template, @additional_line_tags = compile(additional_lines)
+      @additional_line_template, @additional_line_attributes = compile(additional_lines)
 
       @tag_template = tag_format || DEFAULT_TAG_FORMAT
       unless @tag_template.scan("%s").size == 2
@@ -112,12 +114,12 @@ module Lumberjack
 
       formatted_time = @time_formatter.call(entry.time) if @template_include_time
       format_args = [formatted_time, entry.severity_label, entry.progname, entry.pid, first_line]
-      append_tag_args!(format_args, entry.tags, @first_line_tags)
+      append_tag_args!(format_args, entry.attributes, @first_line_attributes)
       message = (@first_line_template % format_args)
 
       if additional_lines && !additional_lines.empty?
         format_args.slice!(5, format_args.size)
-        append_tag_args!(format_args, entry.tags, @additional_line_tags)
+        append_tag_args!(format_args, entry.attributes, @additional_line_attributes)
 
         message_length = message.length
         message.chomp!(Lumberjack::LINE_SEPARATOR)
@@ -136,31 +138,34 @@ module Lumberjack
 
     private
 
-    def append_tag_args!(args, tags, tag_vars)
-      if tags.nil? || tags.size == 0
+    def append_tag_args!(args, attributes, tag_vars)
+      if attributes.nil? || attributes.size == 0
         (tag_vars.length + 1).times { args << nil }
         return
       end
 
-      tags_string = +""
-      tags.each do |name, value|
+      attributes_string = +""
+      attributes.each do |name, value|
         unless value.nil? || tag_vars.include?(name)
           value = value.to_s
           value = value.gsub(Lumberjack::LINE_SEPARATOR, " ") if value.include?(Lumberjack::LINE_SEPARATOR)
-          tags_string << " "
-          tags_string << @tag_template % [name, value]
+          attributes_string << " "
+          attributes_string << @tag_template % [name, value]
         end
       end
 
-      args << tags_string
+      args << attributes_string
       tag_vars.each do |name|
-        args << tags[name]
+        args << attributes[name]
       end
     end
 
     # Compile the template string into a value that can be used with sprintf.
     def compile(template) # :nodoc:
-      template = template.gsub(/ :tags\b/, ":tags")
+      template = template.gsub(/:tags\b/, ":attributes")
+      template = template.gsub(/ :attributes\b/, ":attributes")
+      template = template.gsub("%", "%%")
+
       tag_vars = []
       template = template.gsub(PLACEHOLDER_PATTERN) do |match|
         var_name = match.sub("{", "").sub("}", "")

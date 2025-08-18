@@ -12,7 +12,7 @@ RSpec.describe Lumberjack::IOCompatibility do
         message: "Hello, world",
         severity: Logger::UNKNOWN,
         progname: nil,
-        tags: nil
+        attributes: nil
       }
     ])
   end
@@ -25,7 +25,7 @@ RSpec.describe Lumberjack::IOCompatibility do
         message: "Hello, world",
         severity: Logger::INFO,
         progname: nil,
-        tags: nil
+        attributes: nil
       }
     ])
   end
@@ -37,13 +37,13 @@ RSpec.describe Lumberjack::IOCompatibility do
         message: "Hello",
         severity: Logger::UNKNOWN,
         progname: nil,
-        tags: nil
+        attributes: nil
       },
       {
         message: "world",
         severity: Logger::UNKNOWN,
         progname: nil,
-        tags: nil
+        attributes: nil
       }
     ])
   end
@@ -55,13 +55,13 @@ RSpec.describe Lumberjack::IOCompatibility do
         message: "Hello",
         severity: Logger::UNKNOWN,
         progname: nil,
-        tags: nil
+        attributes: nil
       },
       {
         message: "world",
         severity: Logger::UNKNOWN,
         progname: nil,
-        tags: nil
+        attributes: nil
       }
     ])
   end
@@ -73,7 +73,7 @@ RSpec.describe Lumberjack::IOCompatibility do
         message: "Hello world",
         severity: Logger::UNKNOWN,
         progname: nil,
-        tags: nil
+        attributes: nil
       }
     ])
   end

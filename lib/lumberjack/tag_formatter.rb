@@ -1,18 +1,18 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  # Class for formatting tags. You can register a default formatter and tag
+  # Class for formatting attributes. You can register a default formatter and tag
   # name specific formatters. Formatters can be either `Lumberjack::Formatter`
   # objects or any object that responds to `call`.
   #
   # @example
-  #   tag_formatter = Lumberjack::TagFormatter.new.default(Lumberjack::Formatter.new)
-  #   tag_formatter.add(["password", "email"]) { |value| "***" }
-  #   tag_formatter.add("finished_at", Lumberjack::Formatter::DateTimeFormatter.new("%Y-%m-%dT%H:%m:%S%z"))
-  #   tag_formatter.add(Enumerable) { |value| value.join(", ") }
+  #   attribute_formatter = Lumberjack::TagFormatter.new.default(Lumberjack::Formatter.new)
+  #   attribute_formatter.add(["password", "email"]) { |value| "***" }
+  #   attribute_formatter.add("finished_at", Lumberjack::Formatter::DateTimeFormatter.new("%Y-%m-%dT%H:%m:%S%z"))
+  #   attribute_formatter.add(Enumerable) { |value| value.join(", ") }
   class TagFormatter
     def initialize
-      @tag_formatters = {}
+      @attribute_formatters = {}
       @class_formatter = Formatter.empty
       @default_formatter = nil
     end
@@ -50,7 +50,7 @@ module Lumberjack
     # @return [Lumberjack::TagFormatter] self
     #
     # @example
-    #  tag_formatter.add("password", &:redact)
+    #  attribute_formatter.add("password", &:redact)
     def add(names_or_classes, formatter = nil, &block)
       Array(names_or_classes).each do |obj|
         if obj.is_a?(Module)
@@ -105,9 +105,9 @@ module Lumberjack
       Array(tag_names).each do |tag_name|
         tag_name = tag_name.to_s
         if formatter.nil?
-          @tag_formatters.delete(tag_name)
+          @attribute_formatters.delete(tag_name)
         else
-          @tag_formatters[tag_name] = formatter
+          @attribute_formatters[tag_name] = formatter
         end
       end
 
@@ -123,7 +123,7 @@ module Lumberjack
         if key.is_a?(Module)
           @class_formatter.remove(key)
         else
-          @tag_formatters.delete(key.to_s)
+          @attribute_formatters.delete(key.to_s)
         end
       end
       self
@@ -134,32 +134,32 @@ module Lumberjack
     # @return [Lumberjack::TagFormatter] self
     def clear
       @default_formatter = nil
-      @tag_formatters.clear
+      @attribute_formatters.clear
       @class_formatter.clear
       self
     end
 
     def empty?
-      @tag_formatters.empty? && @class_formatter.empty? && @default_formatter.nil?
+      @attribute_formatters.empty? && @class_formatter.empty? && @default_formatter.nil?
     end
 
-    # Format a hash of tags using the formatters
+    # Format a hash of attributes using the formatters
     #
-    # @param tags [Hash] The tags to format.
-    # @return [Hash] The formatted tags.
-    def format(tags)
-      return nil if tags.nil?
-      return tags if empty?
+    # @param attributes [Hash] The attributes to format.
+    # @return [Hash] The formatted attributes.
+    def format(attributes)
+      return nil if attributes.nil?
+      return attributes if empty?
 
-      formated_tags(tags)
+      formated_attributes(attributes)
     end
 
     private
 
-    def formated_tags(tags, skip_classes: nil, prefix: nil)
+    def formated_attributes(attributes, skip_classes: nil, prefix: nil)
       formatted = {}
 
-      tags.each do |name, value|
+      attributes.each do |name, value|
         name = name.to_s
         formatted[name] = formatted_tag_value(name, value, skip_classes: skip_classes, prefix: prefix)
       end
@@ -171,7 +171,7 @@ module Lumberjack
       prefixed_name = prefix ? "#{prefix}#{name}" : name
       using_class_formatter = false
 
-      formatter = @tag_formatters[prefixed_name]
+      formatter = @attribute_formatters[prefixed_name]
       if formatter.nil? && (skip_classes.nil? || !skip_classes.include?(value.class))
         formatter = @class_formatter.formatter_for(value.class)
         using_class_formatter = true if formatter
@@ -193,7 +193,7 @@ module Lumberjack
         sub_prefix = "#{prefixed_name}."
 
         formatted_value = if formatted_value.is_a?(Hash)
-          formated_tags(formatted_value, skip_classes: skip_classes, prefix: sub_prefix)
+          formated_attributes(formatted_value, skip_classes: skip_classes, prefix: sub_prefix)
         else
           formatted_value.collect do |item|
             formatted_tag_value(nil, item, skip_classes: skip_classes, prefix: sub_prefix)

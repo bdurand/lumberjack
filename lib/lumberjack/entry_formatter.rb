@@ -5,7 +5,7 @@ module Lumberjack
   # two kinds of formatters and returns an entry with all of the raw objects formatted.
   #
   # 1. A `Lumberjack::Formatter` which is used to format log messages.
-  # 2. A `Lumberjack::TagFormatter` which is used to format log tags.
+  # 2. A `Lumberjack::attributeFormatter` which is used to format log attributes.
   #
   # It also provides an interface for managing all both formatters with chained methods.
   #
@@ -14,16 +14,18 @@ module Lumberjack
   # formatter = Lumberjack::EntryFormatter.new
   #   .add(ActiveRecord::Base, :id) # format models with the id formatter
   #   .add(MyClass) { |obj| "Custom format for #{obj}" }
-  #   .tags do
-  #     add("status") { |obj| "Status: #{obj}" } # custom formatter for the "status" tag
-  #     add(Exception) { |obj| {kind: obj.class.name, message: obj.message} } # custom formatter for exceptions in tags
+  #   .attributes do
+  #     add("status") { |obj| "Status: #{obj}" } # custom formatter for the "status" attribute
+  #     add(Exception) { |obj| {kind: obj.class.name, message: obj.message} } # custom formatter for exceptions in attributes
   #   end
   class EntryFormatter
     attr_accessor :message_formatter
 
-    attr_accessor :tag_formatter
+    attr_accessor :attribute_formatter
 
-    def initialize(message_formatter: nil, tag_formatter: nil)
+    def initialize(message_formatter: nil, attribute_formatter: nil, tag_formatter: nil)
+      attribute_formatter ||= tag_formatter
+
       if message_formatter.nil? || message_formatter == :default
         message_formatter = Lumberjack::Formatter.new
       elsif message_formatter == :none
@@ -31,7 +33,7 @@ module Lumberjack
       end
 
       @message_formatter = message_formatter
-      @tag_formatter = tag_formatter
+      @attribute_formatter = attribute_formatter
     end
 
     # Add a message formatter for a class or module.
@@ -56,28 +58,28 @@ module Lumberjack
       self
     end
 
-    # Switch context to the tag formatter. Within the block all method calls will be made to
-    # the tag formatter.
+    # Switch context to the attribute formatter. Within the block all method calls will be made to
+    # the attribute formatter.
     #
-    # @param block [Proc] The block to execute within the tag formatter context.
+    # @param block [Proc] The block to execute within the attribute formatter context.
     # @return [Lumberjack::EntryFormatter] The entry formatter.
     #
     # @example
-    #   formatter.tags do
-    #     add("status") { |obj| "Status: #{obj}" } # Adds to the tag formatter
+    #   formatter.attributes do
+    #     add("status") { |obj| "Status: #{obj}" } # Adds to the attribute formatter
     #   end
-    def tags(&block)
-      @tag_formatter ||= Lumberjack::TagFormatter.new
-      tag_formatter.instance_exec(&block) if block
+    def attributes(&block)
+      @attribute_formatter ||= Lumberjack::TagFormatter.new
+      attribute_formatter.instance_exec(&block) if block
       self
     end
 
-    # Format the message and tags.
+    # Format the message and attributes.
     #
     # @param message [Object, nil] The log message.
-    # @param tags [Hash, nil] The log tags.
-    # @return [Array<Object, Hash>] The formatted message and tags.
-    def format(message, tags)
+    # @param attributes [Hash, nil] The log attributes.
+    # @return [Array<Object, Hash>] The formatted message and attributes.
+    def format(message, attributes)
       message = message.call if message.is_a?(Proc)
       if message.respond_to?(:to_log_format) && message.method(:to_log_format).parameters.empty?
         message = message.to_log_format
@@ -85,18 +87,18 @@ module Lumberjack
         message = message_formatter.format(message)
       end
 
-      message_tags = nil
+      message_attributes = nil
       if message.is_a?(Formatter::TaggedMessage)
-        message_tags = message.tags
+        message_attributes = message.attributes
         message = message.message
       end
-      message_tags = Utils.flatten_tags(message_tags) if message_tags
+      message_attributes = Utils.flatten_attributes(message_attributes) if message_attributes
 
-      tags = merge_tags(tags, message_tags) if message_tags
-      tags = Tags.expand_runtime_values(tags)
-      tags = tag_formatter.format(tags) if tags && tag_formatter
+      attributes = merge_attributes(attributes, message_attributes) if message_attributes
+      attributes = Tags.expand_runtime_values(attributes)
+      attributes = attribute_formatter.format(attributes) if attributes && attribute_formatter
 
-      [message, tags]
+      [message, attributes]
     end
 
     def call(severity, timestamp, progname, msg)
@@ -105,18 +107,18 @@ module Lumberjack
 
     private
 
-    def merge_tags(current_tags, tags)
-      if current_tags.nil? || current_tags.empty?
-        tags
-      elsif tags.nil?
-        current_tags
+    def merge_attributes(current_attributes, attributes)
+      if current_attributes.nil? || current_attributes.empty?
+        attributes
+      elsif attributes.nil?
+        current_attributes
       else
-        current_tags.merge(tags)
+        current_attributes.merge(attributes)
       end
     end
 
     # TODO: need this in logger
-    def accepts_tags_parameter?(formatter)
+    def accepts_attributes_parameter?(formatter)
       method_obj = if formatter.is_a?(Proc)
         formatter
       elsif formatter.respond_to?(:call)

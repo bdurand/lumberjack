@@ -69,12 +69,12 @@ class TestContextLogger
     @entries = []
   end
 
-  def add_entry(severity, message, progname = nil, tags = nil)
+  def add_entry(severity, message, progname = nil, attributes = nil)
     @entries << {
       severity: severity,
       message: message,
       progname: progname,
-      tags: tags
+      attributes: attributes
     }
   end
 

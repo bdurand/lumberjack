@@ -11,8 +11,8 @@ RSpec.describe Lumberjack::Rack::Context do
     expect(response).to eq([200, {"Context" => true}, ["OK"]])
   end
 
-  it "should apply tags from the request environment" do
-    app = lambda { |env| [200, {"Content-Type" => env["Content-Type"], "Request-ID" => Lumberjack.context_tags["request_id"]}, ["OK"]] }
+  it "should apply attributes from the request environment" do
+    app = lambda { |env| [200, {"Content-Type" => env["Content-Type"], "Request-ID" => Lumberjack.context_attributes["request_id"]}, ["OK"]] }
     handler = Lumberjack::Rack::Context.new(app, request_id: ->(env) { env["action_dispatch.request_id"] })
 
     response = handler.call("Content-Type" => "text/plain", "action_dispatch.request_id" => "0123-4567-89ab-cdef")

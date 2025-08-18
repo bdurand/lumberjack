@@ -32,12 +32,12 @@ module Lumberjack
   @global_contexts_mutex = Mutex.new
 
   class << self
-    # Contexts can be used to store tags that will be attached to all log entries in the block.
+    # Contexts can be used to store attributes that will be attached to all log entries in the block.
     # The context will apply to all Lumberjack loggers that are used within the block.
     #
     # If this method is called with a block, it will set a logging context for the scope of a block.
     # If there is already a context in scope, a new one will be created that inherits
-    # all the tags of the parent context.
+    # all the attributes of the parent context.
     #
     # Otherwise, it will return the current context. If one doesn't exist, it will return a new one
     # but that context will not be in any scope.
@@ -79,27 +79,35 @@ module Lumberjack
       !!@global_contexts[Fiber.current.object_id]
     end
 
-    # Return tags that will be applied to all Lumberjack loggers.
+    # Return attributes that will be applied to all Lumberjack loggers.
     #
     # @return [Hash, nil]
-    def context_tags
-      current_context&.tags
+    def context_attributes
+      current_context&.attributes
     end
 
-    # Set tags on the current context
+    def context_tags
+      context_attributes
+    end
+
+    # Set attributes on the current context
     #
-    # @param tags [Hash] The tags to set.
-    # @param block [Proc] optional context block in which to set the tags.
+    # @param attributes [Hash] The attributes to set.
+    # @param block [Proc] optional context block in which to set the attributes.
     # @return [void]
-    def tag(tags, &block)
+    def assign_attributes(attributes, &block)
       if block
         context do
-          current_context.tag(tags)
+          current_context.tag(attributes)
           block.call
         end
       else
-        current_context&.tag(tags)
+        current_context&.tag(attributes)
       end
+    end
+
+    def tag(tags, &block)
+      assign_attributes(tags, &block)
     end
 
     private
