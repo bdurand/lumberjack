@@ -49,6 +49,17 @@ module Lumberjack
         attributes == other.attributes
     end
 
+    # Alias for tags to provide backward compatibility with version 1.x API. This method
+    # will eventually be removed.
+    #
+    # @return [Hash, nil] The attributes of the log entry.
+    # @deprecated Use {#attributes} instead.
+    def tags
+      Utils.deprecated(:tags, "Use attributes instead.") do
+        attributes
+      end
+    end
+
     # Return the attribute with the specified name.
     #
     # @param name [String, Symbol] The attribute name.
