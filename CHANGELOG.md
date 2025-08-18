@@ -27,6 +27,7 @@ This is a major update with several breaking changes.
 ### Changed
 
 - `Lumberjack::Logger` now inherits from `::Logger` instead of just having API compatibility with the standard library `Logger` class.
+- `Lumberjack::Logger` not takes keyword arguments instead of an options hash.
 - The default log level is now DEBUG instead of INFO.
 - The severity label for log entries with an unknown level is now ANY instead of UNKNOWN.
 - Changing logger level or progname inside a context block will now only be in effect inside the block.
