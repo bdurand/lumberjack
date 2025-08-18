@@ -23,6 +23,26 @@ module Lumberjack
 
     attr_accessor :attribute_formatter
 
+    class << self
+      # Build a new entry formatter using the given block. The block will be yielded to with
+      # the new formatter in context.
+      #
+      # @example
+      #   Lumberjack::EntryFormatter.build do
+      #     add(ActiveRecord::Base, :id) # format models with the id formatter
+      #     add(MyClass) { |obj| "Custom format for #{obj}" }
+      #     attributes do
+      #       add("status") { |obj| "Status: #{obj}" } # custom formatter for the "status" attribute
+      #       add(Exception) { |obj| {kind: obj.class.name, message: obj.message} } # custom formatter for exceptions in attributes
+      #     end
+      #   end
+      def build(message_formatter: nil, attribute_formatter: nil, &block)
+        formatter = new(message_formatter: message_formatter, attribute_formatter: attribute_formatter)
+        formatter.instance_exec(&block) if block
+        formatter
+      end
+    end
+
     def initialize(message_formatter: nil, attribute_formatter: nil)
       if message_formatter.nil? || message_formatter == :default
         message_formatter = Lumberjack::Formatter.new

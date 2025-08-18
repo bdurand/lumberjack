@@ -36,6 +36,20 @@ module Lumberjack
       def empty
         new.clear
       end
+
+      # Build a new formatter using the given block. The block will be yielded to with
+      # the new formatter in context.
+      #
+      # @example
+      #   Lumberjack::Formatter.build do
+      #     add(MyClass, :pretty_print)
+      #     add(YourClass) { |obj| obj.humanize }
+      #   end
+      def build(&block)
+        formatter = new
+        formatter.instance_eval(&block)
+        formatter
+      end
     end
 
     def initialize

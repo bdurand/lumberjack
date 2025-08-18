@@ -11,6 +11,22 @@ module Lumberjack
   #   attribute_formatter.add("finished_at", Lumberjack::Formatter::DateTimeFormatter.new("%Y-%m-%dT%H:%m:%S%z"))
   #   attribute_formatter.add(Enumerable) { |value| value.join(", ") }
   class AttributeFormatter
+    class << self
+      # Build a new attribute formatter using the given block. The block will be yielded to with
+      # the new formatter in context.
+      #
+      # @example
+      #   Lumberjack::AttributeFormatter.build do
+      #     add(["password", "email"]) { |value| "***" }
+      #     add(Enumerable) { |value| value.join(", ") }
+      #   end
+      def build(&block)
+        formatter = new
+        formatter.instance_eval(&block)
+        formatter
+      end
+    end
+
     def initialize
       @attribute_formatters = {}
       @class_formatter = Formatter.empty

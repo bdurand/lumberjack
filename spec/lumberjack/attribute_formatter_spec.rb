@@ -5,6 +5,15 @@ require "spec_helper"
 RSpec.describe Lumberjack::AttributeFormatter do
   let(:attributes) { {"foo" => "bar", "baz" => "boo", "count" => 1} }
 
+  describe "#build" do
+    it "builds an attribute formatter in a block" do
+      attribute_formatter = Lumberjack::AttributeFormatter.build do
+        add(:foo) { |val| val.to_s.upcase }
+      end
+      expect(attribute_formatter.format(attributes)).to eq({"foo" => "BAR", "baz" => "boo", "count" => 1})
+    end
+  end
+
   it "should do nothing by default" do
     attribute_formatter = Lumberjack::AttributeFormatter.new
     expect(attribute_formatter.format(attributes)).to eq attributes

@@ -18,6 +18,20 @@ RSpec.describe Lumberjack::Formatter do
     end
 
     it "should be able to override the optimized formatters" do
+      formatter.add(String) { |s| s.upcase }
+      expect(formatter.format("foo")).to eq("FOO")
+      expect(formatter.format(1)).to eq(1) # Still uses optimized formatter
+    end
+  end
+
+  describe "#build" do
+    it "builds a formatter in a block" do
+      formatter = Lumberjack::Formatter.build do
+        add(String) { |s| s.upcase }
+        add(Integer) { |obj| "number: #{obj}" }
+      end
+      expect(formatter.format("foo")).to eq("FOO")
+      expect(formatter.format(10)).to eq("number: 10")
     end
   end
 

@@ -41,6 +41,18 @@ RSpec.describe Lumberjack::EntryFormatter do
       expect(entry_formatter.attributes { remove(Object) }).to eq(entry_formatter)
       expect(entry_formatter.attribute_formatter).to be_empty
     end
+
+    it "build a formatter with a build block" do
+      entry_formatter = Lumberjack::EntryFormatter.build do
+        add(String) { |obj| obj.to_s.upcase }
+        attributes do
+          add("status") { |obj| "[#{obj}]" }
+        end
+      end
+
+      expect(entry_formatter.message_formatter.format("foobar")).to eq("FOOBAR")
+      expect(entry_formatter.attribute_formatter.format("status" => "new")).to eq({"status" => "[new]"})
+    end
   end
 
   describe "#entry" do
