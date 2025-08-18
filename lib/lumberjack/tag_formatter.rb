@@ -6,5 +6,10 @@ module Lumberjack
   #
   # @deprecated Use Lumberjack::AttributeFormatter instead.
   class TagFormatter < AttributeFormatter
+    def initialize
+      Utils.deprecated("Lumberjack::TagFormatter", "Use Lumberjack::AttributeFormatter instead.") do
+        super
+      end
+    end
   end
 end

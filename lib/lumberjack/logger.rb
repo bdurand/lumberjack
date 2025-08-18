@@ -65,7 +65,11 @@ module Lumberjack
       device_options[:standard_logger_formatter] = formatter if standard_logger_formatter?(formatter)
 
       # @deprecated Use {#attribute_formatter} instead.
-      attribute_formatter ||= device_options.delete(:tag_formatter)
+      if kwargs.include?(:tag_formatter)
+        Utils.deprecated(:tag_formatter, "Use attribute_formatter instead.") do
+          attribute_formatter ||= device_options.delete(:tag_formatter)
+        end
+      end
 
       @logdev = open_device(logdev, device_options)
 
@@ -131,6 +135,20 @@ module Lumberjack
       formatter.attribute_formatter = value
     end
 
+    # @deprecated Use {#attribute_formatter} instead.
+    def tag_formatter
+      Utils.deprecated(:tag_formatter, "Use attribute_formatter instead.") do
+        formatter.attributes.attribute_formatter
+      end
+    end
+
+    # @deprecated Use {#attribute_formatter=} instead.
+    def tag_formatter=(value)
+      Utils.deprecated(:tag_formatter=, "Use attribute_formatter= instead.") do
+        formatter.attributes.attribute_formatter = value
+      end
+    end
+
     # Flush the logging device. Messages are not guaranteed to be written until this method is called.
     #
     # @return [void]
@@ -181,7 +199,9 @@ module Lumberjack
     # @return [void]
     # @deprecated Use {#tag!} instead.
     def tag_globally(tags)
-      tag!(tags)
+      Utils.deprecated(:tag_globally, "Use tag! instead.") do
+        tag!(tags)
+      end
     end
 
     # Use context? instead
@@ -189,7 +209,9 @@ module Lumberjack
     # @return [Boolean]
     # @deprecated Use {#context?} instead.
     def in_tag_context?
-      context?
+      Utils.deprecated(:in_tag_context?, "Use context? instead.") do
+        context?
+      end
     end
 
     # Remove a tag from the current context block. If this is called inside a context block,
@@ -200,8 +222,10 @@ module Lumberjack
     # @return [void]
     # @deprecated Use untag or untag! instead.
     def remove_tag(*tag_names)
-      attributes = current_context&.attributes
-      AttributesHelper.new(attributes).delete(*tag_names) if attributes
+      Utils.deprecated(:remove_tag, "Use untag or untag! instead.") do
+        attributes = current_context&.attributes
+        AttributesHelper.new(attributes).delete(*tag_names) if attributes
+      end
     end
 
     # Add an entry to the log.

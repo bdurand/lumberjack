@@ -57,6 +57,21 @@ def delete_tmp_files
   end
 end
 
+def silence_deprecations
+  save_warning = Warning[:deprecated]
+  save_verbose = $VERBOSE
+  begin
+    Warning[:deprecated] = false
+    $VERBOSE = false
+    begin
+      yield
+    ensure
+      Warning[:deprecated] = save_warning
+      $VERBOSE = save_verbose
+    end
+  end
+end
+
 # Minimal implementation of a Lumberjack::ContextLogger for testing to ensure that methods from
 # Lumberjack::Logger are not polluting any of the logic.
 class TestContextLogger

@@ -63,7 +63,9 @@ module Lumberjack
     # @return [Hash]
     # @deprecated Use {#[]} instead.
     def tag(name)
-      self[name]
+      Utils.deprecated(:tag, "Use [] instead.") do
+        self[name]
+      end
     end
 
     # Helper method to expand the attributes into a nested structure. attributes with dots in the name
@@ -84,7 +86,9 @@ module Lumberjack
     # @return [Hash]
     # @deprecated Use {#nested_attributes} instead.
     def nested_tags
-      nested_attributes
+      Utils.deprecated(:nested_tags, "Use nested_attributes instead.") do
+        nested_attributes
+      end
     end
 
     # Return true if the log entry has no message and no attributes.

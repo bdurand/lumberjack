@@ -130,7 +130,9 @@ module Lumberjack
       # @return [Hash]
       # @deprecated Use {#flatten_attributes} instead.
       def flatten_tags(tag_hash)
-        flatten_attributes(tag_hash)
+        Utils.deprecated(:flatten_tags, "Use flatten_attributes instead.") do
+          flatten_attributes(tag_hash)
+        end
       end
 
       # Expand a hash of attributes that may contain nested hashes or dot notation keys. Dot notation attributes
@@ -154,7 +156,9 @@ module Lumberjack
       # @return [Hash]
       # @deprecated Use {#expand_attributes} instead.
       def expand_tags(tags)
-        expand_attributes(tags)
+        Utils.deprecated(:expand_tags, "Use expand_attributes instead.") do
+          expand_attributes(tags)
+        end
       end
 
       private

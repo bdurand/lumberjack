@@ -96,7 +96,9 @@ module Lumberjack
     # @return [Hash, nil]
     # @deprecated Use {#context_attributes}
     def context_tags
-      context_attributes
+      Utils.deprecated(:context_tags, "Use context_attributes instead.") do
+        context_attributes
+      end
     end
 
     # Tag all loggers with attributes on the current context

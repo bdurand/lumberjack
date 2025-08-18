@@ -395,7 +395,9 @@ module Lumberjack
     # @return [Hash]
     # @deprecated Use {#attributes} instead
     def tags
-      attributes
+      Utils.deprecated(:tags, "Use attributes instead.") do
+        attributes
+      end
     end
 
     # Get the value of an attribute by name from the current context.
@@ -413,7 +415,9 @@ module Lumberjack
     # @return [Hash]
     # @deprecated Use {#attribute_value} instead
     def tag_value(name)
-      attribute_value(name)
+      Utils.deprecated(:tag_value, "Use attribute_value instead.") do
+        attribute_value(name)
+      end
     end
 
     # Remove all attributes on the current logger and logging context within a block.

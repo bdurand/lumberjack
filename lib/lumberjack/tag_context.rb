@@ -6,5 +6,10 @@ module Lumberjack
   #
   # @deprecated Use Lumberjack::AttributesHelper instead.
   class TagContext < AttributesHelper
+    def initialize
+      Utils.deprecated("Lumberjack::TagContext", "Use Lumberjack::AttributesHelper instead.") do
+        super
+      end
+    end
   end
 end
