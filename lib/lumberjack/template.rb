@@ -164,7 +164,7 @@ module Lumberjack
     def compile(template) # :nodoc:
       template = template.gsub(/:tags\b/, ":attributes")
       template = template.gsub(/ :attributes\b/, ":attributes")
-      template = template.gsub("%", "%%")
+      template = template.gsub(/%(?!%)/, "%%")
 
       attribute_vars = []
       template = template.gsub(PLACEHOLDER_PATTERN) do |match|

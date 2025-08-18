@@ -15,8 +15,7 @@ module Lumberjack
 
         copy = {}
         hash.each do |key, value|
-          arity = value.arity if value.is_a?(Proc)
-          if arity == 0 || arity == -1
+          if value.is_a?(Proc) && (value.arity == 0 || value.arity == -1)
             value = value.call
           end
           copy[key.to_s] = value
