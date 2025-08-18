@@ -4,6 +4,12 @@ module Lumberjack
   # The standard severity levels for logging messages.
   module Severity
     TRACE = -1
+    DEBUG = Logger::Severity::DEBUG
+    INFO = Logger::Severity::INFO
+    WARN = Logger::Severity::WARN
+    ERROR = Logger::Severity::ERROR
+    FATAL = Logger::Severity::FATAL
+    UNKNOWN = Logger::Severity::UNKNOWN
 
     TRACE_LABEL = "TRACE"
     private_constant :TRACE_LABEL
@@ -27,7 +33,7 @@ module Lumberjack
       # @return [Integer] The severity level.
       def label_to_level(label)
         label = label.to_s.upcase
-        SEVERITY_LABELS.index(label) || ((label == TRACE_LABEL) ? TRACE : Logger::UNKNOWN)
+        SEVERITY_LABELS.index(label) || ((label == TRACE_LABEL) ? TRACE : UNKNOWN)
       end
 
       # Coerce a value to a severity level.
