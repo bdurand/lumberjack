@@ -13,7 +13,7 @@ module Lumberjack
   # Log entries are written to a logging Device if their severity meets or exceeds the log level.
   #
   # Each log entry records the log message and severity along with the time it was logged, the
-  # program name, process id, and an optional hash of tags. The message will be converted to a string, but
+  # program name, process id, and an optional hash of attributes. The message will be converted to a string, but
   # otherwise, it is up to the device how these values are recorded. Messages are converted to strings
   # using a Formatter associated with the logger.
   class Logger < ::Logger
@@ -51,11 +51,11 @@ module Lumberjack
     # @param shift_period_suffix [String] The suffix to use for the shifted log file names.
     # @param template [String] The template to use for serializing log entries to a string.
     # @param message_formatter [Lumberjack::Formatter] The MessageFormatter to use for formatting log messages.
-    # @param tag_formatter [Lumberjack::TagFormatter] The TagFormatter to use for formatting tags.
+    # @param attribute_formatter [Lumberjack::AttributeFormatter] The AttributeFormatter to use for formatting attributes.
     def initialize(logdev, shift_age = 0, shift_size = 1048576,
       level: DEBUG, progname: nil, formatter: nil, datetime_format: nil,
       binmode: false, shift_period_suffix: "%Y%m%d",
-      template: nil, message_formatter: nil, tag_formatter: nil, **kwargs)
+      template: nil, message_formatter: nil, attribute_formatter: nil, **kwargs)
       init_fiber_locals!
 
       # Include standard args that affect devices with the optional kwargs which may
@@ -63,13 +63,21 @@ module Lumberjack
       device_options = kwargs.merge(shift_age: shift_age, shift_size: shift_size, binmode: binmode, shift_period_suffix: shift_period_suffix)
       device_options[:template] = template unless template.nil?
       device_options[:standard_logger_formatter] = formatter if standard_logger_formatter?(formatter)
+
+      # @deprecated Use {#attribute_formatter} instead.
+      if kwargs.include?(:tag_formatter)
+        Utils.deprecated(:tag_formatter, "Use attribute_formatter instead.") do
+          attribute_formatter ||= device_options.delete(:tag_formatter)
+        end
+      end
+
       @logdev = open_device(logdev, device_options)
 
       @context = Context.new
       self.level = level || DEBUG
       self.progname = progname
 
-      self.formatter = build_entry_formatter(formatter, message_formatter, tag_formatter)
+      self.formatter = build_entry_formatter(formatter, message_formatter, attribute_formatter)
       self.datetime_format = datetime_format if datetime_format
 
       @closed = false # TODO
@@ -119,12 +127,26 @@ module Lumberjack
       formatter.message_formatter = value
     end
 
-    def tag_formatter
-      formatter.tags.tag_formatter
+    def attribute_formatter
+      formatter.attributes.attribute_formatter
     end
 
+    def attribute_formatter=(value)
+      formatter.attribute_formatter = value
+    end
+
+    # @deprecated Use {#attribute_formatter} instead.
+    def tag_formatter
+      Utils.deprecated(:tag_formatter, "Use attribute_formatter instead.") do
+        formatter.attributes.attribute_formatter
+      end
+    end
+
+    # @deprecated Use {#attribute_formatter=} instead.
     def tag_formatter=(value)
-      formatter.tag_formatter = value
+      Utils.deprecated(:tag_formatter=, "Use attribute_formatter= instead.") do
+        formatter.attributes.attribute_formatter = value
+      end
     end
 
     # Flush the logging device. Messages are not guaranteed to be written until this method is called.
@@ -172,22 +194,38 @@ module Lumberjack
       end
     end
 
-    # @deprecated Use tag! instead
-    alias_method :tag_globally, :tag!
-
-    # @deprecated Use context? instead
-    alias_method :in_tag_context?, :context?
-
-    # Remove a tag from the current context block. If this is called inside a tag context,
-    # the tags will only be removed for the duration of that block. Otherwise they will be removed
-    # from the global tags.
+    # Use tag! instead
     #
-    # @param [Array<String, Symbol>] tag_names The tags to remove.
+    # @return [void]
+    # @deprecated Use {#tag!} instead.
+    def tag_globally(tags)
+      Utils.deprecated(:tag_globally, "Use tag! instead.") do
+        tag!(tags)
+      end
+    end
+
+    # Use context? instead
+    #
+    # @return [Boolean]
+    # @deprecated Use {#context?} instead.
+    def in_tag_context?
+      Utils.deprecated(:in_tag_context?, "Use context? instead.") do
+        context?
+      end
+    end
+
+    # Remove a tag from the current context block. If this is called inside a context block,
+    # the attributes will only be removed for the duration of that block. Otherwise they will be removed
+    # from the global attributes.
+    #
+    # @param [Array<String, Symbol>] tag_names The attributes to remove.
     # @return [void]
     # @deprecated Use untag or untag! instead.
     def remove_tag(*tag_names)
-      tags = current_context&.tags
-      TagContext.new(tags).delete(*tag_names) if tags
+      Utils.deprecated(:remove_tag, "Use untag or untag! instead.") do
+        attributes = current_context&.attributes
+        AttributesHelper.new(attributes).delete(*tag_names) if attributes
+      end
     end
 
     # Add an entry to the log.
@@ -195,7 +233,7 @@ module Lumberjack
     # @param [Integer, Symbol, String] severity The severity of the message.
     # @param [Object] message The message to log.
     # @param [String] progname The name of the program that is logging the message.
-    # @param [Hash] tags The tags to add to the log entry.
+    # @param [Hash] attributes The attributes to add to the log entry.
     # @return [void]
     # @api private
     #
@@ -205,7 +243,7 @@ module Lumberjack
     #   logger.add_entry(Logger::INFO, "Request completed")
     #   logger.add_entry(:warn, "Request took a long time")
     #   logger.add_entry(Logger::DEBUG){"Start processing with options #{options.inspect}"}
-    def add_entry(severity, message, progname = nil, tags = nil)
+    def add_entry(severity, message, progname = nil, attributes = nil)
       return false unless device
       return false if fiber_local_value(:logging)
 
@@ -216,11 +254,11 @@ module Lumberjack
 
         time = Time.now
         progname ||= self.progname
-        tags = nil unless tags.is_a?(Hash)
-        tags = merge_tags(merge_all_tags, tags)
-        message, tags = formatter.format(message, tags) if formatter
+        attributes = nil unless attributes.is_a?(Hash)
+        attributes = merge_attributes(merge_all_attributes, attributes)
+        message, attributes = formatter.format(message, attributes) if formatter
 
-        entry = Lumberjack::LogEntry.new(time, severity, message, progname, Process.pid, tags)
+        entry = Lumberjack::LogEntry.new(time, severity, message, progname, Process.pid, attributes)
 
         write_to_device(entry)
       ensure
@@ -231,7 +269,7 @@ module Lumberjack
 
     def inspect
       formatted_object_id = object_id.to_s(16).rjust(16, "0")
-      "#<Lumberjack::Logger:0x#{formatted_object_id} level:#{Severity.level_to_label(level)} device:#{device.class.name} progname:#{progname.inspect} tags:#{tags.inspect}>"
+      "#<Lumberjack::Logger:0x#{formatted_object_id} level:#{Severity.level_to_label(level)} device:#{device.class.name} progname:#{progname.inspect} attributes:#{attributes.inspect}>"
     end
 
     private
@@ -266,7 +304,7 @@ module Lumberjack
       end
     end
 
-    def build_entry_formatter(formatter, message_formatter, tag_formatter) # :nodoc:
+    def build_entry_formatter(formatter, message_formatter, attribute_formatter) # :nodoc:
       entry_formatter = formatter if formatter.is_a?(Lumberjack::EntryFormatter)
 
       unless entry_formatter
@@ -275,7 +313,7 @@ module Lumberjack
       end
 
       entry_formatter.message_formatter = message_formatter if message_formatter
-      entry_formatter.tag_formatter = tag_formatter if tag_formatter
+      entry_formatter.attribute_formatter = attribute_formatter if attribute_formatter
 
       entry_formatter
     end

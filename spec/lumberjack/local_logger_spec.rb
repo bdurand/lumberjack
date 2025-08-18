@@ -14,7 +14,7 @@ RSpec.describe Lumberjack::LocalLogger do
       severity: Logger::INFO,
       message: "Test message",
       progname: nil,
-      tags: nil
+      attributes: nil
     })
   end
 
@@ -34,20 +34,20 @@ RSpec.describe Lumberjack::LocalLogger do
       severity: Logger::INFO,
       message: "Test message",
       progname: nil,
-      tags: nil
+      attributes: nil
     })
   end
 
-  it "allows setting tags on the local logger" do
+  it "allows setting attributes on the local logger" do
     local_logger = Lumberjack::LocalLogger.new(logger)
     local_logger.tag!(test: "value")
     local_logger.info("Test message")
-    expect(logger.tags).to be_empty
+    expect(logger.attributes).to be_empty
     expect(logger.entries.first).to eq({
       severity: Logger::INFO,
       message: "Test message",
       progname: nil,
-      tags: {"test" => "value"}
+      attributes: {"test" => "value"}
     })
   end
 
@@ -60,7 +60,7 @@ RSpec.describe Lumberjack::LocalLogger do
       severity: Logger::INFO,
       message: "Test message",
       progname: "TestProgname",
-      tags: nil
+      attributes: nil
     })
   end
 end

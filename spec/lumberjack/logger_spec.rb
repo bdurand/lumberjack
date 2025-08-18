@@ -44,10 +44,10 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.message_formatter).to be
     end
 
-    it "should have a tag formatter" do
+    it "should have an attribute formatter" do
       out = StringIO.new
       logger = Lumberjack::Logger.new(out)
-      expect(logger.tag_formatter).to be
+      expect(logger.attribute_formatter).to be
     end
 
     it "should open a file path in a device" do
@@ -227,7 +227,7 @@ RSpec.describe Lumberjack::Logger do
 
   describe "logging methods" do
     let(:out) { StringIO.new }
-    let(:device) { Lumberjack::Device::Writer.new(out, template: "[:time :severity :progname(:pid)] :message :tags") }
+    let(:device) { Lumberjack::Device::Writer.new(out, template: "[:time :severity :progname(:pid)] :message :attributes") }
     let(:logger) { Lumberjack::Logger.new(device, level: Logger::INFO, progname: "app") }
     let(:n) { Lumberjack::LINE_SEPARATOR }
 
@@ -294,14 +294,14 @@ RSpec.describe Lumberjack::Logger do
     end
 
     describe "add_entry" do
-      it "should add entries with tags" do
+      it "should add entries with attributes" do
         time = Time.parse("2011-01-30T12:31:56.123")
         allow(Time).to receive_messages(now: time)
         logger.add_entry(Logger::INFO, "test", "spec", "tag" => "ABCD")
         expect(out.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{Process.pid})] test [tag:ABCD]")
       end
 
-      it "should handle malformed tags" do
+      it "should handle malformed attributes" do
         time = Time.parse("2011-01-30T12:31:56.123")
         allow(Time).to receive_messages(now: time)
         logger.add_entry(Logger::INFO, "test", "spec", "ABCD")
@@ -367,7 +367,7 @@ RSpec.describe Lumberjack::Logger do
           expect(out.string.chomp).to eq("[#{timestamp} #{level.upcase} spec(#{Process.pid})] test")
         end
 
-        it "should log a message string with tags" do
+        it "should log a message string with attributes" do
           logger.send(level, "test", tag: 1)
           expect(out.string.chomp).to eq("[#{timestamp} #{level.upcase} app(#{Process.pid})] test [tag:1]")
         end
@@ -382,17 +382,17 @@ RSpec.describe Lumberjack::Logger do
           expect(out.string.chomp).to eq("[#{timestamp} #{level.upcase} spec(#{Process.pid})] test")
         end
 
-        it "should log a message block with tags" do
+        it "should log a message block with attributes" do
           logger.send(level, tag: 1) { "test" }
           expect(out.string.chomp).to eq("[#{timestamp} #{level.upcase} app(#{Process.pid})] test [tag:1]")
         end
 
-        it "should log a message block with a progname and tags" do
+        it "should log a message block with a progname and attributes" do
           logger.send(level, "spec", tag: 1) { "test" }
           expect(out.string.chomp).to eq("[#{timestamp} #{level.upcase} spec(#{Process.pid})] test [tag:1]")
         end
 
-        it "should log a message block with a progname and tags" do
+        it "should log a message block with a progname and attributes" do
           logger.send(level, {tag: 1}, "spec") { "test" }
           expect(out.string.chomp).to eq("[#{timestamp} #{level.upcase} spec(#{Process.pid})] test [tag:1]")
         end
@@ -415,8 +415,8 @@ RSpec.describe Lumberjack::Logger do
         expect(out.string.chomp).to eq "tset"
       end
 
-      it "should copy tags from the message if the formatter returns a Lumberjack::Formatter::TaggedMessage" do
-        logger = Lumberjack::Logger.new(out, template: ":message :tags")
+      it "should copy attributes from the message if the formatter returns a Lumberjack::Formatter::TaggedMessage" do
+        logger = Lumberjack::Logger.new(out, template: ":message :attributes")
         logger.formatter.add(String) { |msg| Lumberjack::Formatter::TaggedMessage.new(msg.upcase, tag: msg.downcase) }
         logger.info("Test")
         expect(out.string.chomp).to eq "TEST [tag:test]"
@@ -424,48 +424,56 @@ RSpec.describe Lumberjack::Logger do
     end
 
     describe "#tag_globally" do
-      let(:device) { Lumberjack::Device::Writer.new(out, template: ":message - :count - :tags") }
+      let(:device) { Lumberjack::Device::Writer.new(out, template: ":message - :count - :attributes") }
 
-      it "should be able to add global tags to the logger" do
-        logger.tag_globally(count: 1, foo: "bar")
-        logger.info("one")
-        logger.info("two", count: 2)
-        lines = out.string.split(n)
-        expect(lines[0]).to eq "one - 1 - [foo:bar]"
-        expect(lines[1]).to eq "two - 2 - [foo:bar]"
+      it "should be able to add global attributes to the logger" do
+        silence_deprecations do
+          logger.tag_globally(count: 1, foo: "bar")
+          logger.info("one")
+          logger.info("two", count: 2)
+          lines = out.string.split(n)
+          expect(lines[0]).to eq "one - 1 - [foo:bar]"
+          expect(lines[1]).to eq "two - 2 - [foo:bar]"
+        end
       end
     end
 
     describe "#remove_tag" do
-      let(:device) { Lumberjack::Device::Writer.new(out, template: ":message - :count - :tags") }
+      let(:device) { Lumberjack::Device::Writer.new(out, template: ":message - :count - :attributes") }
 
-      it "should remove context tags in a context block and global tags outside of one" do
-        logger.tag!(foo: "bar", wip: "wap")
-        logger.context do
-          logger.tag(baz: "boo", bip: "bap")
-          logger.remove_tag(:baz)
+      it "should remove context attributes in a context block and global attributes outside of one" do
+        silence_deprecations do
+          logger.tag!(foo: "bar", wip: "wap")
+          logger.context do
+            logger.tag(baz: "boo", bip: "bap")
+            logger.remove_tag(:baz)
+            logger.remove_tag(:foo)
+            expect(logger.attributes).to eq({"foo" => "bar", "wip" => "wap", "bip" => "bap"})
+          end
           logger.remove_tag(:foo)
-          expect(logger.tags).to eq({"foo" => "bar", "wip" => "wap", "bip" => "bap"})
+          expect(logger.attributes).to eq({"wip" => "wap"})
         end
-        logger.remove_tag(:foo)
-        expect(logger.tags).to eq({"wip" => "wap"})
       end
 
-      it "should be able to extract tags from an object with a formatter that returns Lumberjack::Formatter::TaggedMessage" do
-        logger.formatter.add(Exception, ->(e) {
-          Lumberjack::Formatter::TaggedMessage.new(e.inspect, {message: e.message, class: e.class.name})
-        })
-        error = StandardError.new("foobar")
-        logger.info(error)
-        line = out.string.chomp
-        expect(line).to eq "#{error.inspect} -  - [message:foobar] [class:StandardError]"
+      it "should be able to extract attributes from an object with a formatter that returns Lumberjack::Formatter::TaggedMessage" do
+        silence_deprecations do
+          logger.formatter.add(Exception, ->(e) {
+            Lumberjack::Formatter::TaggedMessage.new(e.inspect, {message: e.message, class: e.class.name})
+          })
+          error = StandardError.new("foobar")
+          logger.info(error)
+          line = out.string.chomp
+          expect(line).to eq "#{error.inspect} -  - [message:foobar] [class:StandardError]"
+        end
       end
 
-      it "should apply a tag formatter to the tags" do
-        logger.tag_formatter.add(:foo, &:reverse).add(:count) { |val| val * 100 }
-        logger.info("message", count: 2, foo: "abc")
-        line = out.string.chomp
-        expect(line).to eq "message - 200 - [foo:cba]"
+      it "should apply an attribute formatter to the attributes" do
+        silence_deprecations do
+          logger.attribute_formatter.add(:foo, &:reverse).add(:count) { |val| val * 100 }
+          logger.info("message", count: 2, foo: "abc")
+          line = out.string.chomp
+          expect(line).to eq "message - 200 - [foo:cba]"
+        end
       end
     end
   end

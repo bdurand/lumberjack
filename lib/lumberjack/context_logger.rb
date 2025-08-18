@@ -121,13 +121,13 @@ module Lumberjack
 
     # Log a +FATAL+ message. The message can be passed in either the +message+ argument or in a block.
     #
-    # @param [Object] message_or_progname_or_tags The message to log or progname
+    # @param [Object] message_or_progname_or_attributes The message to log or progname
     #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_tags The name of the program that is logging the message or tags
+    # @param [String, Hash] progname_or_attributes The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
-    def fatal(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
-      call_add_entry(Logger::FATAL, message_or_progname_or_tags, progname_or_tags, &block)
+    def fatal(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
+      call_add_entry(Logger::FATAL, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
 
     # Return +true+ if +FATAL+ messages are being logged.
@@ -146,13 +146,13 @@ module Lumberjack
 
     # Log an +ERROR+ message. The message can be passed in either the +message+ argument or in a block.
     #
-    # @param [Object] message_or_progname_or_tags The message to log or progname
+    # @param [Object] message_or_progname_or_attributes The message to log or progname
     #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_tags The name of the program that is logging the message or tags
+    # @param [String, Hash] progname_or_attributes The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
-    def error(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
-      call_add_entry(Logger::ERROR, message_or_progname_or_tags, progname_or_tags, &block)
+    def error(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
+      call_add_entry(Logger::ERROR, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
 
     # Return +true+ if +ERROR+ messages are being logged.
@@ -171,13 +171,13 @@ module Lumberjack
 
     # Log a +WARN+ message. The message can be passed in either the +message+ argument or in a block.
     #
-    # @param [Object] message_or_progname_or_tags The message to log or progname
+    # @param [Object] message_or_progname_or_attributes The message to log or progname
     #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_tags The name of the program that is logging the message or tags
+    # @param [String, Hash] progname_or_attributes The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
-    def warn(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
-      call_add_entry(Logger::WARN, message_or_progname_or_tags, progname_or_tags, &block)
+    def warn(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
+      call_add_entry(Logger::WARN, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
 
     # Return +true+ if +WARN+ messages are being logged.
@@ -196,13 +196,13 @@ module Lumberjack
 
     # Log an +INFO+ message. The message can be passed in either the +message+ argument or in a block.
     #
-    # @param [Object] message_or_progname_or_tags The message to log or progname
+    # @param [Object] message_or_progname_or_attributes The message to log or progname
     #   if the message is passed in a block.
-    # @param [String] progname_or_tags The name of the program that is logging the message or tags
+    # @param [String] progname_or_attributes The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
-    def info(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
-      call_add_entry(Logger::INFO, message_or_progname_or_tags, progname_or_tags, &block)
+    def info(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
+      call_add_entry(Logger::INFO, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
 
     # Return +true+ if +INFO+ messages are being logged.
@@ -221,13 +221,13 @@ module Lumberjack
 
     # Log a +DEBUG+ message. The message can be passed in either the +message+ argument or in a block.
     #
-    # @param [Object] message_or_progname_or_tags The message to log or progname
+    # @param [Object] message_or_progname_or_attributes The message to log or progname
     #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_tags The name of the program that is logging the message or tags
+    # @param [String, Hash] progname_or_attributes The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
-    def debug(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
-      call_add_entry(Logger::DEBUG, message_or_progname_or_tags, progname_or_tags, &block)
+    def debug(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
+      call_add_entry(Logger::DEBUG, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
 
     # Return +true+ if +DEBUG+ messages are being logged.
@@ -248,13 +248,13 @@ module Lumberjack
     # Trace logs are a level lower than debug and are generally used to log code execution paths for
     # low level debugging.
     #
-    # @param [Object] message_or_progname_or_tags The message to log or progname
+    # @param [Object] message_or_progname_or_attributes The message to log or progname
     #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_tags The name of the program that is logging the message or tags
+    # @param [String, Hash] progname_or_attributes The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
-    def trace(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
-      call_add_entry(TRACE, message_or_progname_or_tags, progname_or_tags, &block)
+    def trace(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
+      call_add_entry(TRACE, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
 
     # Return +true+ if +TRACE+ messages are being logged.
@@ -274,13 +274,13 @@ module Lumberjack
     # Log a message when the severity is not known. Unknown messages will always appear in the log.
     # The message can be passed in either the +message+ argument or in a block.
     #
-    # @param [Object] message_or_progname_or_tags The message to log or progname
+    # @param [Object] message_or_progname_or_attributes The message to log or progname
     #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_tags The name of the program that is logging the message or tags
+    # @param [String, Hash] progname_or_attributes The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
-    def unknown(message_or_progname_or_tags = nil, progname_or_tags = nil, &block)
-      call_add_entry(Logger::UNKNOWN, message_or_progname_or_tags, progname_or_tags, &block)
+    def unknown(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
+      call_add_entry(Logger::UNKNOWN, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
 
     # Add a message when the severity is not known.
@@ -291,55 +291,55 @@ module Lumberjack
       add_entry(default_severity, msg)
     end
 
-    # Set a hash of tags on logger. If a block is given, the tags will only be set
-    # for the duration of the block. Otherwise the tags will be applied on the current
+    # Tag the logger with a set of attributes. If a block is given, the attributes will only be set
+    # for the duration of the block. Otherwise the attributes will be applied on the current
     # logger context for the duration of the current context. If there is no current context,
-    # then a new logger object will be returned with those tags set on it.
+    # then a new logger object will be returned with those attributes set on it.
     #
-    # @param [Hash] tags The tags to set.
+    # @param [Hash] attributes The attributes to set.
     # @return [Object, Lumberjack::ContextLogger] If a block is given then the result of the block is returned.
-    #   Otherwise it returns a Lumberjack::ContextLogger with the tags set.
+    #   Otherwise it returns a Lumberjack::ContextLogger with the attributes set.
     #
     # @example
-    #   # Only applies the tag inside the block
+    #   # Only applies the attributes inside the block
     #   logger.tag(foo: "bar") do
     #     logger.info("message")
     #   end
     #
     # @example
-    #   # Only applies the tag inside the context block
+    #   # Only applies the attributes inside the context block
     #   logger.context do
     #     logger.tag(foo: "bar")
     #     logger.info("message")
     #   end
     #
     # @example
-    #   # Returns a new logger with the tag set on it
+    #   # Returns a new logger with the attributes set on it
     #   logger.tag(foo: "bar").info("message")
-    def tag(tags, &block)
+    def tag(attributes, &block)
       if block
         context do |ctx|
-          ctx.tag(tags)
+          ctx.assign_attributes(attributes)
           block.call(ctx)
         end
       else
-        local_context&.tag(tags)
+        local_context&.assign_attributes(attributes)
         self
       end
     end
 
-    # Add persistent tags to the logger. These tags will be included on every log entry and are
-    # not tied to a context block. If the logger does not support global tags, then these will be
-    # ignored.
-    def tag!(tags)
-      default_context&.tag(tags)
+    # Tags the logger with a set of persistent attributes. These attributes will be included on every log
+    # entry and are not tied to a context block. If the logger does not have a default context, then
+    # these will be ignored.
+    def tag!(attributes)
+      default_context&.assign_attributes(attributes)
       nil
     end
 
-    # Set up a context block for the logger. All tags added within the block will be cleared when
+    # Set up a context block for the logger. All attributes added within the block will be cleared when
     # the block exits.
     #
-    # @param [Proc] block The block to execute with the tag context.
+    # @param [Proc] block The block to execute with the context.
     # @return [Object] The result of the block.
     # @yield [Context]
     def context(&block)
@@ -353,54 +353,76 @@ module Lumberjack
       end
     end
 
-    def local_logger(level: nil, progname: nil, tags: nil)
+    def local_logger(level: nil, progname: nil, attributes: nil)
       logger = LocalLogger.new(self)
       logger.level = level if level
       logger.progname = progname if progname
-      logger.tag!(tags) if tags
+      logger.tag!(attributes) if attributes
       logger
     end
 
-    # Remove a tag from the current context block.
+    # Remove attributes from the current context block.
     #
-    # @param [Array<String, Symbol>] tag_names The tags to remove.
+    # @param [Array<String, Symbol>] attribute_names The attributes to remove.
     # @return [void]
-    def untag(*tag_names)
-      tags = local_context&.tags
-      TagContext.new(tags).delete(*tag_names) if tags
+    def untag(*attribute_names)
+      attributes = local_context&.attributes
+      AttributesHelper.new(attributes).delete(*attribute_names) if attributes
       nil
     end
 
-    # Remove a tag from the default context for the logger.
+    # Remove attributes from the default context for the logger.
     #
-    # @param [Array<String, Symbol>] tag_names The tags to remove.
+    # @param [Array<String, Symbol>] attribute_names The attributes to remove.
     # @return [void]
-    def untag!(*tag_names)
-      tags = default_context&.tags
-      TagContext.new(tags).delete(*tag_names) if tags
+    def untag!(*attribute_names)
+      attributes = default_context&.attributes
+      AttributesHelper.new(attributes).delete(*attribute_names) if attributes
       nil
     end
 
-    # Return all tags in scope on the logger including global tags set on the Lumberjack
-    # context, tags set on the logger, and tags set on the current block for the logger.
+    # Return all attributes in scope on the logger including global attributes set on the Lumberjack
+    # context, attributes set on the logger, and attributes set on the current block for the logger.
     #
     # @return [Hash]
-    def tags
-      merge_all_tags || {}
+    def attributes
+      merge_all_attributes || {}
     end
 
-    # Get the value of a tag by name from the current tag context.
+    # Alias method for #attributes to provide backward compatibility with version 1.x API. This
+    # method will eventually be removed.
     #
-    # @param [String, Symbol] name The name of the tag to get.
-    # @return [Object, nil] The value of the tag or nil if the tag does not exist.
-    def tag_value(name)
-      name = name.join(".") if name.is_a?(Array)
-      TagContext.new(tags)[name]
+    # @return [Hash]
+    # @deprecated Use {#attributes} instead
+    def tags
+      Utils.deprecated(:tags, "Use attributes instead.") do
+        attributes
+      end
     end
 
-    # Remove all tags on the current logger and logging context within a block.
-    # You can still set new block scoped tags within theuntagged block and provide
-    # tags on individual log methods.
+    # Get the value of an attribute by name from the current context.
+    #
+    # @param [String, Symbol] name The name of the attribute to get.
+    # @return [Object, nil] The value of the attribute or nil if the attribute does not exist.
+    def attribute_value(name)
+      name = name.join(".") if name.is_a?(Array)
+      AttributesHelper.new(attributes)[name]
+    end
+
+    # Alias method for #attribute_value to provide backward compatibility with version 1.x API. This
+    # method will eventually be removed.
+    #
+    # @return [Hash]
+    # @deprecated Use {#attribute_value} instead
+    def tag_value(name)
+      Utils.deprecated(:tag_value, "Use attribute_value instead.") do
+        attribute_value(name)
+      end
+    end
+
+    # Remove all attributes on the current logger and logging context within a block.
+    # You can still set new block scoped attributes within the untagged block and provide
+    # attributes on individual log methods.
     #
     # @return [void]
     def untagged(&block)
@@ -409,7 +431,7 @@ module Lumberjack
         begin
           set_fiber_local_value(:logger_untagged, true)
           context do |ctx|
-            ctx.clear_tags
+            ctx.clear_attributes
             block.call
           end
         ensure
@@ -430,10 +452,10 @@ module Lumberjack
     # @param [Integer, Symbol, String] severity The severity of the message.
     # @param [Object] message The message to log.
     # @param [String] progname The name of the program that is logging the message.
-    # @param [Hash] tags The tags to add to the log entry.
+    # @param [Hash] attributes The attributes to add to the log entry.
     # @return [void]
     # @api private
-    def add_entry(severity, message, progname = nil, tags = nil)
+    def add_entry(severity, message, progname = nil, attributes = nil)
       raise NotImplementedError
     end
 
@@ -461,72 +483,72 @@ module Lumberjack
     end
 
     # Dereference arguments to log calls so we can have methods with compatibility with ::Logger
-    def call_add_entry(severity, message_or_progname_or_tags, progname_or_tags, &block) # :nodoc:
+    def call_add_entry(severity, message_or_progname_or_attributes, progname_or_attributes, &block) # :nodoc:
       severity = Severity.coerce(severity) unless severity.is_a?(Integer)
       return true unless level.nil? || severity >= level
 
       message = nil
       progname = nil
-      tags = nil
+      attributes = nil
       if block
         message = block
-        if message_or_progname_or_tags.is_a?(Hash)
-          tags = message_or_progname_or_tags
-          progname = progname_or_tags
+        if message_or_progname_or_attributes.is_a?(Hash)
+          attributes = message_or_progname_or_attributes
+          progname = progname_or_attributes
         else
-          progname = message_or_progname_or_tags
-          tags = progname_or_tags if progname_or_tags.is_a?(Hash)
+          progname = message_or_progname_or_attributes
+          attributes = progname_or_attributes if progname_or_attributes.is_a?(Hash)
         end
       else
-        message = message_or_progname_or_tags
-        if progname_or_tags.is_a?(Hash)
-          tags = progname_or_tags
+        message = message_or_progname_or_attributes
+        if progname_or_attributes.is_a?(Hash)
+          attributes = progname_or_attributes
         else
-          progname = progname_or_tags
+          progname = progname_or_attributes
         end
       end
 
       message = message.call if message.is_a?(Proc)
-      return if (message.nil? || message == "") && (tags.nil? || tags.empty?)
+      return if (message.nil? || message == "") && (attributes.nil? || attributes.empty?)
 
-      add_entry(severity, message, progname, tags)
+      add_entry(severity, message, progname, attributes)
     end
 
-    # Merge a tags hash into an existing tags hash.
-    def merge_tags(current_tags, tags)
-      if current_tags.nil? || current_tags.empty?
-        tags
-      elsif tags.nil?
-        current_tags
+    # Merge a attributes hash into an existing attributes hash.
+    def merge_attributes(current_attributes, attributes)
+      if current_attributes.nil? || current_attributes.empty?
+        attributes
+      elsif attributes.nil?
+        current_attributes
       else
-        current_tags.merge(tags)
+        current_attributes.merge(attributes)
       end
     end
 
-    def merge_all_tags
-      tags = nil
+    def merge_all_attributes
+      attributes = nil
 
       unless fiber_local_value(:logger_untagged)
-        global_context_tags = Lumberjack.context_tags
-        if global_context_tags && !global_context_tags.empty?
-          tags ||= {}
-          tags.merge!(global_context_tags)
+        global_context_attributes = Lumberjack.context_attributes
+        if global_context_attributes && !global_context_attributes.empty?
+          attributes ||= {}
+          attributes.merge!(global_context_attributes)
         end
 
-        default_tags = default_context&.tags
-        if default_tags && !default_tags.empty?
-          tags ||= {}
-          tags.merge!(default_tags)
+        default_attributes = default_context&.attributes
+        if default_attributes && !default_attributes.empty?
+          attributes ||= {}
+          attributes.merge!(default_attributes)
         end
       end
 
-      context_tags = current_context&.tags
-      if context_tags && !context_tags.empty?
-        tags ||= {}
-        tags.merge!(context_tags)
+      context_attributes = current_context&.attributes
+      if context_attributes && !context_attributes.empty?
+        attributes ||= {}
+        attributes.merge!(context_attributes)
       end
 
-      tags
+      attributes
     end
   end
 end

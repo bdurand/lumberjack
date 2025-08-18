@@ -8,34 +8,27 @@ module Lumberjack
       #
       # @param [Hash] hash The hash to transform.
       # @return [Hash] The hash with string keys.
+      # @deprecated No longer supported
       def stringify_keys(hash)
-        return nil if hash.nil?
-        if hash.keys.all? { |key| key.is_a?(String) }
-          hash
-        else
-          hash.transform_keys(&:to_s)
+        Utils.deprecated(:stringify_keys, "No longer supported") do
+          return nil if hash.nil?
+          if hash.keys.all? { |key| key.is_a?(String) }
+            hash
+          else
+            hash.transform_keys(&:to_s)
+          end
         end
       end
 
-      # Ensure keys are strings and expand any values in a hash that are Proc's by calling them and replacing
-      # the value with the result. This allows setting global tags with runtime values.
+      # Alias to AttributesHelper.expand_runtime_values
       #
       # @param [Hash] hash The hash to transform.
       # @return [Hash] The hash with string keys and expanded values.
+      # @deprecated Use {Lumberjack::AttributesHelper.expand_runtime_values} instead.
       def expand_runtime_values(hash)
-        return nil if hash.nil?
-        if hash.all? { |key, value| key.is_a?(String) && !value.is_a?(Proc) }
-          return hash
+        Utils.deprecated(:expand_runtime_values, "Use Lumberjack::AttributesHelper.expand_runtime_values instead.") do
+          AttributesHelper.expand_runtime_values(hash)
         end
-
-        copy = {}
-        hash.each do |key, value|
-          if value.is_a?(Proc) && (value.arity == 0 || value.arity == -1)
-            value = value.call
-          end
-          copy[key.to_s] = value
-        end
-        copy
       end
     end
   end

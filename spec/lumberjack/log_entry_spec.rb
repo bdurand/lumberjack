@@ -56,14 +56,14 @@ RSpec.describe Lumberjack::LogEntry do
     end
   end
 
-  describe "#tags" do
-    it "should have tags" do
+  describe "#attributes" do
+    it "should have attributes" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo" => "ABCD")
-      expect(entry.tags).to eq("foo" => "ABCD")
+      expect(entry.attributes).to eq("foo" => "ABCD")
     end
 
-    it "should compact tags that are set to empty values" do
-      tags = {
+    it "should compact attributes that are set to empty values" do
+      attributes = {
         "a" => "A",
         "b" => nil,
         "c" => "",
@@ -71,13 +71,13 @@ RSpec.describe Lumberjack::LogEntry do
         "g" => {"h" => "", "i" => []}
       }
 
-      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, tags)
-      expect(entry.tags).to eq("a" => "A", "d" => {"e" => "E"})
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, attributes)
+      expect(entry.attributes).to eq("a" => "A", "d" => {"e" => "E"})
     end
   end
 
   describe "#empty?" do
-    it "is empty if the log has no message and no tags" do
+    it "is empty if the log has no message and no attributes" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, nil, "app", 1500, nil)
       expect(entry.empty?).to be true
 
@@ -87,43 +87,43 @@ RSpec.describe Lumberjack::LogEntry do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "message", "app", 1500, nil)
       expect(entry.empty?).to be false
 
-      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, nil, "app", 1500, {tag: "value"})
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, nil, "app", 1500, {attribute: "value"})
       expect(entry.empty?).to be false
     end
   end
 
-  describe "#tag" do
-    it "returns the tag value for a given name" do
+  describe "#[]]" do
+    it "returns the attribute value for a given name" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "a" => 1, "b" => 2)
-      expect(entry.tag("a")).to eq(1)
-      expect(entry.tag("b")).to eq(2)
-      expect(entry.tag("non_existent")).to be_nil
+      expect(entry["a"]).to eq(1)
+      expect(entry["b"]).to eq(2)
+      expect(entry["non_existent"]).to be_nil
     end
 
-    it "returns a hash when a tag is a parent of a dot notation key" do
+    it "returns a hash when a attribute is a parent of a dot notation key" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo.bar" => "baz", "foo.far" => "qux")
-      expect(entry.tag("foo")).to eq({"bar" => "baz", "far" => "qux"})
-      expect(entry.tag("foo.bar")).to eq("baz")
-      expect(entry.tag("foo.far")).to eq("qux")
+      expect(entry["foo"]).to eq({"bar" => "baz", "far" => "qux"})
+      expect(entry["foo.bar"]).to eq("baz")
+      expect(entry["foo.far"]).to eq("qux")
     end
   end
 
-  describe "#nested_tags" do
-    it "expands tags into a nested structure" do
+  describe "#nested_attributes" do
+    it "expands attributes into a nested structure" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "a.b.c" => 1, "a.b.d" => 2)
-      expect(entry.nested_tags).to eq({"a" => {"b" => {"c" => 1, "d" => 2}}})
+      expect(entry.nested_attributes).to eq({"a" => {"b" => {"c" => 1, "d" => 2}}})
     end
 
-    it "returns an empty hash if there are no tags" do
+    it "returns an empty hash if there are no attributes" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, nil)
-      expect(entry.nested_tags).to eq({})
+      expect(entry.nested_attributes).to eq({})
     end
   end
 
   describe "==" do
     let(:entry) { Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo" => "bar") }
     it "is equal to a log entry with the same attributes" do
-      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname, entry.pid, entry.tags)
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname, entry.pid, entry.attributes)
       expect(entry).to eq(other_entry)
     end
 
@@ -132,31 +132,31 @@ RSpec.describe Lumberjack::LogEntry do
     end
 
     it "is not equal to an entry with a different time" do
-      other_entry = Lumberjack::LogEntry.new(entry.time + 1, entry.severity, entry.message, entry.progname, entry.pid, entry.tags)
+      other_entry = Lumberjack::LogEntry.new(entry.time + 1, entry.severity, entry.message, entry.progname, entry.pid, entry.attributes)
       expect(entry).not_to eq(other_entry)
     end
 
     it "is not equal to an entry with a different severity" do
-      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity + 1, entry.message, entry.progname, entry.pid, entry.tags)
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity + 1, entry.message, entry.progname, entry.pid, entry.attributes)
       expect(entry).not_to eq(other_entry)
     end
 
     it "is not equal to an entry with a different message" do
-      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message + " altered", entry.progname, entry.pid, entry.tags)
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message + " altered", entry.progname, entry.pid, entry.attributes)
       expect(entry).not_to eq(other_entry)
     end
 
     it "is not equal to an entry with a different progname" do
-      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname + " altered", entry.pid, entry.tags)
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname + " altered", entry.pid, entry.attributes)
       expect(entry).not_to eq(other_entry)
     end
 
     it "is not equal to an entry with a different pid" do
-      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname, entry.pid + 1, entry.tags)
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname, entry.pid + 1, entry.attributes)
       expect(entry).not_to eq(other_entry)
     end
 
-    it "is not equal to an entry with different tags" do
+    it "is not equal to an entry with different attributes" do
       other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname, entry.pid, {"foo" => "baz"})
       expect(entry).not_to eq(other_entry)
     end

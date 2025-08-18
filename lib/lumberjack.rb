@@ -9,6 +9,8 @@ require "pathname"
 module Lumberjack
   LINE_SEPARATOR = ((RbConfig::CONFIG["host_os"] =~ /mswin/i) ? "\r\n" : "\n")
 
+  require_relative "lumberjack/attribute_formatter"
+  require_relative "lumberjack/attributes_helper"
   require_relative "lumberjack/context"
   require_relative "lumberjack/context_logger"
   require_relative "lumberjack/fiber_locals"
@@ -22,22 +24,24 @@ module Lumberjack
   require_relative "lumberjack/logger"
   require_relative "lumberjack/rack"
   require_relative "lumberjack/severity"
-  require_relative "lumberjack/tags"
-  require_relative "lumberjack/tag_context"
-  require_relative "lumberjack/tag_formatter"
   require_relative "lumberjack/template"
   require_relative "lumberjack/utils"
+
+  # Deprecated
+  require_relative "lumberjack/tag_context"
+  require_relative "lumberjack/tag_formatter"
+  require_relative "lumberjack/tags"
 
   @global_contexts = {}
   @global_contexts_mutex = Mutex.new
 
   class << self
-    # Contexts can be used to store tags that will be attached to all log entries in the block.
+    # Contexts can be used to store attributes that will be attached to all log entries in the block.
     # The context will apply to all Lumberjack loggers that are used within the block.
     #
     # If this method is called with a block, it will set a logging context for the scope of a block.
     # If there is already a context in scope, a new one will be created that inherits
-    # all the tags of the parent context.
+    # all the attributes of the parent context.
     #
     # Otherwise, it will return the current context. If one doesn't exist, it will return a new one
     # but that context will not be in any scope.
@@ -79,26 +83,37 @@ module Lumberjack
       !!@global_contexts[Fiber.current.object_id]
     end
 
-    # Return tags that will be applied to all Lumberjack loggers.
+    # Return attributes that will be applied to all Lumberjack loggers.
     #
     # @return [Hash, nil]
-    def context_tags
-      current_context&.tags
+    def context_attributes
+      current_context&.attributes
     end
 
-    # Set tags on the current context
+    # Alias for context_attributes to provide API compatibility with version 1.x.
+    # This method will eventually be removed.
     #
-    # @param tags [Hash] The tags to set.
-    # @param block [Proc] optional context block in which to set the tags.
+    # @return [Hash, nil]
+    # @deprecated Use {#context_attributes}
+    def context_tags
+      Utils.deprecated(:context_tags, "Use context_attributes instead.") do
+        context_attributes
+      end
+    end
+
+    # Tag all loggers with attributes on the current context
+    #
+    # @param attributes [Hash] The attributes to set.
+    # @param block [Proc] optional context block in which to set the attributes.
     # @return [void]
-    def tag(tags, &block)
+    def tag(attributes, &block)
       if block
         context do
-          current_context.tag(tags)
+          current_context.assign_attributes(attributes)
           block.call
         end
       else
-        current_context&.tag(tags)
+        current_context&.assign_attributes(attributes)
       end
     end
 

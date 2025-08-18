@@ -91,14 +91,14 @@ RSpec.describe Lumberjack::Device::Test do
       expect(device.match(progname: "different_progname")).to be_nil
     end
 
-    it "can match by tags" do
+    it "can match by attributes" do
       entry_1 = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Message 1", "progname1", nil, {"foo" => "bar"})
       entry_2 = Lumberjack::LogEntry.new(Time.now, Logger::WARN, "Message 2", "progname2", nil, {"foo" => "baz"})
       device.write(entry_1)
       device.write(entry_2)
-      expect(device.match(tags: {foo: "bar"})).to eq(entry_1)
-      expect(device.match(tags: {foo: "baz"})).to eq(entry_2)
-      expect(device.match(tags: {foo: "qux"})).to be_nil
+      expect(device.match(attributes: {foo: "bar"})).to eq(entry_1)
+      expect(device.match(attributes: {foo: "baz"})).to eq(entry_2)
+      expect(device.match(attributes: {foo: "qux"})).to be_nil
     end
   end
 end

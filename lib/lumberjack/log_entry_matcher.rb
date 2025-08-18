@@ -2,11 +2,11 @@
 
 module Lumberjack
   class LogEntryMatcher
-    def initialize(message: nil, severity: nil, progname: nil, tags: nil)
+    def initialize(message: nil, severity: nil, progname: nil, attributes: nil)
       @message_filter = message
       @severity_filter = Severity.coerce(severity) if severity
       @progname_filter = progname
-      @tags_filter = Utils.expand_tags(tags) if tags
+      @attributes_filter = Utils.expand_attributes(attributes) if attributes
     end
 
     def match?(entry)
@@ -14,9 +14,9 @@ module Lumberjack
       return false unless match_filter?(entry.severity, @severity_filter)
       return false unless match_filter?(entry.progname, @progname_filter)
 
-      if @tags_filter
-        tags = Utils.expand_tags(entry.tags)
-        return false unless match_tags?(tags, @tags_filter)
+      if @attributes_filter
+        attributes = Utils.expand_attributes(entry.attributes)
+        return false unless match_attributes?(attributes, @attributes_filter)
       end
 
       true
@@ -30,23 +30,23 @@ module Lumberjack
       filter === value
     end
 
-    def match_tags?(tags, filter)
+    def match_attributes?(attributes, filter)
       return true unless filter
-      return false unless tags
+      return false unless attributes
 
       filter.all? do |name, value_filter|
         name = name.to_s
-        tag_values = tags[name]
-        if tag_values.is_a?(Hash)
+        attribute_values = attributes[name]
+        if attribute_values.is_a?(Hash)
           if value_filter.is_a?(Hash)
-            match_tags?(tag_values, value_filter)
+            match_attributes?(attribute_values, value_filter)
           else
-            match_filter?(tag_values, value_filter)
+            match_filter?(attribute_values, value_filter)
           end
         elsif value_filter.nil? || (value_filter.is_a?(Enumerable) && value_filter.empty?)
-          tag_values.nil? || (tag_values.is_a?(Array) && tag_values.empty?)
-        elsif tags.include?(name)
-          match_filter?(tag_values, value_filter)
+          attribute_values.nil? || (attribute_values.is_a?(Array) && attribute_values.empty?)
+        elsif attributes.include?(name)
+          match_filter?(attribute_values, value_filter)
         else
           false
         end

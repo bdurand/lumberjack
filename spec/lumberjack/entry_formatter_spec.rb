@@ -4,10 +4,10 @@ require "spec_helper"
 
 RSpec.describe Lumberjack::EntryFormatter do
   describe "building formatters" do
-    it "starts with a default message formatter and no tag formatter" do
+    it "starts with a default message formatter and no attribute formatter" do
       entry_formatter = Lumberjack::EntryFormatter.new
       expect(entry_formatter.message_formatter).to_not be_nil
-      expect(entry_formatter.tag_formatter).to be_nil
+      expect(entry_formatter.attribute_formatter).to be_nil
       obj = Object.new
       expect(entry_formatter.message_formatter.format(obj)).to eq(obj.inspect)
     end
@@ -27,31 +27,31 @@ RSpec.describe Lumberjack::EntryFormatter do
       expect(entry_formatter.message_formatter.formatter_for(Object)).to be_nil
     end
 
-    it "can add new tag formatters in a chain" do
+    it "can add new attribute formatters in a chain" do
       entry_formatter = Lumberjack::EntryFormatter.new
       formatter = lambda {}
-      expect(entry_formatter.tags { add(Object, formatter) }).to eq(entry_formatter)
-      expect(entry_formatter.tag_formatter).to_not be_empty
+      expect(entry_formatter.attributes { add(Object, formatter) }).to eq(entry_formatter)
+      expect(entry_formatter.attribute_formatter).to_not be_empty
     end
 
-    it "can remove tag formatters in a chain" do
+    it "can remove attribute formatters in a chain" do
       entry_formatter = Lumberjack::EntryFormatter.new
       formatter = lambda {}
-      entry_formatter.tags { add(Object, formatter) }
-      expect(entry_formatter.tags { remove(Object) }).to eq(entry_formatter)
-      expect(entry_formatter.tag_formatter).to be_empty
+      entry_formatter.attributes { add(Object, formatter) }
+      expect(entry_formatter.attributes { remove(Object) }).to eq(entry_formatter)
+      expect(entry_formatter.attribute_formatter).to be_empty
     end
   end
 
   describe "#entry" do
     let(:entry_formatter) { Lumberjack::EntryFormatter.new }
 
-    it "does nothing with no message or tag formatter" do
+    it "does nothing with no message or attribute formatter" do
       entry_formatter.message_formatter = nil
-      entry_formatter.tag_formatter = nil
-      message, tags = entry_formatter.format("foobar", {"foo" => "bar"})
+      entry_formatter.attribute_formatter = nil
+      message, attributes = entry_formatter.format("foobar", {"foo" => "bar"})
       expect(message).to eq("foobar")
-      expect(tags).to eq({"foo" => "bar"})
+      expect(attributes).to eq({"foo" => "bar"})
     end
 
     it "formats the message on the entry" do
@@ -65,11 +65,11 @@ RSpec.describe Lumberjack::EntryFormatter do
       expect(message).to eq("foobar")
     end
 
-    it "splits the message and tags if the message formatter is a tagged message" do
-      entry_formatter.add(String) { |obj| Lumberjack::Formatter::TaggedMessage.new("Tagged: #{obj}", {"tag" => obj}) }
-      message, tags = entry_formatter.format("foobar", {"foo" => "bar"})
-      expect(message).to eq("Tagged: foobar")
-      expect(tags).to eq({"tag" => "foobar", "foo" => "bar"})
+    it "splits the message and attributes if the message formatter is a attributeged message" do
+      entry_formatter.add(String) { |obj| Lumberjack::Formatter::TaggedMessage.new("attributeged: #{obj}", {"attribute" => obj}) }
+      message, attributes = entry_formatter.format("foobar", {"foo" => "bar"})
+      expect(message).to eq("attributeged: foobar")
+      expect(attributes).to eq({"attribute" => "foobar", "foo" => "bar"})
     end
 
     it "applies the to_log_format method instead of the registered formatter if it exists" do
@@ -86,31 +86,31 @@ RSpec.describe Lumberjack::EntryFormatter do
       expect(message).to eq("Custom format for FooBar")
     end
 
-    it "applies the tag formatter to the tags" do
-      entry_formatter.tags { add("foo") { |obj| "Foo: #{obj}" } }
-      message, tags = entry_formatter.format("foobar", {"foo" => "bar"})
+    it "applies the attribute formatter to the attributes" do
+      entry_formatter.attributes { add("foo") { |obj| "Foo: #{obj}" } }
+      message, attributes = entry_formatter.format("foobar", {"foo" => "bar"})
       expect(message).to eq("foobar")
-      expect(tags).to eq({"foo" => "Foo: bar"})
+      expect(attributes).to eq({"foo" => "Foo: bar"})
     end
 
-    it "calls Proc values in tags" do
-      message, tags = entry_formatter.format("foobar", {"foo" => -> { "bar" }})
+    it "calls Proc values in attributes" do
+      message, attributes = entry_formatter.format("foobar", {"foo" => -> { "bar" }})
       expect(message).to eq("foobar")
-      expect(tags).to eq({"foo" => "bar"})
+      expect(attributes).to eq({"foo" => "bar"})
     end
 
     it "handles nil messages" do
       entry_formatter.message_formatter.clear
-      message, tags = entry_formatter.format(nil, {"foo" => "bar"})
+      message, attributes = entry_formatter.format(nil, {"foo" => "bar"})
       expect(message).to be_nil
-      expect(tags).to eq({"foo" => "bar"})
+      expect(attributes).to eq({"foo" => "bar"})
     end
 
-    it "handles nil tags" do
-      entry_formatter.tags { add("foo") { |obj| "Foo: #{obj}" } }
-      message, tags = entry_formatter.format("foobar", nil)
+    it "handles nil attributes" do
+      entry_formatter.attributes { add("foo") { |obj| "Foo: #{obj}" } }
+      message, attributes = entry_formatter.format("foobar", nil)
       expect(message).to eq("foobar")
-      expect(tags).to be_nil
+      expect(attributes).to be_nil
     end
   end
 end

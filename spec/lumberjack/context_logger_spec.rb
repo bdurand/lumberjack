@@ -66,7 +66,9 @@ RSpec.describe Lumberjack::ContextLogger do
           fiber_1.resume
         end
         expect(logger.level).to be_nil
-      end.resume
+      end
+
+      fiber_2.resume
     end
   end
 
@@ -112,7 +114,9 @@ RSpec.describe Lumberjack::ContextLogger do
           fiber_1.resume
         end
         expect(logger.progname).to be_nil
-      end.resume
+      end
+
+      fiber_2.resume
     end
   end
 
@@ -123,7 +127,7 @@ RSpec.describe Lumberjack::ContextLogger do
         severity: Logger::INFO,
         message: "Test message",
         progname: nil,
-        tags: nil
+        attributes: nil
       })
     end
 
@@ -140,7 +144,7 @@ RSpec.describe Lumberjack::ContextLogger do
         severity: Logger::UNKNOWN,
         message: "Test message",
         progname: nil,
-        tags: nil
+        attributes: nil
       })
     end
 
@@ -158,7 +162,7 @@ RSpec.describe Lumberjack::ContextLogger do
         severity: Logger::UNKNOWN,
         message: "Test message",
         progname: nil,
-        tags: nil
+        attributes: nil
       })
     end
 
@@ -170,7 +174,7 @@ RSpec.describe Lumberjack::ContextLogger do
         severity: Logger::INFO,
         message: "Test message",
         progname: nil,
-        tags: nil
+        attributes: nil
       })
     end
   end
@@ -183,29 +187,29 @@ RSpec.describe Lumberjack::ContextLogger do
         logger.tag(foo: "bar")
         expect(logger.level).to eq(Logger::DEBUG)
         expect(logger.progname).to eq("Temp")
-        expect(logger.tags).to eq({"foo" => "bar"})
+        expect(logger.attributes).to eq({"foo" => "bar"})
 
         logger.context do
           expect(logger.level).to eq(Logger::DEBUG)
           expect(logger.progname).to eq("Temp")
-          expect(logger.tags).to eq({"foo" => "bar"})
+          expect(logger.attributes).to eq({"foo" => "bar"})
 
           logger.level = :info
           logger.progname = "Inner"
           logger.tag(baz: "qux")
           expect(logger.level).to eq(Logger::INFO)
           expect(logger.progname).to eq("Inner")
-          expect(logger.tags).to eq({"foo" => "bar", "baz" => "qux"})
+          expect(logger.attributes).to eq({"foo" => "bar", "baz" => "qux"})
         end
 
         expect(logger.level).to eq(Logger::DEBUG)
         expect(logger.progname).to eq("Temp")
-        expect(logger.tags).to eq({"foo" => "bar"})
+        expect(logger.attributes).to eq({"foo" => "bar"})
       end
 
       expect(logger.level).to be_nil
       expect(logger.progname).to be_nil
-      expect(logger.tags).to be_empty
+      expect(logger.attributes).to be_empty
     end
 
     it "returns the result of the block" do
@@ -231,42 +235,42 @@ RSpec.describe Lumberjack::ContextLogger do
   end
 
   describe "#tag" do
-    it "adds tags inside of a block" do
+    it "adds attributes inside of a block" do
       logger.tag(foo: "bar") do
-        expect(logger.tags).to eq({"foo" => "bar"})
+        expect(logger.attributes).to eq({"foo" => "bar"})
       end
-      expect(logger.tags).to be_empty
+      expect(logger.attributes).to be_empty
     end
 
-    it "merges tags in nested blocks" do
+    it "merges attributes in nested blocks" do
       logger.tag(foo: "bar") do
         logger.tag(baz: "qux") do
-          expect(logger.tags).to eq({"foo" => "bar", "baz" => "qux"})
+          expect(logger.attributes).to eq({"foo" => "bar", "baz" => "qux"})
         end
-        expect(logger.tags).to eq({"foo" => "bar"})
+        expect(logger.attributes).to eq({"foo" => "bar"})
       end
-      expect(logger.tags).to be_empty
+      expect(logger.attributes).to be_empty
     end
 
-    it "flattens nested tags" do
+    it "flattens nested attributes" do
       logger.tag(foo: {bar: "baz", far: "qux"}) do
-        expect(logger.tags).to eq({"foo.bar" => "baz", "foo.far" => "qux"})
+        expect(logger.attributes).to eq({"foo.bar" => "baz", "foo.far" => "qux"})
       end
     end
 
-    it "adds new tags to the current context without a block" do
+    it "adds new attributes to the current context without a block" do
       logger.context do
         logger.tag(foo: "bar")
         logger.tag(baz: "qux")
-        expect(logger.tags).to eq({"foo" => "bar", "baz" => "qux"})
+        expect(logger.attributes).to eq({"foo" => "bar", "baz" => "qux"})
       end
-      expect(logger.tags).to be_empty
+      expect(logger.attributes).to be_empty
     end
 
     it "works with a frozen hash" do
       logger.tag({foo: "bar"}.freeze) do
         logger.tag(baz: "qux")
-        expect(logger.tags).to eq({"foo" => "bar", "baz" => "qux"})
+        expect(logger.attributes).to eq({"foo" => "bar", "baz" => "qux"})
       end
     end
 
@@ -281,144 +285,144 @@ RSpec.describe Lumberjack::ContextLogger do
       end
     end
 
-    it "returns self without applying tags if there is no current context" do
+    it "returns self without applying attributes if there is no current context" do
       expect(logger.tag(foo: "bar")).to equal(logger)
-      expect(logger.tags).to be_empty
+      expect(logger.attributes).to be_empty
     end
   end
 
   describe "#tag!" do
-    it "adds tags to the default context" do
+    it "adds attributes to the default context" do
       logger_with_default_context.tag!(foo: "bar")
-      expect(logger_with_default_context.tags).to eq({"foo" => "bar"})
+      expect(logger_with_default_context.attributes).to eq({"foo" => "bar"})
       logger_with_default_context.tag!(baz: "qux")
-      expect(logger_with_default_context.tags).to eq({"foo" => "bar", "baz" => "qux"})
+      expect(logger_with_default_context.attributes).to eq({"foo" => "bar", "baz" => "qux"})
     end
 
     it "does nothing if there is no default context" do
       logger.tag!(foo: "bar")
-      expect(logger.tags).to be_empty
+      expect(logger.attributes).to be_empty
     end
   end
 
   describe "#untag" do
-    it "removes tags from the current context block" do
+    it "removes attributes from the current context block" do
       logger.tag(foo: "bar", baz: "qux", bip: "bap") do
         logger.untag(:foo, "baz")
-        expect(logger.tags).to eq({"bip" => "bap"})
+        expect(logger.attributes).to eq({"bip" => "bap"})
       end
     end
 
     it "does nothing outside of a context block" do
       logger_with_default_context.tag!(foo: "bar")
       logger_with_default_context.untag(:foo)
-      expect(logger_with_default_context.tags).to eq({"foo" => "bar"})
+      expect(logger_with_default_context.attributes).to eq({"foo" => "bar"})
     end
   end
 
   describe "#untag!" do
-    it "removes tags from the default context" do
+    it "removes attributes from the default context" do
       logger_with_default_context.tag!(foo: "bar", baz: "qux", bip: "bap")
       logger_with_default_context.untag!(:foo, "baz")
-      expect(logger_with_default_context.tags).to eq({"bip" => "bap"})
+      expect(logger_with_default_context.attributes).to eq({"bip" => "bap"})
     end
 
     it "does nothing if the logger does not have a default context" do
       logger.untag!(:foo)
-      expect(logger.tags).to be_empty
+      expect(logger.attributes).to be_empty
     end
   end
 
-  describe "#tags" do
+  describe "#attributes" do
     it "returns an empty hash by default" do
-      expect(logger.tags).to eq({})
-      expect(logger_with_default_context.tags).to eq({})
+      expect(logger.attributes).to eq({})
+      expect(logger_with_default_context.attributes).to eq({})
     end
 
-    it "returns tags from the default context" do
+    it "returns attributes from the default context" do
       logger_with_default_context.tag!(foo: "bar")
-      expect(logger_with_default_context.tags).to eq({"foo" => "bar"})
+      expect(logger_with_default_context.attributes).to eq({"foo" => "bar"})
     end
 
-    it "returns tags from the current context" do
+    it "returns attributes from the current context" do
       logger.tag(foo: "bar") do
-        expect(logger.tags).to eq({"foo" => "bar"})
+        expect(logger.attributes).to eq({"foo" => "bar"})
       end
     end
 
-    it "merges tags from the current context with the default context tags" do
+    it "merges attributes from the current context with the default context attributes" do
       logger_with_default_context.tag!(foo: "bar")
       logger_with_default_context.tag(baz: "qux") do
-        expect(logger_with_default_context.tags).to eq({"foo" => "bar", "baz" => "qux"})
+        expect(logger_with_default_context.attributes).to eq({"foo" => "bar", "baz" => "qux"})
       end
-      expect(logger_with_default_context.tags).to eq({"foo" => "bar"})
+      expect(logger_with_default_context.attributes).to eq({"foo" => "bar"})
     end
 
-    it "includes tags from the global context" do
+    it "includes attributes from the global context" do
       Lumberjack.tag(foo: "bar") do
         logger.tag(baz: "qux") do
-          expect(logger.tags).to eq({"foo" => "bar", "baz" => "qux"})
+          expect(logger.attributes).to eq({"foo" => "bar", "baz" => "qux"})
         end
-        expect(logger.tags).to eq({"foo" => "bar"})
+        expect(logger.attributes).to eq({"foo" => "bar"})
       end
     end
 
-    it "prefers tags from the most local context" do
+    it "prefers attributes from the most local context" do
       Lumberjack.tag(foo: "one") do
-        expect(logger.tags["foo"]).to eq("one")
+        expect(logger.attributes["foo"]).to eq("one")
 
         logger_with_default_context.tag!(foo: "two")
-        expect(logger_with_default_context.tags["foo"]).to eq("two")
+        expect(logger_with_default_context.attributes["foo"]).to eq("two")
 
         logger_with_default_context.tag(foo: "three") do
-          expect(logger_with_default_context.tag_value("foo")).to eq("three")
+          expect(logger_with_default_context.attribute_value("foo")).to eq("three")
         end
       end
     end
   end
 
-  describe "#tag_value" do
+  describe "#attribute_value" do
     it "returns the value of a tag" do
       Lumberjack.tag(foo: "bar") do
         logger_with_default_context.tag!(baz: "qux")
         logger_with_default_context.tag(bip: "bap") do
-          expect(logger_with_default_context.tag_value("foo")).to eq("bar")
-          expect(logger_with_default_context.tag_value("baz")).to eq("qux")
-          expect(logger_with_default_context.tag_value("bip")).to eq("bap")
+          expect(logger_with_default_context.attribute_value("foo")).to eq("bar")
+          expect(logger_with_default_context.attribute_value("baz")).to eq("qux")
+          expect(logger_with_default_context.attribute_value("bip")).to eq("bap")
         end
       end
     end
 
     it "expands dot notation in tag names" do
       logger.tag(foo: {"bar.baz": "boo"}) do
-        expect(logger.tag_value("foo.bar.baz")).to eq("boo")
-        expect(logger.tag_value("foo.bar")).to eq("baz" => "boo")
+        expect(logger.attribute_value("foo.bar.baz")).to eq("boo")
+        expect(logger.attribute_value("foo.bar")).to eq("baz" => "boo")
       end
     end
 
     it "should expand tag name as a array to dot notation" do
       logger.tag("foo.bar" => "baz") do
-        expect(logger.tag_value([:foo, :bar])).to eq("baz")
+        expect(logger.attribute_value([:foo, :bar])).to eq("baz")
       end
     end
 
     it "should return nil for a non-existent tag" do
-      expect(logger.tag_value(:non_existent)).to be_nil
+      expect(logger.attribute_value(:non_existent)).to be_nil
     end
   end
 
   describe "#untagged" do
-    it "removes all tags from the current, default, and global contexts for the duration of the block" do
+    it "removes all attributes from the current, default, and global contexts for the duration of the block" do
       Lumberjack.tag(foo: "bar") do
         logger_with_default_context.tag!(baz: "qux")
         logger_with_default_context.tag(bip: "bap") do
-          expect(logger_with_default_context.tags.length).to eq(3)
+          expect(logger_with_default_context.attributes.length).to eq(3)
 
           logger_with_default_context.untagged do
-            expect(logger_with_default_context.tags).to be_empty
+            expect(logger_with_default_context.attributes).to be_empty
 
             logger_with_default_context.tag(moo: "mip") do
-              expect(logger_with_default_context.tags).to eq({"moo" => "mip"})
+              expect(logger_with_default_context.attributes).to eq({"moo" => "mip"})
             end
           end
         end
@@ -442,9 +446,9 @@ RSpec.describe Lumberjack::ContextLogger do
       local_logger.progname = "LocalLogger"
       expect(local_logger.progname).to_not eq logger.progname
 
-      expect(local_logger.tags).to eq logger.tags
+      expect(local_logger.attributes).to eq logger.attributes
       local_logger.tag!(foo: "bar")
-      expect(local_logger.tags).to_not eq logger.tags
+      expect(local_logger.attributes).to_not eq logger.attributes
     end
 
     it "can set the level on the local logger" do
@@ -457,9 +461,9 @@ RSpec.describe Lumberjack::ContextLogger do
       expect(local_logger.progname).to eq("LocalLogger")
     end
 
-    it "can set tags on the local logger" do
-      local_logger = logger.local_logger(tags: {foo: "bar"})
-      expect(local_logger.tags).to eq({"foo" => "bar"})
+    it "can set attributes on the local logger" do
+      local_logger = logger.local_logger(attributes: {foo: "bar"})
+      expect(local_logger.attributes).to eq({"foo" => "bar"})
     end
   end
 
@@ -471,7 +475,7 @@ RSpec.describe Lumberjack::ContextLogger do
           severity: Lumberjack::Severity.coerce(severity),
           message: "Message",
           progname: nil,
-          tags: nil
+          attributes: nil
         })
       end
 
@@ -481,7 +485,7 @@ RSpec.describe Lumberjack::ContextLogger do
           severity: Lumberjack::Severity.coerce(severity),
           message: "Message",
           progname: nil,
-          tags: nil
+          attributes: nil
         })
       end
 
@@ -491,27 +495,27 @@ RSpec.describe Lumberjack::ContextLogger do
           severity: Lumberjack::Severity.coerce(severity),
           message: "Message",
           progname: "myApp",
-          tags: nil
+          attributes: nil
         })
       end
 
-      it "logs an entry as #{severity} with tags" do
+      it "logs an entry as #{severity} with attributes" do
         logger.public_send(severity, "Message", foo: "bar")
         expect(logger.entries.first).to eq({
           severity: Lumberjack::Severity.coerce(severity),
           message: "Message",
           progname: nil,
-          tags: {foo: "bar"}
+          attributes: {foo: "bar"}
         })
       end
 
-      it "logs an entry as #{severity} with tags and the message in a block" do
+      it "logs an entry as #{severity} with attributes and the message in a block" do
         logger.public_send(severity, foo: "bar") { "Message" }
         expect(logger.entries.first).to eq({
           severity: Lumberjack::Severity.coerce(severity),
           message: "Message",
           progname: nil,
-          tags: {foo: "bar"}
+          attributes: {foo: "bar"}
         })
       end
 
@@ -522,7 +526,7 @@ RSpec.describe Lumberjack::ContextLogger do
         end
       end
 
-      it "does not log nil entries even if there are context tags" do
+      it "does not log nil entries even if there are context attributes" do
         logger.tag(foo: "bar") do
           logger.public_send(severity, nil)
           logger.public_send(severity, "", {})
@@ -530,13 +534,13 @@ RSpec.describe Lumberjack::ContextLogger do
         expect(logger.entries).to be_empty
       end
 
-      it "does log nil if there are explicit tags" do
+      it "does log nil if there are explicit attributes" do
         logger.public_send(severity, nil, {foo: "bar"})
         expect(logger.entries).to include({
           severity: Lumberjack::Severity.coerce(severity),
           message: nil,
           progname: nil,
-          tags: {foo: "bar"}
+          attributes: {foo: "bar"}
         })
       end
     end

@@ -111,32 +111,54 @@ module Lumberjack
         str.dup.force_encoding("ASCII-8BIT").encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
       end
 
-      # Flatten a tag hash to a single level hash with dot notation for nested keys.
+      # Flatten an attribute hash to a single level hash with dot notation for nested keys.
       #
-      # @param tag_hash [Hash] The hash to flatten.
+      # @param attr_hash [Hash] The hash to flatten.
       # @return [Hash<String, Object>] The flattened hash.
       # @example
-      #   expand_tags(user: {id: 123, name: "Alice"}, action: "login")})
+      #   expand_attributes(user: {id: 123, name: "Alice"}, action: "login")})
       #   # => {"user.id" => 123, "user.name" => "Alice", "action" => "login"}
-      def flatten_tags(tag_hash)
-        return {} unless tag_hash.is_a?(Hash)
+      def flatten_attributes(attr_hash)
+        return {} unless attr_hash.is_a?(Hash)
 
-        flatten_hash_recursive(tag_hash)
+        flatten_hash_recursive(attr_hash)
       end
 
-      # Expand a hash of tags that may contain nested hashes or dot notation keys. Dot notation tags
+      # Alias to flatten_attributes for compatibility with the 1.x API. This method will eventually
+      # be removed
+      #
+      # @return [Hash]
+      # @deprecated Use {#flatten_attributes} instead.
+      def flatten_tags(tag_hash)
+        Utils.deprecated(:flatten_tags, "Use flatten_attributes instead.") do
+          flatten_attributes(tag_hash)
+        end
+      end
+
+      # Expand a hash of attributes that may contain nested hashes or dot notation keys. Dot notation attributes
       # will be expanded into nested hashes.
       #
-      # @param tags [Hash] The hash of tags to expand.
+      # @param attributes [Hash] The hash of attributes to expand.
       # @return [Hash] The expanded hash with dot notation keys.
       #
       # @example
-      #   expand_tags({"user.id" => 123, "user.name" => "Alice", "action" => "login"})
+      #   expand_attributes({"user.id" => 123, "user.name" => "Alice", "action" => "login"})
       #   # => {"user" => {"id" => 123, "name" => "Alice"}, "action" => "login"}
-      def expand_tags(tags)
-        return {} unless tags.is_a?(Hash)
+      def expand_attributes(attributes)
+        return {} unless attributes.is_a?(Hash)
 
-        expand_dot_notation_hash(tags)
+        expand_dot_notation_hash(attributes)
+      end
+
+      # Alias to expand_attributes for compatibility with the 1.x API. This method will eventually
+      # be removed
+      #
+      # @return [Hash]
+      # @deprecated Use {#expand_attributes} instead.
+      def expand_tags(tags)
+        Utils.deprecated(:expand_tags, "Use expand_attributes instead.") do
+          expand_attributes(tags)
+        end
       end
 
       private

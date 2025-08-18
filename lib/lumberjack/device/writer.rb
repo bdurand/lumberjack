@@ -35,7 +35,7 @@ module Lumberjack
           @template = if template.respond_to?(:call)
             template
           else
-            Template.new(template, additional_lines: options[:additional_lines], time_format: options[:time_format], tag_format: options[:tag_format])
+            Template.new(template, additional_lines: options[:additional_lines], time_format: options[:time_format], attribute_format: options[:attribute_format])
           end
         end
       end
