@@ -64,10 +64,22 @@ module Lumberjack
       device_options[:template] = template unless template.nil?
       device_options[:standard_logger_formatter] = formatter if standard_logger_formatter?(formatter)
 
-      # @deprecated Use {#attribute_formatter} instead.
-      if kwargs.include?(:tag_formatter)
+      if device_options.include?(:tag_formatter)
         Utils.deprecated(:tag_formatter, "Use attribute_formatter instead.") do
           attribute_formatter ||= device_options.delete(:tag_formatter)
+        end
+      end
+
+      if device_options.include?(:roll) && shift_age != 0
+        Utils.deprecated(:roll, "Use shift_age instead.") do
+          shift_age = device_options.delete(:roll)
+        end
+      end
+
+      if device_options.include?(:max_size)
+        Utils.deprecated(:max_size, "Use shift_size instead.") do
+          shift_age = 10
+          shift_size = device_options.delete(:max_size)
         end
       end
 

@@ -105,6 +105,24 @@ RSpec.describe Lumberjack::Logger do
       logger = Lumberjack::Logger.new(:null, progname: "app")
       expect(logger.progname).to eq("app")
     end
+
+    it "allows using the deprecated :roll option without blowing up" do
+      silence_deprecations do
+        expect { Lumberjack::Logger.new(File::NULL, roll: :daily) }.to_not raise_error
+      end
+    end
+
+    it "allows using the deprecated :max_size option without blowing up" do
+      silence_deprecations do
+        expect { Lumberjack::Logger.new(File::NULL, max_size: 10) }.to_not raise_error
+      end
+    end
+
+    it "allows using the deprecated :tag_formatter option without blowing up" do
+      silence_deprecations do
+        expect { Lumberjack::Logger.new(File::NULL, tag_formatter: Lumberjack::TagFormatter.new) }.to_not raise_error
+      end
+    end
   end
 
   describe "#set_progname" do
