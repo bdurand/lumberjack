@@ -456,7 +456,7 @@ module Lumberjack
     # Return true if the thread is currently in a context block with a local context.
     #
     # @return [Boolean]
-    def context?
+    def in_context?
       !!local_context
     end
 

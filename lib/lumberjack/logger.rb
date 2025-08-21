@@ -219,7 +219,7 @@ module Lumberjack
     # Use context? instead
     #
     # @return [Boolean]
-    # @deprecated Use {#context?} instead.
+    # @deprecated Use {#in_context?} instead.
     def in_tag_context?
       Utils.deprecated(:in_tag_context?, "Use context? instead.") do
         context?

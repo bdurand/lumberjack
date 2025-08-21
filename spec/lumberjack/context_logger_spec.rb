@@ -224,13 +224,13 @@ RSpec.describe Lumberjack::ContextLogger do
     end
   end
 
-  describe "#context?" do
+  describe "#in_context?" do
     it "returns true inside a context block" do
-      expect(logger.context?).to be false
+      expect(logger.in_context?).to be false
       logger.context do
-        expect(logger.context?).to be true
+        expect(logger.in_context?).to be true
       end
-      expect(logger.context?).to be false
+      expect(logger.in_context?).to be false
     end
   end
 

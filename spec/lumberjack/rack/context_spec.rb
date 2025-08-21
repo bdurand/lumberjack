@@ -4,7 +4,7 @@ require "spec_helper"
 
 RSpec.describe Lumberjack::Rack::Context do
   it "should create a context for a request" do
-    app = lambda { |env| [200, {"Context" => Lumberjack.context?}, ["OK"]] }
+    app = lambda { |env| [200, {"Context" => Lumberjack.in_context?}, ["OK"]] }
     handler = Lumberjack::Rack::Context.new(app)
 
     response = handler.call("Content-Type" => "text/plain", "action_dispatch.request_id" => "0123-4567-89ab-cdef")
