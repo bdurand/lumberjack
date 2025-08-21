@@ -79,8 +79,14 @@ module Lumberjack
     # Return true if inside a context block.
     #
     # @return [Boolean]
-    def context?
+    def in_context?
       !!@global_contexts[Fiber.current.object_id]
+    end
+
+    def context?
+      Utils.deprecated(:context?, "Use in_context? instead.") do
+        in_context?
+      end
     end
 
     # Return attributes that will be applied to all Lumberjack loggers.

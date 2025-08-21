@@ -12,11 +12,11 @@ RSpec.describe Lumberjack do
     end
 
     it "should determine if it is inside a context block" do
-      expect(Lumberjack.context?).to eq false
+      expect(Lumberjack.in_context?).to eq false
       Lumberjack.context do
-        expect(Lumberjack.context?).to eq true
+        expect(Lumberjack.in_context?).to eq true
       end
-      expect(Lumberjack.context?).to eq false
+      expect(Lumberjack.in_context?).to eq false
     end
 
     it "should return the result of the context block" do
