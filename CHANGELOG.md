@@ -21,7 +21,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Tag formatters can now add class formatters by class name using the `add_class` method. This allows setting a class formatter before the class has been loaded.
 - A tag format can now be passed to the `Lumberjack::Template` class to specify how to format tag name/value pairs. The default is "[%s:%s]".
 - Added `TRACE` logging level for logging at an even lower level than `DEBUG`. `Lumberjack::Logger#trace` can be used to log messages at this level.
-- Added `Lumberjack::LocalLogger` which is a wrapper around a logger with a separate context. A local logger has a parent logger which it will write it's log entries through. It will inherit the level, progname, and tags from a parent logger, but has its own local context isolated from the parent logger. You can change the level, progname, and add tags on the local logger without impacting the parent logger. Local loggers can be gotten from the current logger by calling `Lumberjack::Logger#local_logger`.
+- Added `Lumberjack::ForkedLogger` which is a wrapper around a logger with a separate context. A local logger has a parent logger which it will write it's log entries through. It will inherit the level, progname, and tags from a parent logger, but has its own local context isolated from the parent logger. You can change the level, progname, and add tags on the local logger without impacting the parent logger. Local loggers can be gotten from the current logger by calling `Lumberjack::Logger#fork`.
 - Added `Lumberjack::Utils.current_line` as a helper method for getting the current line of code.
 
 ### Changed

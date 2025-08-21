@@ -435,35 +435,35 @@ RSpec.describe Lumberjack::ContextLogger do
     end
   end
 
-  describe "#local_logger" do
+  describe "#fork" do
     it "returns a local logger that has an isolated context from the current logger" do
-      local_logger = logger.local_logger
-      expect(local_logger.level).to eq logger.level
-      local_logger.level = :warn
-      expect(local_logger.level).to_not eq logger.level
+      forked_logger = logger.fork
+      expect(forked_logger.level).to eq logger.level
+      forked_logger.level = :warn
+      expect(forked_logger.level).to_not eq logger.level
 
-      expect(local_logger.progname).to eq logger.progname
-      local_logger.progname = "LocalLogger"
-      expect(local_logger.progname).to_not eq logger.progname
+      expect(forked_logger.progname).to eq logger.progname
+      forked_logger.progname = "ForkedLogger"
+      expect(forked_logger.progname).to_not eq logger.progname
 
-      expect(local_logger.attributes).to eq logger.attributes
-      local_logger.tag!(foo: "bar")
-      expect(local_logger.attributes).to_not eq logger.attributes
+      expect(forked_logger.attributes).to eq logger.attributes
+      forked_logger.tag!(foo: "bar")
+      expect(forked_logger.attributes).to_not eq logger.attributes
     end
 
     it "can set the level on the local logger" do
-      local_logger = logger.local_logger(level: :warn)
-      expect(local_logger.level).to eq(Logger::WARN)
+      forked_logger = logger.fork(level: :warn)
+      expect(forked_logger.level).to eq(Logger::WARN)
     end
 
     it "can set the progname on the local logger" do
-      local_logger = logger.local_logger(progname: "LocalLogger")
-      expect(local_logger.progname).to eq("LocalLogger")
+      forked_logger = logger.fork(progname: "ForkedLogger")
+      expect(forked_logger.progname).to eq("ForkedLogger")
     end
 
     it "can set attributes on the local logger" do
-      local_logger = logger.local_logger(attributes: {foo: "bar"})
-      expect(local_logger.attributes).to eq({"foo" => "bar"})
+      forked_logger = logger.fork(attributes: {foo: "bar"})
+      expect(forked_logger.attributes).to eq({"foo" => "bar"})
     end
   end
 

@@ -20,7 +20,7 @@ module Lumberjack
   require_relative "lumberjack/device"
   require_relative "lumberjack/entry_formatter"
   require_relative "lumberjack/formatter"
-  require_relative "lumberjack/local_logger"
+  require_relative "lumberjack/forked_logger"
   require_relative "lumberjack/logger"
   require_relative "lumberjack/rack"
   require_relative "lumberjack/severity"

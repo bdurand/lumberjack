@@ -353,8 +353,21 @@ module Lumberjack
       end
     end
 
-    def local_logger(level: nil, progname: nil, attributes: nil)
-      logger = LocalLogger.new(self)
+    # Forks a new logger with a new context that will send output through this logger.
+    # The new logger will inherit the level, progname, and attributes of the current logger
+    # context. Any changes to those values, though, will be isolated to just the forked logger.
+    # Any calls to log messages will be forwarded to the parent logger for output to the
+    # logging device.
+    #
+    # @param level [Integer, String, Symbol, nil] The level to set on the new logger. If this
+    #   is not specified, then the level on the parent logger will be used.
+    # @param progname [String, nil] The progname to set on the new logger. If this is not specified,
+    #   then the progname on the parent logger will be used.
+    # @param attributes [Hash, nil] The attributes to set on the new logger. The forked logger will
+    #   inherit all attributes from the current logging context.
+    # @return [ForkedLogger]
+    def fork(level: nil, progname: nil, attributes: nil)
+      logger = ForkedLogger.new(self)
       logger.level = level if level
       logger.progname = progname if progname
       logger.tag!(attributes) if attributes
