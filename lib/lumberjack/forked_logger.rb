@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  class LocalLogger < Logger
+  class ForkedLogger < Logger
     include ContextLogger
 
     attr_reader :parent_logger
