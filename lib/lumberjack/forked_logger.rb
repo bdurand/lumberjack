@@ -6,12 +6,18 @@ module Lumberjack
 
     attr_reader :parent_logger
 
-    def initialize(logger)
+    def initialize(logger, context: nil)
       init_fiber_locals!
+
       @parent_logger = logger
-      @context = Context.new
-      @context.level ||= logger.level
-      @context.progname ||= logger.progname
+
+      if context
+        @context = context
+      else
+        @context = Context.new
+        @context.level ||= logger.level
+        @context.progname ||= logger.progname
+      end
     end
 
     def add_entry(severity, message, progname = nil, attributes = nil)

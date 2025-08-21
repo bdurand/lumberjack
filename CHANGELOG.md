@@ -62,6 +62,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
   - `Lumberjack::LogEntry#tag`
   - `Lumberjack::LogEntry#tags`
   - `Lumberjack::LogEntry#nested_tags`
+  - `Lumberjack::Logger#set_progname`
   - `Lumberjack::Logger::Utils.flatten_tags`
   - `Lumberjack::Logger::Utils.expand_tags`
   - `Lumberjack::Logger::TagContext`

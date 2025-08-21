@@ -125,7 +125,23 @@ RSpec.describe Lumberjack::Logger do
     end
   end
 
+  describe "#global" do
+    it "returns a logger that can manipulate the default context" do
+      logger = Lumberjack::Logger.new(:test)
+      global_logger = logger.global
+      expect(global_logger).to be_a(Lumberjack::ForkedLogger)
+      global_logger.tag!(foo: "bar")
+      expect(logger.tags).to eq({"foo" => "bar"})
+    end
+  end
+
   describe "#set_progname" do
+    around do |example|
+      silence_deprecations do
+        example.run
+      end
+    end
+
     it "should be able to set the progname in a block" do
       logger = Lumberjack::Logger.new(StringIO.new)
       logger.set_progname("app")
@@ -274,7 +290,7 @@ RSpec.describe Lumberjack::Logger do
       it "should add entries with a local progname and message" do
         time = Time.parse("2011-01-30T12:31:56.123")
         allow(Time).to receive_messages(now: time)
-        logger.set_progname("block") do
+        logger.with_progname("block") do
           logger.add(Logger::INFO, "test")
         end
         expect(out.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO block(#{Process.pid})] test")
@@ -283,7 +299,7 @@ RSpec.describe Lumberjack::Logger do
       it "should add entries with a progname but no message or block" do
         time = Time.parse("2011-01-30T12:31:56.123")
         allow(Time).to receive_messages(now: time)
-        logger.set_progname("default") do
+        logger.with_progname("default") do
           logger.add(Logger::INFO, nil, "message")
         end
         expect(out.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO default(#{Process.pid})] message")

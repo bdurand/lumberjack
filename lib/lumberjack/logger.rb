@@ -95,6 +95,19 @@ module Lumberjack
       @closed = false # TODO
     end
 
+    # Returns a forked logger that contains the default context for this logger. So any changes
+    # made to the context on that logger will be persisted in the default context on this logger.
+    #
+    # This can be used for setting default attributes that apply to all log entries.
+    #
+    # @return [ForkedLogger]
+    #
+    # @example
+    #   logger.global.tag!(host: Lumberjack::Utils.hostname)
+    def global
+      ForkedLogger.new(self, context: @context)
+    end
+
     # Get the logging device that is used to write log entries.
     #
     # @return [Lumberjack::Device] The logging device.
@@ -199,19 +212,21 @@ module Lumberjack
     # @param [String] value The program name to use.
     # @return [void]
     def set_progname(value, &block)
-      if block
-        with_progname(value, &block)
-      else
-        self.progname = value
+      Utils.deprecated(:set_progname, "Use with_progname or progname= instead.") do
+        if block
+          with_progname(value, &block)
+        else
+          self.progname = value
+        end
       end
     end
 
-    # Use tag! instead
+    # Use `global.tag!`` instead
     #
     # @return [void]
     # @deprecated Use {#tag!} instead.
     def tag_globally(tags)
-      Utils.deprecated(:tag_globally, "Use tag! instead.") do
+      Utils.deprecated(:tag_globally, "Use global.tag! instead.") do
         tag!(tags)
       end
     end

@@ -15,9 +15,6 @@ begin
 rescue LoadError
 end
 
-# Enable all warnings to protect against bad practices and deprecations.
-$VERBOSE = true
-
 require_relative "../lib/lumberjack"
 
 RSpec.configure do |config|
