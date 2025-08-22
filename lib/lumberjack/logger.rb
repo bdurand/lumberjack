@@ -312,6 +312,8 @@ module Lumberjack
         Device::Test.new(options)
       elsif device.is_a?(Device)
         device
+      elsif device.is_a?(ContextLogger)
+        Device::Logger.new(device)
       elsif device.respond_to?(:write) && !device.respond_to?(:path)
         Device::Writer.new(device, options)
       else

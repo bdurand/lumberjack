@@ -15,6 +15,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Added `Lumberjack::Logger#untag!` and `Lumberjack::Logger#untag!` to remove global tags from a logger.
 - Added `Lumberjack::Logger#in_context?` as a replacement for `Lumberjack::Logger.in_tag_context?` and `Lumberjack.in_context?` as a replacement for `Lumberjack::Logger.context?`.
 - Added IO compatibility methods for logging. Calling `logger.write`, `logger.puts`, `logger.print`, or `logger.printf` will write log entries. The severity of the log entries can be set with `default_severity`.
+- Added `Lumberjack::Device::Logger` as a device that forwards entries to another Lumberjack logger.
 - Added `Lumberjack::Device::Test` class for use in testing logging functionality. This device will buffer log entries and has `match?` and `include?` methods that can be used for assertions in tests.
 - Added support for standard library `Logger::Formatter`. This is for compatibility with the standard library `Logger`. If a standard library logger is passed to `Lumberjack::Logger` as the formatter, it will override the template when writing to a stream. Tags are not available in the output when using a standard library formatter.
 - Classes can now define their own formatting in logs by implementing the `to_log_format` method. If an object responds to this method, it will be called in lieu of looking up the formatter by class. This allows a pattern of defining log formatting along with the code rather than in a an initializer.

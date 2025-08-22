@@ -6,6 +6,7 @@ module Lumberjack
   class Device
     require_relative "device/writer"
     require_relative "device/logger_file"
+    require_relative "device/logger"
     require_relative "device/multi"
     require_relative "device/null"
     require_relative "device/test"
