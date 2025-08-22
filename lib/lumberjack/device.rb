@@ -12,7 +12,7 @@ module Lumberjack
 
     # Subclasses must implement this method to write a LogEntry.
     #
-    # @param [Lumberjack::LogEntry] entry The entry to write.
+    # @param entry [Lumberjack::LogEntry] The entry to write.
     # @return [void]
     def write(entry)
       raise NotImplementedError
@@ -27,7 +27,7 @@ module Lumberjack
 
     # Subclasses may implement this method to reopen the device.
     #
-    # @param [Object] logdev The log device to use.
+    # @param logdev [Object] The log device to use.
     # @return [void]
     def reopen(logdev = nil)
       flush
@@ -47,7 +47,7 @@ module Lumberjack
 
     # Subclasses may implement this method to set a format for log timestamps.
     #
-    # @param [String] format The format for log timestamps.
+    # @param format [String] The format for log timestamps.
     # @return [void]
     def datetime_format=(format)
     end

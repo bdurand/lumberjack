@@ -29,7 +29,7 @@ module Lumberjack
     # Set the log level using either an integer level like Logger::INFO or a label like
     # :info or "info"
     #
-    # @param [Integer, Symbol, String] value The severity level.
+    # @param value [Integer, Symbol, String] The severity level.
     # @return [void]
     def level=(value)
       value = Severity.coerce(value) unless value.nil?
@@ -42,7 +42,7 @@ module Lumberjack
 
     # Adjust the log level during the block execution for the current Fiber only.
     #
-    # @param [Integer, Symbol, String] severity The severity level.
+    # @param severity [Integer, Symbol, String] The severity level.
     # @return [Object] The result of the block.
     def with_level(severity, &block)
       context do |ctx|
@@ -72,7 +72,7 @@ module Lumberjack
     # Set the logger progname for the duration of the block.
     #
     # @yield [Object] The block to execute with the program name set.
-    # @param [String] value The program name to use.
+    # @param value [String] The program name to use.
     # @return [Object] The result of the block.
     def with_progname(value, &block)
       context do |ctx|
@@ -91,7 +91,7 @@ module Lumberjack
     # Set the default severity used when writing log messages directly to a stream
     # for the current context.
     #
-    # @param [Integer, Symbol, String] value The default severity level.
+    # @param value [Integer, Symbol, String] The default severity level.
     # @return [void]
     def default_severity=(value)
       ctx = current_context
@@ -100,30 +100,27 @@ module Lumberjack
 
     # ::Logger compatible method to add a log entry.
     #
-    # @param [Integer, Symbol, String] severity The severity of the message.
-    # @param [Object] message The message to log.
-    # @param [String] progname The name of the program that is logging the message.
+    # @param severity [Integer, Symbol, String] The severity of the message.
+    # @param message [Object] The message to log.
+    # @param progname [String] The name of the program that is logging the message.
     # @return [void]
-    def add(severity, message = nil, progname = nil, &block)
-      if message.nil?
-        if block
-          message = block.call
-        else
-          message = progname
-          progname = nil
-        end
+    def add(severity, message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
+      # This convoluted logic is to have API compatibility with ::Logger#add.
+      severity ||= Logger::UNKNOWN
+      if message_or_progname_or_attributes.nil? && !progname_or_attributes.is_a?(Hash)
+        message_or_progname_or_attributes = progname_or_attributes
+        progname_or_attributes = nil
       end
-
-      call_add_entry(severity, message, progname)
+      call_add_entry(severity, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
 
     alias_method :log, :add
 
     # Log a +FATAL+ message. The message can be passed in either the +message+ argument or in a block.
     #
-    # @param [Object] message_or_progname_or_attributes The message to log or progname
+    # @param message_or_progname_or_attributes [Object] The message to log or progname
     #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_attributes The name of the program that is logging the message or attributes
+    # @param progname_or_attributes [String, Hash] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
     def fatal(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
@@ -146,9 +143,9 @@ module Lumberjack
 
     # Log an +ERROR+ message. The message can be passed in either the +message+ argument or in a block.
     #
-    # @param [Object] message_or_progname_or_attributes The message to log or progname
+    # @param message_or_progname_or_attributes [Object] The message to log or progname
     #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_attributes The name of the program that is logging the message or attributes
+    # @param progname_or_attributes [String, Hash] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
     def error(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
@@ -171,9 +168,9 @@ module Lumberjack
 
     # Log a +WARN+ message. The message can be passed in either the +message+ argument or in a block.
     #
-    # @param [Object] message_or_progname_or_attributes The message to log or progname
+    # @param message_or_progname_or_attributes [Object] The message to log or progname
     #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_attributes The name of the program that is logging the message or attributes
+    # @param progname_or_attributes [String, Hash] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
     def warn(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
@@ -196,9 +193,9 @@ module Lumberjack
 
     # Log an +INFO+ message. The message can be passed in either the +message+ argument or in a block.
     #
-    # @param [Object] message_or_progname_or_attributes The message to log or progname
+    # @param message_or_progname_or_attributes [Object] The message to log or progname
     #   if the message is passed in a block.
-    # @param [String] progname_or_attributes The name of the program that is logging the message or attributes
+    # @param progname_or_attributes [String] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
     def info(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
@@ -221,9 +218,9 @@ module Lumberjack
 
     # Log a +DEBUG+ message. The message can be passed in either the +message+ argument or in a block.
     #
-    # @param [Object] message_or_progname_or_attributes The message to log or progname
+    # @param message_or_progname_or_attributes [Object] The message to log or progname
     #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_attributes The name of the program that is logging the message or attributes
+    # @param progname_or_attributes [String, Hash] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
     def debug(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
@@ -248,9 +245,9 @@ module Lumberjack
     # Trace logs are a level lower than debug and are generally used to log code execution paths for
     # low level debugging.
     #
-    # @param [Object] message_or_progname_or_attributes The message to log or progname
+    # @param message_or_progname_or_attributes [Object] The message to log or progname
     #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_attributes The name of the program that is logging the message or attributes
+    # @param progname_or_attributes [String, Hash] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
     def trace(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
@@ -274,9 +271,9 @@ module Lumberjack
     # Log a message when the severity is not known. Unknown messages will always appear in the log.
     # The message can be passed in either the +message+ argument or in a block.
     #
-    # @param [Object] message_or_progname_or_attributes The message to log or progname
+    # @param message_or_progname_or_attributes [Object] The message to log or progname
     #   if the message is passed in a block.
-    # @param [String, Hash] progname_or_attributes The name of the program that is logging the message or attributes
+    # @param progname_or_attributes [String, Hash] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
     def unknown(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
@@ -285,7 +282,7 @@ module Lumberjack
 
     # Add a message when the severity is not known.
     #
-    # @param [Object] msg The message to log.
+    # @param msg [Object] The message to log.
     # @return [void]
     def <<(msg)
       add_entry(default_severity, msg)
@@ -296,7 +293,7 @@ module Lumberjack
     # logger context for the duration of the current context. If there is no current context,
     # then a new logger object will be returned with those attributes set on it.
     #
-    # @param [Hash] attributes The attributes to set.
+    # @param attributes [Hash] The attributes to set.
     # @return [Object, Lumberjack::ContextLogger] If a block is given then the result of the block is returned.
     #   Otherwise it returns a Lumberjack::ContextLogger with the attributes set.
     #
@@ -339,7 +336,7 @@ module Lumberjack
     # Set up a context block for the logger. All attributes added within the block will be cleared when
     # the block exits.
     #
-    # @param [Proc] block The block to execute with the context.
+    # @param block [Proc] The block to execute with the context.
     # @return [Object] The result of the block.
     # @yield [Context]
     def context(&block)
@@ -376,7 +373,7 @@ module Lumberjack
 
     # Remove attributes from the current context block.
     #
-    # @param [Array<String, Symbol>] attribute_names The attributes to remove.
+    # @param attribute_names [Array<String, Symbol>] The attributes to remove.
     # @return [void]
     def untag(*attribute_names)
       attributes = local_context&.attributes
@@ -386,7 +383,7 @@ module Lumberjack
 
     # Remove attributes from the default context for the logger.
     #
-    # @param [Array<String, Symbol>] attribute_names The attributes to remove.
+    # @param attribute_names [Array<String, Symbol>] The attributes to remove.
     # @return [void]
     def untag!(*attribute_names)
       attributes = default_context&.attributes
@@ -415,7 +412,7 @@ module Lumberjack
 
     # Get the value of an attribute by name from the current context.
     #
-    # @param [String, Symbol] name The name of the attribute to get.
+    # @param name [String, Symbol] The name of the attribute to get.
     # @return [Object, nil] The value of the attribute or nil if the attribute does not exist.
     def attribute_value(name)
       name = name.join(".") if name.is_a?(Array)
@@ -462,10 +459,10 @@ module Lumberjack
 
     # Add an entry to the log. This method must be implemented by the class that includes this module.
     #
-    # @param [Integer, Symbol, String] severity The severity of the message.
-    # @param [Object] message The message to log.
-    # @param [String] progname The name of the program that is logging the message.
-    # @param [Hash] attributes The attributes to add to the log entry.
+    # @param severity [Integer, Symbol, String] The severity of the message.
+    # @param message [Object] The message to log.
+    # @param progname [String] The name of the program that is logging the message.
+    # @param attributes [Hash] The attributes to add to the log entry.
     # @return [void]
     # @api private
     def add_entry(severity, message, progname = nil, attributes = nil)
@@ -488,7 +485,7 @@ module Lumberjack
 
     # Write a log entry to the logging device.
     #
-    # @param [Lumberjack::LogEntry] entry The log entry to write.
+    # @param entry [Lumberjack::LogEntry] The log entry to write.
     # @return [void]
     # @api private
     def write_to_device(entry)

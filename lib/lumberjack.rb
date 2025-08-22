@@ -7,6 +7,8 @@ require "fiber"
 require "pathname"
 
 module Lumberjack
+  VERSION = File.read(File.join(__dir__, "..", "VERSION")).chomp
+
   LINE_SEPARATOR = ((RbConfig::CONFIG["host_os"] =~ /mswin/i) ? "\r\n" : "\n")
 
   require_relative "lumberjack/attribute_formatter"
@@ -54,7 +56,7 @@ module Lumberjack
 
     # Set the context to use within a block.
     #
-    # @param [Lumberjack::Context] context The context to use within the block.
+    # @param context [Lumberjack::Context] The context to use within the block.
     # @return [Object] The result of the block.
     # @api private
     def use_context(context, &block)

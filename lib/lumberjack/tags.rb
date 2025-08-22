@@ -6,7 +6,7 @@ module Lumberjack
       # Transform hash keys to strings. This method exists for optimization and backward compatibility.
       # If a hash already has string keys, it will be returned as is.
       #
-      # @param [Hash] hash The hash to transform.
+      # @param hash [Hash] The hash to transform.
       # @return [Hash] The hash with string keys.
       # @deprecated No longer supported
       def stringify_keys(hash)
@@ -22,7 +22,7 @@ module Lumberjack
 
       # Alias to AttributesHelper.expand_runtime_values
       #
-      # @param [Hash] hash The hash to transform.
+      # @param hash [Hash] The hash to transform.
       # @return [Hash] The hash with string keys and expanded values.
       # @deprecated Use {Lumberjack::AttributesHelper.expand_runtime_values} instead.
       def expand_runtime_values(hash)

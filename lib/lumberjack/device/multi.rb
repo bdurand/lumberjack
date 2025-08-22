@@ -4,7 +4,7 @@ module Lumberjack
   class Device
     # This is a logging device that forward log entries to multiple other devices.
     class Multi < Device
-      # @param [Array<Lumberjack::Device>] devices The devices to write to.
+      # @param devices [Array<Lumberjack::Device>] The devices to write to.
       def initialize(*devices)
         @devices = devices.flatten
       end

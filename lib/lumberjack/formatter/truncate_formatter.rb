@@ -10,7 +10,7 @@ module Lumberjack
     # When a string is truncated, it will have a unicode ellipsis
     # character (U+2026) appended to the end of the string.
     class TruncateFormatter
-      # @param [Integer] length The maximum length of the string (defaults to 32K)
+      # @param length [Integer] The maximum length of the string (defaults to 32K)
       def initialize(length = 32768)
         @length = length
       end

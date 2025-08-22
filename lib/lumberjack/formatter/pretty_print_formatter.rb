@@ -12,7 +12,7 @@ module Lumberjack
       # Create a new formatter. The maximum width of the message can be specified with the width
       # parameter (defaults to 79 characters).
       #
-      # @param [Integer] width The maximum width of the message.
+      # @param width [Integer] The maximum width of the message.
       def initialize(width = 79)
         @width = width
       end

@@ -37,7 +37,7 @@ module Lumberjack
     #   rolling value and must be one of "daily", "weekly", or "monthly". This parameter has no
     #   effect unless the device parameter is a file path or file stream.
     # @param shift_size [Integer] The size in bytes of the log files to before rolling them.
-    # @param [Hash] options The options for the logger.
+    # @param options [Hash] The options for the logger.
     # @param level [Integer, Symbol, String] The logging level below which messages will be ignored.
     # @param progname [String] The name of the program that will be recorded with each log entry.
     # @param formatter [Lumberjack::EntryFormatter, Lumberjack::Formatter, ::Logger::Formatter, #call]
@@ -104,7 +104,7 @@ module Lumberjack
 
     # Set the logging device to a new device.
     #
-    # @param [Lumberjack::Device] device The new logging device.
+    # @param device [Lumberjack::Device] The new logging device.
     # @return [void]
     def device=(device)
       @logdev = device.nil? ? nil : open_device(device, {})
@@ -123,7 +123,7 @@ module Lumberjack
 
     # Set the timestamp format on the device if it is supported.
     #
-    # @param [String] format The timestamp format.
+    # @param format [String] The timestamp format.
     # @return [void]
     def datetime_format=(format)
       if device.respond_to?(:datetime_format=)
@@ -187,7 +187,7 @@ module Lumberjack
 
     # Reopen the logging device.
     #
-    # @param [Object] logdev passed through to the logging device.
+    # @param logdev [Object] passed through to the logging device.
     def reopen(logdev = nil)
       @closed = false
       device.reopen(logdev) if device.respond_to?(:reopen)
@@ -196,13 +196,16 @@ module Lumberjack
     # Set the program name that is associated with log messages. If a block
     # is given, the program name will be valid only within the block.
     #
-    # @param [String] value The program name to use.
+    # @param value [String] The program name to use.
     # @return [void]
+    # @deprecated Use with_progname or progname= instead.
     def set_progname(value, &block)
-      if block
-        with_progname(value, &block)
-      else
-        self.progname = value
+      Utils.deprecated(:set_progname, "Use with_progname or progname= instead.") do
+        if block
+          with_progname(value, &block)
+        else
+          self.progname = value
+        end
       end
     end
 
@@ -230,7 +233,7 @@ module Lumberjack
     # the attributes will only be removed for the duration of that block. Otherwise they will be removed
     # from the global attributes.
     #
-    # @param [Array<String, Symbol>] tag_names The attributes to remove.
+    # @param tag_names [Array<String, Symbol>] The attributes to remove.
     # @return [void]
     # @deprecated Use untag or untag! instead.
     def remove_tag(*tag_names)
@@ -242,10 +245,10 @@ module Lumberjack
 
     # Add an entry to the log.
     #
-    # @param [Integer, Symbol, String] severity The severity of the message.
-    # @param [Object] message The message to log.
-    # @param [String] progname The name of the program that is logging the message.
-    # @param [Hash] attributes The attributes to add to the log entry.
+    # @param severity [Integer, Symbol, String] The severity of the message.
+    # @param message [Object] The message to log.
+    # @param progname [String] The name of the program that is logging the message.
+    # @param attributes [Hash] The attributes to add to the log entry.
     # @return [void]
     # @api private
     #

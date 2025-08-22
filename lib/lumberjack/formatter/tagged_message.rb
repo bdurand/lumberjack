@@ -20,8 +20,8 @@ module Lumberjack
     class TaggedMessage
       attr_reader :message, :attributes
 
-      # @param [Formatter] formatter The formatter to apply the transformation to.
-      # @param [Proc] transform The transformation function to apply to the formatted string.
+      # @param formatter [Formatter] The formatter to apply the transformation to.
+      # @param transform [Proc] The transformation function to apply to the formatted string.
       def initialize(message, attributes)
         @message = message
         @attributes = attributes || {}

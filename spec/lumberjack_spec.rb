@@ -3,6 +3,12 @@
 require "spec_helper"
 
 RSpec.describe Lumberjack do
+  describe "VERSION" do
+    it "is defined" do
+      expect(Lumberjack::VERSION).not_to be_nil
+    end
+  end
+
   describe "#context" do
     it "should create a context with attributes for a block" do
       Lumberjack.context do
