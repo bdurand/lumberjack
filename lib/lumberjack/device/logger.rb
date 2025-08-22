@@ -86,6 +86,12 @@ module Lumberjack
       @logger.close
     end
 
+    # Reopen the underlying logger device. This is typically used to reopen log files
+    # after log rotation or to refresh the logger's output stream.
+    #
+    # Delegates to the target logger's `reopen` method.
+    #
+    # @return [void]
     def reopen
       @logger.reopen
     end
