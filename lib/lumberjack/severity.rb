@@ -20,7 +20,7 @@ module Lumberjack
     class << self
       # Convert a severity level to a label.
       #
-      # @param [Integer] severity The severity level to convert.
+      # @param severity [Integer] The severity level to convert.
       # @return [String] The severity label.
       def level_to_label(severity)
         return TRACE_LABEL if severity == TRACE
@@ -29,7 +29,7 @@ module Lumberjack
 
       # Convert a severity label to a level.
       #
-      # @param [String, Symbol] label The severity label to convert.
+      # @param label [String, Symbol] The severity label to convert.
       # @return [Integer] The severity level.
       def label_to_level(label)
         label = label.to_s.upcase
@@ -38,7 +38,7 @@ module Lumberjack
 
       # Coerce a value to a severity level.
       #
-      # @param [Integer, String, Symbol] value The value to coerce.
+      # @param value [Integer, String, Symbol] The value to coerce.
       # @return [Integer] The severity level.
       def coerce(value)
         if value.is_a?(Numeric)

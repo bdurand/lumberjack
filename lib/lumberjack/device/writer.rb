@@ -20,8 +20,8 @@ module Lumberjack
       # The default template is "[:time :severity :progname(:pid)] :message"
       # with additional lines formatted as "\n  :message".
       #
-      # @param [IO] stream The stream to write log entries to.
-      # @param [Hash] options The options for the device.
+      # @param stream [IO] The stream to write log entries to.
+      # @param options [Hash] The options for the device.
       def initialize(stream, options = {})
         @stream = stream
         @stream.sync = true if @stream.respond_to?(:sync=) && options[:autoflush] != false
@@ -42,7 +42,7 @@ module Lumberjack
 
       # Write an entry to the stream. The entry will be converted into a string using the defined template.
       #
-      # @param [LogEntry, String] entry The entry to write to the stream.
+      # @param entry [LogEntry, String] The entry to write to the stream.
       # @return [void]
       def write(entry)
         string = (entry.is_a?(LogEntry) ? @template.call(entry) : entry)
@@ -82,7 +82,7 @@ module Lumberjack
 
       # Set the datetime format.
       #
-      # @param [String] format The datetime format.
+      # @param format [String] The datetime format.
       # @return [void]
       def datetime_format=(format)
         if @template.respond_to?(:datetime_format=)

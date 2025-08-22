@@ -8,8 +8,8 @@ module Lumberjack
     # environment. This is useful for setting attributes that are relevant to the entire request
     # like the request id, host, etc.
     class Context
-      # @param [Object] app The rack application.
-      # @param [Hash] env_attributes A hash of attributes to set from the request environment. If an attribute value is
+      # @param app [Object] The rack application.
+      # @param env_attributes [Hash] A hash of attributes to set from the request environment. If an attribute value is
       #   a Proc, it will be called with the request `env` as an argument to allow dynamic attribute values
       #   based on request data.
       def initialize(app, env_attributes = nil)

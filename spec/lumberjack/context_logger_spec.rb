@@ -131,6 +131,36 @@ RSpec.describe Lumberjack::ContextLogger do
       })
     end
 
+    it "adds a message with the progname" do
+      logger.add(:info, "Test", "MyApp")
+      expect(logger.entries.last).to eq(
+        severity: Logger::INFO,
+        message: "Test",
+        progname: "MyApp",
+        attributes: nil
+      )
+    end
+
+    it "adds a message with attributes" do
+      logger.add(:info, "Test", foo: "bar")
+      expect(logger.entries.last).to eq(
+        severity: Logger::INFO,
+        message: "Test",
+        progname: nil,
+        attributes: {foo: "bar"}
+      )
+    end
+
+    it "adds a message with the message in a block" do
+      logger.add(:info, foo: "bar") { "Test Message" }
+      expect(logger.entries.last).to eq({
+        severity: Logger::INFO,
+        message: "Test Message",
+        progname: nil,
+        attributes: {foo: "bar"}
+      })
+    end
+
     it "does not add a message if the severity is less than the level" do
       logger.with_level(:warn) do
         logger.add(Logger::INFO, "Test message")
@@ -140,6 +170,16 @@ RSpec.describe Lumberjack::ContextLogger do
 
     it "adds the entry as UNKNOWN if the severity is not specified" do
       logger.add(nil, "Test message")
+      expect(logger.entries.last).to eq({
+        severity: Logger::UNKNOWN,
+        message: "Test message",
+        progname: nil,
+        attributes: nil
+      })
+    end
+
+    it "adds the entry as UNKNOWN if severity is not specified and message is in a block" do
+      logger.add(nil) { "Test message" }
       expect(logger.entries.last).to eq({
         severity: Logger::UNKNOWN,
         message: "Test message",

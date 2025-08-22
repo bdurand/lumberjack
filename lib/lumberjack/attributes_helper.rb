@@ -7,7 +7,7 @@ module Lumberjack
       # Expand any values in a hash that are Proc's by calling them and replacing
       # the value with the result. This allows setting global tags with runtime values.
       #
-      # @param [Hash] hash The hash to transform.
+      # @param hash [Hash] The hash to transform.
       # @return [Hash] The hash with string keys and expanded values.
       def expand_runtime_values(hash)
         return nil if hash.nil?

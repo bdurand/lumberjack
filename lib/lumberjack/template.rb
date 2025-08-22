@@ -81,7 +81,7 @@ module Lumberjack
 
     # Set the format used to format the time.
     #
-    # @param [String] format The format to use to format the time.
+    # @param format [String] The format to use to format the time.
     def datetime_format=(format)
       if format == :milliseconds
         format = MILLISECOND_TIME_FORMAT
@@ -100,7 +100,7 @@ module Lumberjack
 
     # Convert an entry into a string using the template.
     #
-    # @param [Lumberjack::LogEntry] entry The entry to convert to a string.
+    # @param entry [Lumberjack::LogEntry] The entry to convert to a string.
     # @return [String] The entry converted to a string.
     def call(entry)
       return entry unless entry.is_a?(LogEntry)

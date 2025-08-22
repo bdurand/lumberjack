@@ -9,7 +9,7 @@ module Lumberjack
     class ExceptionFormatter
       attr_accessor :backtrace_cleaner
 
-      # @param [#call] backtrace_cleaner An object that responds to `call` and takes
+      # @param backtrace_cleaner [#call] An object that responds to `call` and takes
       #   an array of strings (the backtrace) and returns an array of strings (the
       def initialize(backtrace_cleaner = nil)
         self.backtrace_cleaner = backtrace_cleaner
