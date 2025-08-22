@@ -3,7 +3,9 @@
 module Lumberjack
   # The standard severity levels for logging messages.
   module Severity
+    # Custom severity level for trace messages, lower than DEBUG.
     TRACE = -1
+
     DEBUG = Logger::Severity::DEBUG
     INFO = Logger::Severity::INFO
     WARN = Logger::Severity::WARN

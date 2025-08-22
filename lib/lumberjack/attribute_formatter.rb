@@ -1,24 +1,64 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  # Class for formatting attributes. You can register a default formatter and attribute
-  # name specific formatters. Formatters can be either `Lumberjack::Formatter`
-  # objects or any object that responds to `call`.
+  # AttributeFormatter provides flexible formatting control for log entry attributes (key-value pairs).
+  # It allows you to specify different formatting rules for attribute names, object classes, or
+  # provide a default formatter for all attributes.
   #
-  # @example
-  #   attribute_formatter = Lumberjack::AttributeFormatter.new.default(Lumberjack::Formatter.new)
-  #   attribute_formatter.add(["password", "email"]) { |value| "***" }
-  #   attribute_formatter.add("finished_at", Lumberjack::Formatter::DateTimeFormatter.new("%Y-%m-%dT%H:%m:%S%z"))
-  #   attribute_formatter.add(Enumerable) { |value| value.join(", ") }
+  # The formatter system works in a hierarchical manner:
+  # 1. **Attribute-specific formatters** - Applied to specific attribute names (highest priority)
+  # 2. **Class-specific formatters** - Applied based on the attribute value's class
+  # 3. **Default formatter** - Applied to all other attributes (lowest priority)
+  #
+  # ## Key Features
+  #
+  # - **Nested attribute support**: Use dot notation (e.g., "user.email") to format nested hash values
+  # - **Class-based formatting**: Apply formatters to all values of specific object types
+  # - **Recursive processing**: Automatically handles nested hashes and arrays
+  # - **Flexible formatter types**: Supports Formatter objects, callable objects, blocks, or symbols
+  #
+  # ## Formatter Types
+  #
+  # Formatters can be specified as:
+  # - **Lumberjack::Formatter objects**: Full formatter instances with complex logic
+  # - **Callable objects**: Any object responding to `#call(value)`
+  # - **Blocks**: Inline formatting logic
+  # - **Symbols**: References to predefined formatter classes (e.g., `:strip`, `:truncate`)
+  #
+  # @example Basic usage
+  #   formatter = Lumberjack::AttributeFormatter.new
+  #   formatter.default { |value| value.to_s.upcase }
+  #   formatter.add("password") { |value| "[REDACTED]" }
+  #   formatter.add("created_at", :date_time, "%Y-%m-%d")
+  #
+  # @example Security-focused attribute formatting
+  #   formatter = Lumberjack::AttributeFormatter.build do
+  #     add(["password", "secret", "token"]) { |value| "[REDACTED]" }
+  #     add("email") { |email| email.gsub(/@.*/, "@***") }
+  #     add(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+  #   end
+  #
+  # @example Nested attribute formatting
+  #   formatter = Lumberjack::AttributeFormatter.new
+  #   formatter.add("user.email") { |email| email.downcase }
+  #   formatter.add("config.database.password") { |pwd| "[HIDDEN]" }
+  #
+  # @see Lumberjack::Formatter
+  # @see Lumberjack::EntryFormatter
   class AttributeFormatter
     class << self
-      # Build a new attribute formatter using the given block. The block will be yielded to with
-      # the new formatter in context.
+      # Build a new attribute formatter using a configuration block. The block is evaluated
+      # in the context of the new formatter, allowing direct use of `add`, `default`, and other methods.
+      #
+      # @yield [formatter] A block that configures the attribute formatter.
+      # @return [Lumberjack::AttributeFormatter] A new configured attribute formatter.
       #
       # @example
-      #   Lumberjack::AttributeFormatter.build do
-      #     add(["password", "email"]) { |value| "***" }
-      #     add(Enumerable) { |value| value.join(", ") }
+      #   formatter = Lumberjack::AttributeFormatter.build do
+      #     default { |value| value.to_s.strip }
+      #     add(["password", "secret"]) { |value| "[REDACTED]" }
+      #     add("email") { |email| email.downcase }
+      #     add(Time, :date_time, "%Y-%m-%d %H:%M:%S")
       #   end
       def build(&block)
         formatter = new
@@ -27,18 +67,35 @@ module Lumberjack
       end
     end
 
+    # Create a new attribute formatter with no default formatters configured.
+    # You'll need to add specific formatters using {#add}, {#add_class}, {#add_attribute}, or {#default}.
+    #
+    # @return [Lumberjack::AttributeFormatter] A new empty attribute formatter.
     def initialize
       @attribute_formatters = {}
       @class_formatter = Formatter.empty
       @default_formatter = nil
     end
 
-    # Add a default formatter applied to all attribute values. This can either be a Lumberjack::Formatter
-    # or an object that responds to `call` or a block.
+    # Set a default formatter applied to all attribute values that don't have specific formatters.
+    # This serves as the fallback formatting behavior for any attributes not covered by
+    # attribute-specific or class-specific formatters.
     #
     # @param formatter [Lumberjack::Formatter, #call, nil] The formatter to use.
-    #    If this is nil, then the block will be used as the formatter.
-    # @return [Lumberjack::AttributeFormatter] self
+    #   If nil, the block will be used as the formatter.
+    # @yield [value] Block-based formatter that receives the attribute value.
+    # @yieldparam value [Object] The attribute value to format.
+    # @yieldreturn [Object] The formatted attribute value.
+    # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
+    #
+    # @example Using a formatter object
+    #   formatter.default(Lumberjack::Formatter.new)
+    #
+    # @example Using a block
+    #   formatter.default { |value| value.to_s.upcase }
+    #
+    # @example Using a symbol reference
+    #   formatter.default(:strip)
     def default(formatter = nil, &block)
       formatter ||= block
       formatter = dereference_formatter(formatter)
@@ -46,27 +103,37 @@ module Lumberjack
       self
     end
 
-    # Remove the default formatter.
+    # Remove the default formatter. After calling this, attributes without specific formatters
+    # will be passed through unchanged.
     #
-    # @return [Lumberjack::AttributeFormatter] self
+    # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
     def remove_default
       @default_formatter = nil
       self
     end
 
-    # Add a formatter for specific attribute names or object classes. This is a convenience method and will call
-    # either `add_class` or `add_attribute` as appropriate.
+    # Add formatters for specific attribute names or object classes. This is a convenience method
+    # that automatically delegates to {#add_class} or {#add_attribute} based on the input type.
     #
-    # Class formatters will be applied recursively to nested hashes and arrays.
+    # When you pass a Module/Class, it creates a class-based formatter that applies to all
+    # attribute values of that type. When you pass a String, it creates an attribute-specific
+    # formatter for that exact attribute name.
     #
-    # @param names_or_classes [String, Module, Array<String, Module>] The attribute names or object classes
-    #   to apply the formatter to.
-    # @param formatter [Lumberjack::Formatter, #call, nil] The formatter to use.
-    #    If this is nil, then the block will be used as the formatter.
-    # @return [Lumberjack::AttributeFormatter] self
+    # Class formatters are applied recursively to nested hashes and arrays, making them
+    # powerful for formatting complex nested structures.
     #
-    # @example
-    #  attribute_formatter.add("password", &:redact)
+    # @param names_or_classes [String, Module, Array<String, Module>] Attribute names or object classes.
+    # @param formatter [Lumberjack::Formatter, #call, Symbol, nil] The formatter to use.
+    # @yield [value] Block-based formatter that receives the attribute value.
+    # @yieldparam value [Object] The attribute value to format.
+    # @yieldreturn [Object] The formatted attribute value.
+    # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
+    #
+    # @example Mixed attribute and class formatting
+    #   formatter.add("password") { |value| "[REDACTED]" }  # Attribute-specific
+    #   formatter.add(Time, :date_time, "%Y-%m-%d")         # Class-specific
+    #   formatter.add(["secret", "token"]) { "[HIDDEN]" }   # Multiple attributes
+    #   formatter.add([String, Symbol], :strip)             # Multiple classes
     def add(names_or_classes, formatter = nil, &block)
       Array(names_or_classes).each do |obj|
         if obj.is_a?(Module)
@@ -79,15 +146,26 @@ module Lumberjack
       self
     end
 
-    # Add a formatter for specific object classes. This can either be a Lumberjack::Formatter
-    # or an object that responds to `call` or a block. The formatter will be applied if the attribute value
-    # is an instance of a registered class.
+    # Add formatters for specific object classes. The formatter will be applied to any attribute
+    # value that is an instance of the registered class. This is particularly useful for formatting
+    # all instances of specific data types consistently across your logs.
     #
-    # @param classes_or_names [String, Module, Array<String, Module>] The class names or modules
-    #   to apply the formatter to.
-    # @param formatter [Lumberjack::Formatter, #call, nil] The formatter to use.
-    #    If this is nil, then the block will be used as the formatter.
-    # @return [Lumberjack::AttributeFormatter] self
+    # Class formatters are recursive - they will be applied to matching objects found within
+    # nested hashes and arrays.
+    #
+    # @param classes_or_names [String, Module, Array<String, Module>] Class names or modules.
+    # @param formatter [Lumberjack::Formatter, #call, Symbol, nil] The formatter to use.
+    # @yield [value] Block-based formatter that receives the attribute value.
+    # @yieldparam value [Object] The attribute value to format.
+    # @yieldreturn [Object] The formatted attribute value.
+    # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
+    #
+    # @example Time formatting
+    #   formatter.add_class(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+    #   formatter.add_class([Date, DateTime]) { |dt| dt.strftime("%Y-%m-%d") }
+    #
+    # @example Security formatting
+    #   formatter.add_class(SecretToken) { |token| "[TOKEN:#{token.id}]" }
     def add_class(classes_or_names, formatter = nil, &block)
       formatter ||= block
       formatter = dereference_formatter(formatter)
@@ -104,16 +182,29 @@ module Lumberjack
       self
     end
 
-    # Add a formatter for specific attribute names. Attribute formatters can be applied to nested hashes using dot syntax.
-    # For example, if you add a formatter for "foo.bar", it will be applied to the value of the "bar" key in
-    # the "foo" attribute if that value is a hash.
+    # Add formatters for specific attribute names. These formatters take precedence over
+    # class formatters and the default formatter.
     #
-    # Attribute formatters will take precedence over class formatters.
+    # Supports dot notation for nested attributes (e.g., "user.profile.email"). This allows
+    # you to format specific values deep within nested hash structures.
     #
-    # @param attribute_names [String, Module, Array<String, Module>] The attribute names to apply the formatter to.
-    # @param formatter [Lumberjack::Formatter, #call, nil] The formatter to use.
-    #    If this is nil, then the block will be used as the formatter.
-    # @return [Lumberjack::AttributeFormatter] self
+    # @param attribute_names [String, Symbol, Array<String, Symbol>] The attribute names to format.
+    # @param formatter [Lumberjack::Formatter, #call, Symbol, nil] The formatter to use.
+    # @yield [value] Block-based formatter that receives the attribute value.
+    # @yieldparam value [Object] The attribute value to format.
+    # @yieldreturn [Object] The formatted attribute value.
+    # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
+    #
+    # @example Basic attribute formatting
+    #   formatter.add_attribute("password") { |pwd| "[REDACTED]" }
+    #   formatter.add_attribute("email") { |email| email.downcase }
+    #
+    # @example Nested attribute formatting
+    #   formatter.add_attribute("user.profile.email") { |email| email.downcase }
+    #   formatter.add_attribute("config.database.password") { "[HIDDEN]" }
+    #
+    # @example Multiple attributes
+    #   formatter.add_attribute(["secret", "token", "api_key"]) { "[REDACTED]" }
     def add_attribute(attribute_names, formatter = nil, &block)
       formatter ||= block
       formatter = dereference_formatter(formatter)
@@ -129,10 +220,17 @@ module Lumberjack
       self
     end
 
-    # Remove formatters for specific attribute names. The default formatter will still be applied.
+    # Remove formatters for specific attribute names or classes. This reverts the specified
+    # attributes or classes to use the default formatter (if configured) or no formatting.
     #
-    # @param names_or_classes [String, Module, Array<String, Module>] The attribute names or classes to remove the formatter from.
-    # @return [Lumberjack::AttributeFormatter] self
+    # @param names_or_classes [String, Module, Array<String, Module>] Attribute names or classes
+    #   to remove formatters for.
+    # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
+    #
+    # @example
+    #   formatter.remove("password")           # Remove single attribute formatter
+    #   formatter.remove([Time, Date])         # Remove multiple class formatters
+    #   formatter.remove(["secret", String])  # Remove mixed formatters
     def remove(names_or_classes)
       Array(names_or_classes).each do |key|
         if key.is_a?(Module)
@@ -144,9 +242,15 @@ module Lumberjack
       self
     end
 
-    # Remove all formatters.
+    # Remove all configured formatters, including the default formatter. This resets the
+    # formatter to a completely empty state where all attributes pass through unchanged.
     #
-    # @return [Lumberjack::AttributeFormatter] self
+    # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
+    #
+    # @example Starting fresh
+    #   formatter.clear
+    #           .add("password") { "[REDACTED]" }
+    #           .default { |value| value.to_s.strip }
     def clear
       @default_formatter = nil
       @attribute_formatters.clear
@@ -154,14 +258,48 @@ module Lumberjack
       self
     end
 
+    # Check if the formatter has any configured formatters (attribute, class, or default).
+    #
+    # @return [Boolean] true if no formatters are configured, false otherwise.
     def empty?
       @attribute_formatters.empty? && @class_formatter.empty? && @default_formatter.nil?
     end
 
-    # Format a hash of attributes using the formatters
+    # Format a hash of attributes using the configured formatters. This is the main
+    # method that applies all formatting rules to transform attribute values.
     #
-    # @param attributes [Hash] The attributes to format.
-    # @return [Hash] The formatted attributes.
+    # The formatting process follows this precedence:
+    # 1. Attribute-specific formatters (highest priority)
+    # 2. Class-specific formatters
+    # 3. Default formatter (lowest priority)
+    #
+    # Nested hashes and arrays are processed recursively, and dot notation attribute
+    # formatters are applied to nested structures.
+    #
+    # @param attributes [Hash, nil] The attributes hash to format.
+    # @return [Hash, nil] The formatted attributes hash, or nil if input was nil.
+    #
+    # @example
+    #   formatter = Lumberjack::AttributeFormatter.build do
+    #     add("password") { "[REDACTED]" }
+    #     add(Time, :date_time, "%Y-%m-%d")
+    #     default { |value| value.to_s.upcase }
+    #   end
+    #
+    #   input = {
+    #     user: "alice",
+    #     password: "secret123",
+    #     created_at: Time.now,
+    #     nested: { password: "nested_secret" }
+    #   }
+    #
+    #   formatter.format(input)
+    #   # => {
+    #   #   "user" => "ALICE",
+    #   #   "password" => "[REDACTED]",
+    #   #   "created_at" => "2025-08-21",
+    #   #   "nested" => { "password" => "[REDACTED]" }
+    #   # }
     def format(attributes)
       return nil if attributes.nil?
       return attributes if empty?
@@ -171,6 +309,13 @@ module Lumberjack
 
     private
 
+    # Recursively format all attributes in a hash, handling nested structures.
+    #
+    # @param attributes [Hash] The attributes to format.
+    # @param skip_classes [Array<Class>, nil] Classes to skip during recursive formatting.
+    # @param prefix [String, nil] Dot notation prefix for nested attribute names.
+    # @return [Hash] The formatted attributes hash.
+    # @api private
     def formated_attributes(attributes, skip_classes: nil, prefix: nil)
       formatted = {}
 
@@ -182,6 +327,14 @@ module Lumberjack
       formatted
     end
 
+    # Format a single attribute value using the appropriate formatter.
+    #
+    # @param name [String] The attribute name.
+    # @param value [Object] The attribute value to format.
+    # @param skip_classes [Array<Class>, nil] Classes to skip during recursive formatting.
+    # @param prefix [String, nil] Dot notation prefix for nested attribute names.
+    # @return [Object] The formatted attribute value.
+    # @api private
     def formatted_attribute_value(name, value, skip_classes: nil, prefix: nil)
       prefixed_name = prefix ? "#{prefix}#{name}" : name
       using_class_formatter = false
@@ -219,6 +372,11 @@ module Lumberjack
       formatted_value
     end
 
+    # Convert symbol formatter references to actual formatter instances.
+    #
+    # @param formatter [Symbol, Object] The formatter to dereference.
+    # @return [Object] The actual formatter instance.
+    # @api private
     def dereference_formatter(formatter)
       if formatter.is_a?(Symbol)
         formatter_class_name = "#{formatter.to_s.gsub(/(^|_)([a-z])/) { |m| $~[2].upcase }}Formatter"

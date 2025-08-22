@@ -5,6 +5,19 @@ require_relative "io_compatibility"
 require_relative "severity"
 
 module Lumberjack
+  # ContextLogger provides a logging interface with support for contextual attributes,
+  # level management, and program name scoping. This module is included by Logger
+  # and ForkedLogger to provide a common API for structured logging.
+  #
+  # Key features include:
+  # - Context-aware attribute management with tag/untag methods
+  # - Scoped logging levels and program names
+  # - Compatibility with Ruby's standard Logger API
+  # - Support for forking isolated logger contexts
+  #
+  # @see Lumberjack::Logger
+  # @see Lumberjack::ForkedLogger
+  # @see Lumberjack::Context
   module ContextLogger
     # Constant used for setting trace log level.
     TRACE = Severity::TRACE
@@ -195,7 +208,7 @@ module Lumberjack
     #
     # @param message_or_progname_or_attributes [Object] The message to log or progname
     #   if the message is passed in a block.
-    # @param progname_or_attributes [String] The name of the program that is logging the message or attributes
+    # @param progname_or_attributes [String, Hash] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
     # @return [void]
     def info(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
@@ -363,6 +376,10 @@ module Lumberjack
     # @param attributes [Hash, nil] The attributes to set on the new logger. The forked logger will
     #   inherit all attributes from the current logging context.
     # @return [ForkedLogger]
+    #
+    # @example Creating a forked logger
+    #   child_logger = logger.fork(level: :debug, progname: "Child")
+    #   child_logger.debug("This goes to the parent logger's device")
     def fork(level: nil, progname: nil, attributes: nil)
       logger = ForkedLogger.new(self)
       logger.level = level if level

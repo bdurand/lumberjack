@@ -6,6 +6,29 @@ require "logger"
 require "fiber"
 require "pathname"
 
+# Lumberjack is a flexible logging framework for Ruby that extends the standard
+# Logger functionality with structured logging, context isolation, and advanced
+# formatting capabilities.
+#
+# The main features include:
+# - Structured logging with attributes for machine-readable metadata
+# - Context isolation for scoping logging behavior to specific code blocks
+# - Flexible formatters for customizing log output
+# - Multiple output devices and templates
+# - Built-in testing utilities
+#
+# @example Basic usage
+#   logger = Lumberjack::Logger.new(STDOUT)
+#   logger.info("Hello world")
+#
+# @example Using contexts
+#   Lumberjack.context do
+#     Lumberjack.tag(user_id: 123)
+#     logger.info("User action") # Will include user_id: 123
+#   end
+#
+# @see Lumberjack::Logger
+# @see Lumberjack::ContextLogger
 module Lumberjack
   VERSION = File.read(File.join(__dir__, "..", "VERSION")).chomp
 
@@ -109,7 +132,7 @@ module Lumberjack
       end
     end
 
-    # Tag all loggers with attributes on the current context
+    # Tag all loggers with attributes on the current context.
     #
     # @param attributes [Hash] The attributes to set.
     # @param block [Proc] optional context block in which to set the attributes.
