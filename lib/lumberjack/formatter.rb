@@ -63,11 +63,6 @@ module Lumberjack
       # over all formatting behavior.
       #
       # @return [Lumberjack::Formatter] A new formatter with no default mappings.
-      #
-      # @example
-      #   formatter = Lumberjack::Formatter.empty
-      #   formatter.add(String) { |str| str.upcase }  # Custom string handling
-      #   formatter.format("hello")  # => "HELLO"
       def empty
         new.clear
       end
@@ -124,6 +119,7 @@ module Lumberjack
     # ## Predefined Formatters
     #
     # Available predefined formatters (accessed by symbol):
+    # - `:date_time` - Formats time objects with a customizable format
     # - `:exception` - Formats exceptions with stack trace details
     # - `:id` - Extracts object ID or specified ID field
     # - `:inspect` - Uses Ruby's inspect method for debugging output
@@ -160,15 +156,12 @@ module Lumberjack
     # @example Using custom formatters
     #   formatter.add(MyClass, MyFormatter.new)  # Custom formatter object
     #   formatter.add(SecretData) { |obj| "[REDACTED]" }  # Block formatter
-    #   formatter.add(BigDecimal, RoundFormatter, 4)  # Class with arguments
+    #   formatter.add("BigDecimal", RoundFormatter, 4)  # Class with arguments
     #
     # @example Method chaining
     #   formatter.add(User, :id)
     #            .add(Password) { |pwd| "[HIDDEN]" }
     #            .add(BigDecimal, :round, 2)
-    #
-    # @example Using string class names
-    #   formatter.add("ActiveRecord::Base", :id)  # Avoid loading ActiveRecord
     def add(klass, formatter = nil, *args, &block)
       formatter ||= block
       if formatter.nil?
@@ -203,11 +196,6 @@ module Lumberjack
     #
     # @param klass [Class, Module, String, Array<Class, Module, String>] The class(es) to remove formatters for.
     # @return [self] Returns self for method chaining.
-    #
-    # @example
-    #   formatter.remove(MyClass)  # Remove single class
-    #   formatter.remove([User, Admin])  # Remove multiple classes
-    #   formatter.remove("ActiveRecord::Base")  # Remove by string name
     def remove(klass)
       Array(klass).each do |k|
         @class_formatters.delete(k.to_s)
@@ -222,9 +210,6 @@ module Lumberjack
     # empty formatter where all objects will be passed through unchanged.
     #
     # @return [self] Returns self for method chaining.
-    #
-    # @example
-    #   formatter.clear.add(MyClass, :pretty_print)  # Start fresh with only custom formatters
     def clear
       @class_formatters.clear
       set_optimized_flags!
@@ -249,11 +234,6 @@ module Lumberjack
     #
     # @param message [Object] The object to format.
     # @return [Object] The formatted representation (usually a String).
-    #
-    # @example
-    #   formatter.format("hello")        # => "hello" (String passthrough)
-    #   formatter.format([1, 2, 3])      # => "[1, 2, 3]" (Array formatting)
-    #   formatter.format(my_object)      # => "#<MyClass:0x...>" (inspect default)
     def format(message)
       # These primitive types are the most common in logs and so are optimized here
       # for the normal case where a custom formatter has not been defined.
@@ -287,10 +267,6 @@ module Lumberjack
     # @param progname [String] The program name (ignored).
     # @param msg [Object] The message object to format.
     # @return [String] The formatted message with line separator.
-    #
-    # @example
-    #   logger.formatter = my_formatter
-    #   logger.info("Hello")  # Uses formatter.call(INFO, time, nil, "Hello")
     def call(severity, timestamp, progname, msg)
       formatted_message = format(msg)
       formatted_message = formatted_message.message if formatted_message.is_a?(TaggedMessage)

@@ -145,5 +145,9 @@ RSpec.describe Lumberjack::Utils do
     it "returns the line of code that calls the method" do
       expect(Lumberjack::Utils.current_line).to start_with("#{__FILE__}:#{__LINE__}")
     end
+
+    it "can strip a root path from the line" do
+      expect(Lumberjack::Utils.current_line(__dir__)).to start_with("#{File.basename(__FILE__)}:#{__LINE__}")
+    end
   end
 end

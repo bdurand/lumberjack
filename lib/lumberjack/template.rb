@@ -52,11 +52,6 @@ module Lumberjack
     # A wrapper template that delegates formatting to a standard Ruby Logger formatter.
     # This provides compatibility with existing Logger::Formatter implementations while
     # maintaining the Template interface for consistent usage within Lumberjack.
-    #
-    # @example Using with a custom formatter
-    #   formatter = Logger::Formatter.new
-    #   template = Template::StandardFormatterTemplate.new(formatter)
-    #   formatted = template.call(log_entry)
     class StandardFormatterTemplate < Template
       # Create a new wrapper for a standard Ruby Logger formatter.
       #
@@ -109,29 +104,6 @@ module Lumberjack
     #   - `:microseconds` for ISO format with microsecond precision
     # @param attribute_format [String, nil] Printf-style format for individual attributes.
     #   Must contain exactly two %s placeholders for name and value. Defaults to "[%s:%s]"
-    #
-    # @example Basic template
-    #   template = Lumberjack::Template.new("[:time :severity] :message")
-    #
-    # @example Custom multi-line formatting
-    #   template = Lumberjack::Template.new(
-    #     "[:time :severity] :message",
-    #     additional_lines: "\n    :message"
-    #   )
-    #
-    # @example Custom time format
-    #   template = Lumberjack::Template.new(
-    #     "[:time :severity] :message",
-    #     time_format: "%Y-%m-%d %H:%M:%S"
-    #   )
-    #
-    # @example Custom attribute formatting
-    #   template = Lumberjack::Template.new(
-    #     "[:time :severity] :message :attributes",
-    #     attribute_format: "(%s=%s)"
-    #   )
-    #   # Produces attributes like: (user_id=123) (action=login)
-    #
     # @raise [ArgumentError] If attribute_format doesn't contain exactly two %s placeholders
     def initialize(first_line, additional_lines: nil, time_format: nil, attribute_format: nil)
       first_line ||= DEFAULT_FIRST_LINE_TEMPLATE
@@ -158,12 +130,6 @@ module Lumberjack
     #   - `:milliseconds`: ISO format with millisecond precision (YYYY-MM-DDTHH:MM:SS.sss)
     #   - `:microseconds`: ISO format with microsecond precision (YYYY-MM-DDTHH:MM:SS.ssssss)
     # @return [void]
-    #
-    # @example Setting a custom format
-    #   template.datetime_format = "%Y-%m-%d %H:%M:%S"
-    #
-    # @example Using microsecond precision
-    #   template.datetime_format = :microseconds
     def datetime_format=(format)
       if format == :milliseconds
         format = MILLISECOND_TIME_FORMAT
@@ -176,9 +142,6 @@ module Lumberjack
     # Get the current datetime format string used for timestamp formatting.
     #
     # @return [String] The strftime format string currently in use
-    #
-    # @example
-    #   template.datetime_format  # => "%Y-%m-%dT%H:%M:%S.%3N"
     def datetime_format
       @time_formatter.format
     end
@@ -189,18 +152,6 @@ module Lumberjack
     #
     # @param entry [Lumberjack::LogEntry] The log entry to format
     # @return [String] The formatted log entry string
-    #
-    # @example Single-line message
-    #   entry = LogEntry.new(Time.now, Logger::INFO, "User login", "web", 1234, {user_id: 42})
-    #   template.call(entry)
-    #   # => "[2023-08-21T10:30:15.123 INFO web(1234)] User login [user_id:42]"
-    #
-    # @example Multi-line message
-    #   entry = LogEntry.new(Time.now, Logger::ERROR, "Error occurred\nStack trace line 1\nStack trace line 2", "app", 1234, {})
-    #   template.call(entry)
-    #   # => "[2023-08-21T10:30:15.123 ERROR app(1234)] Error occurred
-    #   #     > Stack trace line 1
-    #   #     > Stack trace line 2"
     def call(entry)
       return entry unless entry.is_a?(LogEntry)
 

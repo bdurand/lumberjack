@@ -8,7 +8,7 @@ Lumberjack is a structured logging framework that extends Ruby's standard Logger
 
 - **Structured logging** with attributes (key-value pairs)
 - **Context isolation** for scoping logging behavior
-- **Flexible output devices** supporting files, streams, and custom destinations  
+- **Flexible output devices** supporting files, streams, and custom destinations
 - **Customizable formatters** for messages and attributes
 - **Thread and fiber safety** for concurrent applications
 - **Hierarchical logger forking** for component isolation
@@ -191,25 +191,25 @@ classDiagram
     Logger --* Context : has
     Logger --* EntryFormatter : uses
     ForkedLogger --* Logger : forwards to
-    
+
     Context --* AttributesHelper : uses
     EntryFormatter --* Formatter : uses
     EntryFormatter --* AttributeFormatter : uses
     AttributeFormatter --* Formatter : uses
-    
+
     Device <|-- WriterDevice : implements
-    Device <|-- LoggerFileDevice : implements  
+    Device <|-- LoggerFileDevice : implements
     Device <|-- MultiDevice : implements
     Device <|-- TestDevice : implements
     Device <|-- NullDevice : implements
     Device <|-- LoggerDevice : implements
     WriterDevice <|-- LoggerFileDevice : inherits
-    
+
     WriterDevice --* Template : uses
     Logger --> LogEntry : creates
     EntryFormatter --> LogEntry : processes
     Device --> LogEntry : receives
-    
+
     MultiDevice --* Device : aggregates
     LoggerDevice --* Logger : forwards to
     TestDevice --* LogEntry : stores
@@ -314,7 +314,7 @@ sequenceDiagram
     %% Logging Call
     App->>Logger: info("User login", ip: "192.168.1.1")
     Logger->>Logger: check level >= INFO
-    
+
     %% Entry Creation
     Logger->>Logger: merge_all_attributes()
     Note over Logger: Combines global, context, and local attributes
@@ -331,7 +331,7 @@ sequenceDiagram
 
     %% Device Writing
     Logger->>Device: write(entry)
-    
+
     alt WriterDevice
         Device->>Template: call(entry)
         Template-->>Device: formatted string
@@ -345,7 +345,7 @@ sequenceDiagram
     else TestDevice
         Device->>Device: entries << entry
     end
-    
+
     Device-->>Logger: success
     Logger-->>App: true
 
@@ -362,7 +362,7 @@ sequenceDiagram
 
 ### 2. **Strategy Pattern**
 - Devices implement pluggable output strategies
-- Formatters provide pluggable formatting strategies  
+- Formatters provide pluggable formatting strategies
 - Templates enable customizable output formatting
 
 ### 3. **Composite Pattern**
@@ -487,7 +487,7 @@ logger = Lumberjack::Logger.new("/var/log/app.log") do |config|
   config.level = :info
   config.shift_age = 10    # Keep 10 old files
   config.shift_size = 50.megabytes
-  
+
   # Structured attribute formatting
   config.attribute_formatter.add("password") { |value| "[REDACTED]" }
   config.attribute_formatter.add(Time, :iso8601)
@@ -499,7 +499,7 @@ end
 logger = Lumberjack::Logger.new(STDOUT) do |config|
   config.level = :debug
   config.template = "[:time :severity] :message :attributes"
-  
+
   # Pretty-print complex objects
   config.formatter.add(Hash, :pretty_print)
   config.formatter.add(Array, :pretty_print)

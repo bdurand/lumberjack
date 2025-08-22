@@ -48,21 +48,8 @@ module Lumberjack
     #   - `:shift_age` - Number of old files to keep, or rotation frequency
     #     ("daily", "weekly", "monthly")
     #   - `:shift_size` - Maximum file size in bytes before rotation
-    #   - `:progname` - Default program name for log entries
-    #   - `:formatter` - Custom formatter for log entries
-    #   - Plus any Writer device options (encoding, sync, etc.)
-    #
-    # @example Basic file with no rotation
-    #   device = LoggerFile.new("/var/log/app.log")
-    #
-    # @example Size-based rotation (rotate when file exceeds 50MB, keep 10 files)
-    #   device = LoggerFile.new("/var/log/app.log", shift_size: 50_000_000, shift_age: 10)
-    #
-    # @example Daily rotation with cleanup
-    #   device = LoggerFile.new("/var/log/app.log", shift_age: "daily")
-    #
-    # @example Custom encoding and sync options
-    #   device = LoggerFile.new("/var/log/app.log", encoding: "UTF-8", sync: true)
+    #   - `:shift_period_suffix` - Suffix to add to rotated log files
+    #   - `:binmode` - Whether to open the log file in binary mode
     def initialize(stream, options = {})
       # Filter options to only include keyword arguments supported by Logger::LogDevice#initialize
       supported_kwargs = ::Logger::LogDevice.instance_method(:initialize).parameters

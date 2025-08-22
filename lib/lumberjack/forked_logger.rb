@@ -50,10 +50,10 @@ module Lumberjack
   #     request_logger.info("Request completed")   # All logs tagged with request info
   #   end
   #
-  # @example Temporary debug logging
+  # @example Different logging levels
   #   debug_logger = Lumberjack::ForkedLogger.new(production_logger)
   #   debug_logger.level = :debug
-  #   debug_logger.debug("Detailed debugging info")  # Only shows if needed
+  #   debug_logger.debug("Detailed debugging info")
   #
   # @see Lumberjack::Logger
   # @see Lumberjack::ContextLogger
@@ -71,15 +71,6 @@ module Lumberjack
     #
     # @param logger [Lumberjack::Logger, #add_entry] The parent logger to forward entries to.
     #   Must respond to either `add_entry` (for Lumberjack loggers) or standard Logger methods.
-    #
-    # @example
-    #   parent = Lumberjack::Logger.new(STDOUT, level: :info, progname: "MyApp")
-    #   forked = Lumberjack::ForkedLogger.new(parent)
-    #   # forked.level == :info (inherited)
-    #   # forked.progname == "MyApp" (inherited)
-    #
-    #   forked.level = :debug     # Only affects forked logger
-    #   forked.progname = "Worker" # Only affects forked logger
     def initialize(logger)
       init_fiber_locals!
       @parent_logger = logger

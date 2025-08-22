@@ -52,13 +52,7 @@ RSpec.describe Lumberjack::IOCompatibility do
     logger.print("Hello", "world")
     expect(logger.entries).to eq([
       {
-        message: "Hello",
-        severity: Logger::UNKNOWN,
-        progname: nil,
-        attributes: nil
-      },
-      {
-        message: "world",
+        message: "Helloworld",
         severity: Logger::UNKNOWN,
         progname: nil,
         attributes: nil

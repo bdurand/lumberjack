@@ -9,11 +9,11 @@ module Lumberjack
     # @example
     #  # Automatically add attributes with error details when logging an exception.
     #  logger.add_formatter(Exception, ->(e) {
-    #    Lumberjack::Formatter::TaggedMessage.new(e.message, {
+    #    Lumberjack::Formatter::TaggedMessage.new(e.inspect, {
     #      error: {
     #        message: e.message,
     #        class: e.class.name,
-    #        trace: e.backtrace
+    #        stack: e.backtrace
     #      }
     #    })
     #  })

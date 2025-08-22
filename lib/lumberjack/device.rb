@@ -18,14 +18,14 @@ module Lumberjack
   #
   # @abstract Subclass and implement {#write} to create a concrete device
   # @see Lumberjack::Device::Writer File-based output device
-  # @see Lumberjack::Device::Logger Ruby Logger compatibility device
+  # @see Lumberjack::Device::LoggerWrapper Ruby Logger compatibility device
   # @see Lumberjack::Device::Multi Multiple device routing
   # @see Lumberjack::Device::Null Silent device for testing
   # @see Lumberjack::Device::Test In-memory device for testing
   class Device
     require_relative "device/writer"
     require_relative "device/logger_file"
-    require_relative "device/logger"
+    require_relative "device/logger_wrapper"
     require_relative "device/multi"
     require_relative "device/null"
     require_relative "device/test"

@@ -33,18 +33,21 @@ module Lumberjack
   #   logger = Lumberjack::Logger.new("/var/log/app.log", 10, 10 * 1024 * 1024)
   #
   # @example Using different devices
-  #   logger = Lumberjack::Logger.new(:null)  # Discard all output
-  #   logger = Lumberjack::Logger.new(StringIO.new)  # Log to memory
-  #   logger = Lumberjack::Logger.new(Lumberjack::Device::Test.new)  # For testing
+  #   logger = Lumberjack::Logger.new("logs/application.log")  # Log to file
+  #   logger = Lumberjack::Logger.new(STDOUT, template: ":severity - :message")  # Log to a stream with a template
+  #   logger = Lumberjack::Logger.new(:test)  # Log to a buffer for testing
+  #   logger = Lumberjack::Logger.new(another_logger) # Proxy logs to another logger
+  #   logger = Lumberjack::Logger.new(MyDevice.new)  # Log to a custom Lumberjack::Device
   #
   # Log entries are written to a logging Device if their severity meets or exceeds the log level.
   # Each log entry records the log message and severity along with the time it was logged, the
   # program name, process id, and an optional hash of attributes. Messages are converted to strings
   # using a Formatter associated with the logger.
   #
-  # @see Lumberjack::Device
-  # @see Lumberjack::EntryFormatter
   # @see Lumberjack::ContextLogger
+  # @see Lumberjack::Device
+  # @see Lumberjack::Template
+  # @see Lumberjack::EntryFormatter
   class Logger < ::Logger
     include ContextLogger
 
@@ -79,28 +82,6 @@ module Lumberjack
     # @param message_formatter [Lumberjack::Formatter] The formatter to use for formatting log messages.
     # @param attribute_formatter [Lumberjack::AttributeFormatter] The formatter to use for formatting attributes.
     # @param kwargs [Hash] Additional device-specific options.
-    #
-    # @example Basic file logging
-    #   logger = Lumberjack::Logger.new("/var/log/app.log")
-    #
-    # @example Logging to STDOUT with custom level
-    #   logger = Lumberjack::Logger.new(STDOUT, level: :info)
-    #
-    # @example File logging with rotation
-    #   # Keep 10 files, rotate when each reaches 10MB
-    #   logger = Lumberjack::Logger.new("/var/log/app.log", 10, 10 * 1024 * 1024)
-    #
-    # @example Daily log rotation
-    #   logger = Lumberjack::Logger.new("/var/log/app.log", "daily")
-    #
-    # @example Null logger for testing
-    #   logger = Lumberjack::Logger.new(:null)
-    #
-    # @example Test logger for capturing output
-    #   logger = Lumberjack::Logger.new(:test)
-    #   logger.info("test message")
-    #   puts logger.device.logged_entries  # Access captured entries
-    #
     # @return [Lumberjack::Logger] A new logger instance.
     def initialize(logdev, shift_age = 0, shift_size = 1048576,
       level: DEBUG, progname: nil, formatter: nil, datetime_format: nil,
@@ -320,13 +301,6 @@ module Lumberjack
     # @param attributes [Hash] The attributes to add to the log entry.
     # @return [void]
     # @api private
-    #
-    # @example
-    #
-    #   logger.add_entry(Logger::ERROR, exception)
-    #   logger.add_entry(Logger::INFO, "Request completed")
-    #   logger.add_entry(:warn, "Request took a long time")
-    #   logger.add_entry(Logger::DEBUG){"Start processing with options #{options.inspect}"}
     def add_entry(severity, message, progname = nil, attributes = nil)
       return false unless device
       return false if fiber_local_value(:logging)
@@ -385,7 +359,7 @@ module Lumberjack
       elsif device.is_a?(Device)
         device
       elsif device.is_a?(ContextLogger)
-        Device::Logger.new(device)
+        Device::LoggerWrapper.new(device)
       elsif device.respond_to?(:write) && !device.respond_to?(:path)
         Device::Writer.new(device, options)
       else

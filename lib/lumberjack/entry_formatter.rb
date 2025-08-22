@@ -18,7 +18,6 @@ module Lumberjack
   # - Handles the coordination between message and attribute formatting
   # - Manages special message types like TaggedMessage that carry embedded attributes
   #
-  #
   # @example Complete entry formatting setup
   #   formatter = Lumberjack::EntryFormatter.build do
   #     # Message formatting (delegates to Formatter)
@@ -87,18 +86,6 @@ module Lumberjack
     #   - :none: Creates an empty Formatter with no default mappings
     # @param attribute_formatter [Lumberjack::AttributeFormatter, nil] The attribute formatter to use.
     #   If nil, no attribute formatting will be performed unless configured later.
-    #
-    # @example Default configuration
-    #   formatter = Lumberjack::EntryFormatter.new
-    #   # Uses default message formatter, no attribute formatter
-    #
-    # @example Custom formatters
-    #   msg_fmt = Lumberjack::Formatter.build { add(User, :id) }
-    #   attr_fmt = Lumberjack::AttributeFormatter.build { add("password") { "[REDACTED]" } }
-    #   formatter = Lumberjack::EntryFormatter.new(
-    #     message_formatter: msg_fmt,
-    #     attribute_formatter: attr_fmt
-    #   )
     def initialize(message_formatter: nil, attribute_formatter: nil)
       if message_formatter.nil? || message_formatter == :default
         message_formatter = Lumberjack::Formatter.new
@@ -137,10 +124,6 @@ module Lumberjack
     # @param klass [Class, Module, String, Array<Class, Module, String>] The class(es) to remove formatters for.
     # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
     #
-    # @example
-    #   formatter.remove(User)  # Remove User formatter, will use default
-    #   formatter.remove([Time, Date])  # Remove multiple formatters
-    #
     # @see Lumberjack::Formatter#remove
     def remove(klass)
       @message_formatter.remove(klass)
@@ -164,12 +147,6 @@ module Lumberjack
     #     default { |value| value.to_s.strip }
     #   end
     #
-    # @example Nested attribute formatting
-    #   formatter.attributes do
-    #     add("user.profile.email") { |email| email.downcase }
-    #     add("config.database.password") { "[HIDDEN]" }
-    #   end
-    #
     # @see Lumberjack::AttributeFormatter
     def attributes(&block)
       @attribute_formatter ||= Lumberjack::AttributeFormatter.new
@@ -181,30 +158,9 @@ module Lumberjack
     # This is the main method that coordinates the formatting of both the message content
     # and any associated attributes.
     #
-    # ## Processing Steps
-    #
-    # 1. **Message processing**: Handles Proc messages, `to_log_format` methods, and delegates to message formatter
-    # 2. **Tagged message handling**: Extracts embedded attributes from TaggedMessage objects
-    # 3. **Attribute merging**: Combines explicit attributes with message-embedded attributes
-    # 4. **Runtime expansion**: Processes dynamic attribute values using AttributesHelper
-    # 5. **Attribute formatting**: Applies attribute formatter rules to the final attribute set
-    #
     # @param message [Object, Proc, nil] The log message to format. Can be any object, a Proc that returns the message, or nil.
     # @param attributes [Hash, nil] The log entry attributes to format.
     # @return [Array<Object, Hash>] A two-element array containing [formatted_message, formatted_attributes].
-    #
-    # @example Basic formatting
-    #   formatter.format("User logged in", user_id: 123, timestamp: Time.now)
-    #   # => ["User logged in", {"user_id" => 123, "timestamp" => "2025-08-21 10:30:00"}]
-    #
-    # @example With TaggedMessage
-    #   tagged_msg = Lumberjack::Formatter::TaggedMessage.new("Login", user: "alice")
-    #   formatter.format(tagged_msg, session: "abc123")
-    #   # => ["Login", {"user" => "alice", "session" => "abc123"}]
-    #
-    # @example With Proc message
-    #   formatter.format(-> { expensive_computation }, level: "debug")
-    #   # Proc is only called during formatting, not when log entry is created
     def format(message, attributes)
       message = message.call if message.is_a?(Proc)
       if message.respond_to?(:to_log_format) && message.method(:to_log_format).parameters.empty?

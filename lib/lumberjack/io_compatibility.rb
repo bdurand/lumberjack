@@ -50,10 +50,6 @@ module Lumberjack
     #
     # @param args [Array<Object>] The messages to write. Each will be converted to a string.
     # @return [nil]
-    #
-    # @example
-    #   logger.puts("First line", "Second line")
-    #   # Creates two separate log entries
     def puts(*args)
       args.each do |arg|
         write(arg)
@@ -61,7 +57,7 @@ module Lumberjack
       nil
     end
 
-    # Write multiple values to the log consecutively. This mimics IO#print behavior
+    # Concatentate strings into a single log entry. This mimics IO#print behavior
     # by writing arguments without separators. If no arguments are given, writes the
     # value of the global $_ variable.
     #
@@ -74,7 +70,7 @@ module Lumberjack
       if args.empty?
         write($_)
       else
-        args.each { |arg| write(arg) }
+        write(args.join(""))
       end
       nil
     end

@@ -18,19 +18,8 @@ module Lumberjack
     #
     # @example Basic multi-device setup
     #   file_device = Lumberjack::Device::Writer.new("/var/log/app.log")
-    #   console_device = Lumberjack::Device::Writer.new(STDOUT)
+    #   console_device = Lumberjack::Device::Writer.new(STDOUT, template: ":message")
     #   multi_device = Lumberjack::Device::Multi.new(file_device, console_device)
-    #
-    # @example Separated concerns logging
-    #   general_log = Lumberjack::Device::Writer.new("/var/log/general.log")
-    #   error_log = Lumberjack::Device::Writer.new("/var/log/errors.log")
-    #   security_log = Lumberjack::Device::Writer.new("/var/log/security.log")
-    #
-    #   multi_device = Lumberjack::Device::Multi.new(
-    #     general_log,    # All entries
-    #     error_log,      # Could be filtered by severity
-    #     security_log    # Could be filtered by attributes
-    #   )
     class Multi < Device
       # Initialize a new Multi device with the specified target devices. The device
       # accepts multiple devices either as individual arguments or as arrays,

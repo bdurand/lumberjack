@@ -87,15 +87,6 @@ module Lumberjack
     # @yieldparam value [Object] The attribute value to format.
     # @yieldreturn [Object] The formatted attribute value.
     # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
-    #
-    # @example Using a formatter object
-    #   formatter.default(Lumberjack::Formatter.new)
-    #
-    # @example Using a block
-    #   formatter.default { |value| value.to_s.upcase }
-    #
-    # @example Using a symbol reference
-    #   formatter.default(:strip)
     def default(formatter = nil, &block)
       formatter ||= block
       formatter = dereference_formatter(formatter)
@@ -128,12 +119,6 @@ module Lumberjack
     # @yieldparam value [Object] The attribute value to format.
     # @yieldreturn [Object] The formatted attribute value.
     # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
-    #
-    # @example Mixed attribute and class formatting
-    #   formatter.add("password") { |value| "[REDACTED]" }  # Attribute-specific
-    #   formatter.add(Time, :date_time, "%Y-%m-%d")         # Class-specific
-    #   formatter.add(["secret", "token"]) { "[HIDDEN]" }   # Multiple attributes
-    #   formatter.add([String, Symbol], :strip)             # Multiple classes
     def add(names_or_classes, formatter = nil, &block)
       Array(names_or_classes).each do |obj|
         if obj.is_a?(Module)
@@ -226,11 +211,6 @@ module Lumberjack
     # @param names_or_classes [String, Module, Array<String, Module>] Attribute names or classes
     #   to remove formatters for.
     # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
-    #
-    # @example
-    #   formatter.remove("password")           # Remove single attribute formatter
-    #   formatter.remove([Time, Date])         # Remove multiple class formatters
-    #   formatter.remove(["secret", String])  # Remove mixed formatters
     def remove(names_or_classes)
       Array(names_or_classes).each do |key|
         if key.is_a?(Module)
@@ -246,11 +226,6 @@ module Lumberjack
     # formatter to a completely empty state where all attributes pass through unchanged.
     #
     # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
-    #
-    # @example Starting fresh
-    #   formatter.clear
-    #           .add("password") { "[REDACTED]" }
-    #           .default { |value| value.to_s.strip }
     def clear
       @default_formatter = nil
       @attribute_formatters.clear
@@ -278,28 +253,6 @@ module Lumberjack
     #
     # @param attributes [Hash, nil] The attributes hash to format.
     # @return [Hash, nil] The formatted attributes hash, or nil if input was nil.
-    #
-    # @example
-    #   formatter = Lumberjack::AttributeFormatter.build do
-    #     add("password") { "[REDACTED]" }
-    #     add(Time, :date_time, "%Y-%m-%d")
-    #     default { |value| value.to_s.upcase }
-    #   end
-    #
-    #   input = {
-    #     user: "alice",
-    #     password: "secret123",
-    #     created_at: Time.now,
-    #     nested: { password: "nested_secret" }
-    #   }
-    #
-    #   formatter.format(input)
-    #   # => {
-    #   #   "user" => "ALICE",
-    #   #   "password" => "[REDACTED]",
-    #   #   "created_at" => "2025-08-21",
-    #   #   "nested" => { "password" => "[REDACTED]" }
-    #   # }
     def format(attributes)
       return nil if attributes.nil?
       return attributes if empty?

@@ -69,13 +69,21 @@ module Lumberjack
       # Get the current line of code that calls this method. This is useful for debugging
       # purposes to record the exact location in your code that generated a log entry.
       #
+      # @param root_path [String, Pathname, nil] An optional root path to strip from the file path.
       # @return [String] A string representation of the caller location (file:line:method).
       #
       # @example Adding source location to log entries
       #   logger.info("Something happened", source: Lumberjack::Utils.current_line)
       #   # Logs: "Something happened" with source: "/path/to/file.rb:123:in `method_name'"
-      def current_line
-        caller_locations(1, 1)[0].to_s
+      def current_line(root_path = nil)
+        location = caller_locations(1, 1)[0]
+        path = location.path
+        if root_path
+          root_path = root_path.to_s
+          root_path = "#{root_path}#{File::SEPARATOR}" unless root_path.end_with?(File::SEPARATOR)
+          path = path.delete_prefix(root_path)
+        end
+        "#{path}:#{location.lineno}:in `#{location.label}'"
       end
 
       # Set the hostname to a specific value. This overrides the system hostname.

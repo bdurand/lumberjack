@@ -55,41 +55,15 @@ module Lumberjack
       #   - Static values: Applied directly to all requests
       #   - Proc objects: Called with the Rack env hash to generate dynamic values
       #   - Any callable: Invoked with env to produce request-specific attributes
-      #
-      # @example Static attributes
-      #   Context.new(app, {
-      #     service: "api",
-      #     environment: "production"
-      #   })
-      #
-      # @example Dynamic attributes using Procs
-      #   Context.new(app, {
-      #     request_id: ->(env) { env["HTTP_X_REQUEST_ID"] || SecureRandom.uuid },
-      #     ip_address: ->(env) { env["REMOTE_ADDR"] },
-      #     user_agent: ->(env) { env["HTTP_USER_AGENT"]&.truncate(100) }
-      #   })
       def initialize(app, env_attributes = nil)
         @app = app
         @env_attributes = env_attributes
       end
 
-      # Process a Rack request within a scoped Lumberjack logging context. This method
-      # creates an isolated logging context for the request duration, applies any
-      # configured environment attributes, processes the request, and automatically
-      # cleans up the context when the request completes.
-      #
-      # The context isolation ensures that logging attributes set during one request
-      # don't affect subsequent requests, providing clean separation in multi-threaded
-      # or concurrent request scenarios.
+      # Process a Rack request within a scoped Lumberjack logging context.
       #
       # @param env [Hash] The Rack environment hash containing request information
       # @return [Array] The standard Rack response array [status, headers, body]
-      #
-      # @example Request processing flow
-      #   # 1. Create scoped logging context
-      #   # 2. Apply environment attributes if configured
-      #   # 3. Process request through application stack
-      #   # 4. Automatically clean up context on completion
       def call(env)
         Lumberjack.context do
           apply_attributes(env) if @env_attributes
@@ -100,17 +74,9 @@ module Lumberjack
       private
 
       # Apply configured environment attributes to the current logging context.
-      # This method processes the env_attributes configuration, evaluating any
-      # Proc values with the request environment and applying the resulting
-      # attributes to the logging context.
       #
       # @param env [Hash] The Rack environment hash
       # @return [void]
-      #
-      # @example Attribute processing
-      #   # Static value: { service: "api" } -> { service: "api" }
-      #   # Proc value: { request_id: ->(env) { env["HTTP_X_REQUEST_ID"] } }
-      #   #   -> { request_id: "abc-123-def" }
       def apply_attributes(env)
         attributes = @env_attributes.transform_values do |value|
           value.is_a?(Proc) ? value.call(env) : value

@@ -16,24 +16,7 @@ module Lumberjack
     # character encoding, whitespace normalization, and provides robust error
     # recovery when stream operations fail.
     #
-    # @example Basic file writing
-    #   device = Lumberjack::Device::Writer.new(File.open("/var/log/app.log", "a"))
-    #   logger = Lumberjack::Logger.new(device)
-    #
-    # @example Console output with custom template
-    #   device = Lumberjack::Device::Writer.new(
-    #     STDOUT,
-    #     template: "[%{time}] %{severity}: %{message}"
-    #   )
-    #
-    # @example Using a Proc template for custom formatting
-    #   custom_formatter = ->(entry) do
-    #     "#{entry.time.iso8601} | #{entry.severity_label.upcase} | #{entry.message}"
-    #   end
-    #   device = Lumberjack::Device::Writer.new(STDERR, template: custom_formatter)
-    #
     # @see Template
-    # @see Template::StandardFormatterTemplate
     class Writer < Device
       EDGE_WHITESPACE_PATTERN = /\A\s|[ \t\f\v][\r\n]*\z/
 

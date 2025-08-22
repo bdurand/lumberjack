@@ -40,7 +40,7 @@ module Lumberjack
     #     message: /Database error/,
     #     attributes: {
     #       database: "users",
-    #       timeout: be_a(Float),
+    #       timeout: Float,
     #       retry_count: be > 0
     #     }
     #   )

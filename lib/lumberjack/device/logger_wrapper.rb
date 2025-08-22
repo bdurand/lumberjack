@@ -17,15 +17,15 @@ module Lumberjack
   #
   # @example Basic logger forwarding
   #   file_logger = Lumberjack::Logger.new("/var/log/app.log")
-  #   logger_device = Lumberjack::Device::Logger.new(file_logger)
+  #   logger_device = Lumberjack::Device::LoggerWrapper.new(file_logger)
   #
   # @example Broadcasting with Multi device
   #   main_logger = Lumberjack::Logger.new("/var/log/main.log")
   #   error_logger = Lumberjack::Logger.new("/var/log/errors.log")
   #
   #   broadcast_device = Lumberjack::Device::Multi.new([
-  #     Lumberjack::Device::Logger.new(main_logger),
-  #     Lumberjack::Device::Logger.new(error_logger)
+  #     Lumberjack::Device::LoggerWrapper.new(main_logger),
+  #     Lumberjack::Device::LoggerWrapper.new(error_logger)
   #   ])
   #
   #   master_logger = Lumberjack::Logger.new(broadcast_device)
@@ -34,20 +34,20 @@ module Lumberjack
   #   # Main application logger
   #   app_logger = Lumberjack::Logger.new("/var/log/app.log")
   #
-  #   # Security-specific logger with different formatting
-  #   security_logger = Lumberjack::Logger.new("/var/log/security.log")
-  #   security_logger.level = Logger::WARN
+  #   # Focused error logs
+  #   error_logger = Lumberjack::Logger.new("/var/log/error.log")
+  #   error_logger.level = Logger::WARN
   #
-  #   # Route all logs to app, security logs to security logger
+  #   # Route all logs to app, error logs to error logger
   #   multi_device = Lumberjack::Device::Multi.new([
-  #     Lumberjack::Device::Logger.new(app_logger),
-  #     Lumberjack::Device::Logger.new(security_logger)
+  #     Lumberjack::Device::LoggerWrapper.new(app_logger),
+  #     Lumberjack::Device::LoggerWrapper.new(error_logger)
   #   ])
   #
   # @see Device::Multi
   # @see Lumberjack::Logger
   # @see Lumberjack::ContextLogger
-  class Device::Logger < Device
+  class Device::LoggerWrapper < Device
     # @!attribute [r] logger
     #   @return [Lumberjack::ContextLogger] The target logger that will receive forwarded log entries
     attr_reader :logger
