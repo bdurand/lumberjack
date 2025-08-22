@@ -82,6 +82,10 @@ module Lumberjack
       @logger.add_entry(entry.severity, entry.message, entry.progname, entry.attributes)
     end
 
+    # Closes the target logger to release any resources or finalize log output.
+    # This method delegates to the target logger's `close` method.
+    #
+    # @return [void]
     def close
       @logger.close
     end
