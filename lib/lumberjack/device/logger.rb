@@ -90,6 +90,11 @@ module Lumberjack
       @logger.reopen
     end
 
+    # Flushes the target logger, ensuring that any buffered log entries are written out.
+    # This delegates to the target logger's flush method, which may flush buffers to disk,
+    # external services, or other destinations depending on the logger's configuration.
+    #
+    # @return [void]
     def flush
       @logger.flush
     end
