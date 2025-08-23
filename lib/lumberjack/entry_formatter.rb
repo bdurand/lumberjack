@@ -163,11 +163,7 @@ module Lumberjack
     # @return [Array<Object, Hash>] A two-element array containing [formatted_message, formatted_attributes].
     def format(message, attributes)
       message = message.call if message.is_a?(Proc)
-      if message.respond_to?(:to_log_format) && message.method(:to_log_format).parameters.empty?
-        message = message.to_log_format
-      elsif message_formatter
-        message = message_formatter.format(message)
-      end
+      message = message_formatter.format(message) if message_formatter.respond_to?(:format)
 
       message_attributes = nil
       if message.is_a?(Formatter::TaggedMessage)

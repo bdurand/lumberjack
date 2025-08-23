@@ -99,3 +99,15 @@ class TestContextLogger
     @context
   end
 end
+
+class TestToLogFormat
+  attr_reader :value
+
+  def initialize(value)
+    @value = value
+  end
+
+  def to_log_format
+    "LOG FORMAT: #{@value}"
+  end
+end

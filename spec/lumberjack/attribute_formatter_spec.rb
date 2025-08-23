@@ -123,4 +123,10 @@ RSpec.describe Lumberjack::AttributeFormatter do
     attribute_formatter = Lumberjack::AttributeFormatter.new
     expect(attribute_formatter.format(attributes).object_id).to eq attributes.object_id
   end
+
+  it "uses the attributes from a TaggedMessage" do
+    attribute_formatter = Lumberjack::AttributeFormatter.new
+    attribute_formatter.add("foo") { |val| Lumberjack::Formatter::TaggedMessage.new(val.upcase, "attr" => val) }
+    expect(attribute_formatter.format({"foo" => "bar"})).to eq({"foo" => {"attr" => "bar"}})
+  end
 end

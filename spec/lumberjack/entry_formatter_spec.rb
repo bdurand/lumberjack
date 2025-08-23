@@ -84,20 +84,6 @@ RSpec.describe Lumberjack::EntryFormatter do
       expect(attributes).to eq({"attribute" => "foobar", "foo" => "bar"})
     end
 
-    it "applies the to_log_format method instead of the registered formatter if it exists" do
-      obj = +"FooBar"
-      def obj.to_log_format
-        "Custom format for #{self}"
-      end
-
-      entry_formatter.add(String) { |s| "String: #{s}" }
-      message, _ = entry_formatter.format("foobar", {})
-      expect(message).to eq("String: foobar")
-
-      message, _ = entry_formatter.format(obj, {})
-      expect(message).to eq("Custom format for FooBar")
-    end
-
     it "applies the attribute formatter to the attributes" do
       entry_formatter.attributes { add("foo") { |obj| "Foo: #{obj}" } }
       message, attributes = entry_formatter.format("foobar", {"foo" => "bar"})

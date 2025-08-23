@@ -232,30 +232,32 @@ module Lumberjack
     # Common primitive types (String, Integer, Float, Boolean) are optimized to bypass
     # formatter lookup when no custom formatters are defined for these types.
     #
-    # @param message [Object] The object to format.
+    # @param value [Object] The object to format.
     # @return [Object] The formatted representation (usually a String).
-    def format(message)
+    def format(value)
       # These primitive types are the most common in logs and so are optimized here
       # for the normal case where a custom formatter has not been defined.
-      case message
+      case value
       when String
-        return message unless @has_string_formatter
+        return value unless @has_string_formatter
       when Integer, Float
-        return message unless @has_numeric_formatter
+        return value unless @has_numeric_formatter
       when Numeric
-        if defined?(BigDecimal) && message.is_a?(BigDecimal)
-          return message unless @has_numeric_formatter
+        if defined?(BigDecimal) && value.is_a?(BigDecimal)
+          return value unless @has_numeric_formatter
         end
       when true, false
-        return message unless @has_boolean_formatter
+        return value unless @has_boolean_formatter
       end
 
-      formatter = formatter_for(message.class)
-      if formatter&.respond_to?(:call)
-        formatter.call(message)
-      else
-        message
+      formatter = formatter_for(value.class)
+      original_value = value
+      value = formatter.call(value) if formatter&.respond_to?(:call)
+      if value.equal?(original_value) && value.respond_to?(:to_log_format)
+        value = value.to_log_format
       end
+
+      value
     end
 
     # Compatibility method for Ruby's standard Logger::Formatter interface. This allows
@@ -283,7 +285,13 @@ module Lumberjack
       return nil if @class_formatters.empty?
 
       formatter = nil
-      klass.ancestors.detect { |ancestor| formatter = @class_formatters[ancestor.name] }
+      has_to_log_format = klass.public_method_defined?(:to_log_format)
+      klass.ancestors.detect do |ancestor|
+        break if has_to_log_format && ancestor == Object
+
+        formatter = @class_formatters[ancestor.name]
+        break if formatter
+      end
       formatter
     end
 

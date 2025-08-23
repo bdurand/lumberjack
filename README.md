@@ -302,6 +302,9 @@ class User
     "User[id: #{id}, name: #{name}]"
   end
 end
+```
+
+Primitive classes (`String`, `Integer`, `Float`, `TrueClass`, `FalseClass`, `NilClass`, `BigDecimal`) will not use `to_log_format`.
 
 #### Attribute Formatters
 
