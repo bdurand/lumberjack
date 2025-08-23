@@ -360,11 +360,18 @@ module Lumberjack
         device
       elsif device.is_a?(ContextLogger)
         Device::LoggerWrapper.new(device)
-      elsif device.respond_to?(:write) && !device.respond_to?(:path)
+      elsif io_but_not_file_stream?(device)
         Device::Writer.new(device, options)
       else
         Device::LoggerFile.new(device, options)
       end
+    end
+
+    def io_but_not_file_stream?(object)
+      return false unless object.respond_to?(:write)
+      return true if object.respond_to?(:tty?) && object.tty?
+      return false if object.respond_to?(:path) && object.path
+      true
     end
 
     def build_entry_formatter(formatter, message_formatter, attribute_formatter) # :nodoc:

@@ -104,8 +104,9 @@ module Lumberjack
     #   - `:microseconds` for ISO format with microsecond precision
     # @param attribute_format [String, nil] Printf-style format for individual attributes.
     #   Must contain exactly two %s placeholders for name and value. Defaults to "[%s:%s]"
+    # @param pad_severity [Boolean] Whether to pad the severity label to a fixed width.
     # @raise [ArgumentError] If attribute_format doesn't contain exactly two %s placeholders
-    def initialize(first_line, additional_lines: nil, time_format: nil, attribute_format: nil)
+    def initialize(first_line, additional_lines: nil, time_format: nil, attribute_format: nil, pad_severity: false)
       first_line ||= DEFAULT_FIRST_LINE_TEMPLATE
       @first_line_template, @first_line_attributes = compile("#{first_line.chomp}#{Lumberjack::LINE_SEPARATOR}")
 
@@ -120,6 +121,8 @@ module Lumberjack
       # Formatting the time is relatively expensive, so only do it if it will be used
       @template_include_time = first_line.include?(":time") || additional_lines.include?(":time")
       self.datetime_format = (time_format || :milliseconds)
+
+      @pad_severity = pad_severity
     end
 
     # Set the datetime format used for timestamp formatting in the template.
@@ -163,7 +166,7 @@ module Lumberjack
       end
 
       formatted_time = @time_formatter.call(entry.time) if @template_include_time
-      format_args = [formatted_time, entry.severity_label, entry.progname, entry.pid, first_line]
+      format_args = [formatted_time, entry.severity_label(@pad_severity), entry.progname, entry.pid, first_line]
       append_attribute_args!(format_args, entry.attributes, @first_line_attributes)
       message = (@first_line_template % format_args)
 

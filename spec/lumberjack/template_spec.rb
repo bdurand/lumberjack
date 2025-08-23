@@ -22,6 +22,11 @@ RSpec.describe Lumberjack::Template do
       template = Lumberjack::Template.new("%s :message")
       expect(template.call(entry)).to eq("%s line 1#{Lumberjack::LINE_SEPARATOR}> line 2#{Lumberjack::LINE_SEPARATOR}> line 3#{Lumberjack::LINE_SEPARATOR}")
     end
+
+    it "can pad the severity labels" do
+      template = Lumberjack::Template.new(":severity-:message", pad_severity: true)
+      expect(template.call(entry)).to start_with("INFO -line 1")
+    end
   end
 
   describe "timestamp format" do

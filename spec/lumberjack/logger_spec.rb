@@ -26,7 +26,7 @@ RSpec.describe Lumberjack::Logger do
       delete_tmp_dir
     end
 
-    it "should wrap an IO stream in a device" do
+    it "should wrap an IO stream in a Writer device" do
       out = StringIO.new
       logger = Lumberjack::Logger.new(out)
       expect(logger.device.class).to eq(Lumberjack::Device::Writer)
@@ -50,20 +50,32 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.attribute_formatter).to be
     end
 
-    it "should open a file path in a device" do
+    it "should open a file path in a LoggerFile device" do
       logger = Lumberjack::Logger.new(File.join(tmp_dir, "log_file_1.log"))
       expect(logger.device.class).to eq(Lumberjack::Device::LoggerFile)
     end
 
-    it "should open a pathname in a device" do
+    it "should open a pathname in a LoggerFile device" do
       logger = Lumberjack::Logger.new(Pathname.new(File.join(tmp_dir, "log_file_1.log")))
       expect(logger.device).to be_a(Lumberjack::Device::LoggerFile)
     end
 
-    it "should open a File in a device" do
+    it "should open a File in a LoggerFile device" do
       file = File.new(File.join(tmp_dir, "log_file_1.log"), "w")
       logger = Lumberjack::Logger.new(file)
       expect(logger.device.class).to eq(Lumberjack::Device::LoggerFile)
+    end
+
+    it "should open a Lumberjack Logger in a LoggerWrapper device" do
+      logger = Lumberjack::Logger.new(Lumberjack::Logger.new(File::NULL))
+      expect(logger.device.class).to eq(Lumberjack::Device::LoggerWrapper)
+    end
+
+    it "should open a tty stream in a Writer device" do
+      out = StringIO.new
+      allow(out).to receive(:tty?).and_return(true)
+      logger = Lumberjack::Logger.new(out)
+      expect(logger.device.class).to eq(Lumberjack::Device::Writer)
     end
 
     it "should use the null device if the stream is :null" do
@@ -332,7 +344,7 @@ RSpec.describe Lumberjack::Logger do
         expect(out.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{Process.pid})] test")
       end
 
-      it "should ouput entries to STDERR if they can't be written the the device" do
+      it "should output entries to STDERR if they can't be written the the device" do
         stderr = $stderr
         $stderr = StringIO.new
         begin

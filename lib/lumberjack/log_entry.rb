@@ -48,8 +48,8 @@ module Lumberjack
     # Get the human-readable severity label corresponding to the numeric severity level.
     #
     # @return [String] The severity label (DEBUG, INFO, WARN, ERROR, FATAL, or UNKNOWN)
-    def severity_label
-      Severity.level_to_label(severity)
+    def severity_label(pad = false)
+      Severity.level_to_label(severity, pad)
     end
 
     # Generate a formatted string representation of the log entry suitable for
