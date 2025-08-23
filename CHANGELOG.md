@@ -25,6 +25,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Added `Lumberjack::ForkedLogger` which is a wrapper around a logger with a separate context. A local logger has a parent logger which it will write it's log entries through. It will inherit the level, progname, and tags from a parent logger, but has its own local context isolated from the parent logger. You can change the level, progname, and add tags on the local logger without impacting the parent logger. Local loggers can be gotten from the current logger by calling `Lumberjack::Logger#fork`.
 - Added `Lumberjack::Utils.current_line` as a helper method for getting the current line of code.
 - Added `Lumberjack.build_formatter` as a helper method for building entry formatters.
+- Templates can now be use a left padded severity label with the option `pad_severity: true`. This will left pad the severity strings to five characters so that they can all be aligned in the log output.
 
 ### Changed
 

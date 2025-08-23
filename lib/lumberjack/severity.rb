@@ -13,20 +13,23 @@ module Lumberjack
     FATAL = Logger::Severity::FATAL
     UNKNOWN = Logger::Severity::UNKNOWN
 
-    TRACE_LABEL = "TRACE"
-    private_constant :TRACE_LABEL
-
-    SEVERITY_LABELS = %w[DEBUG INFO WARN ERROR FATAL ANY].freeze
+    SEVERITY_LABELS = %w[TRACE DEBUG INFO WARN ERROR FATAL ANY].freeze
     private_constant :SEVERITY_LABELS
+
+    PADDED_SEVERITY_LABELS = SEVERITY_LABELS.map { |label| label.ljust(5) }.freeze
+    private_constant :PADDED_SEVERITY_LABELS
 
     class << self
       # Convert a severity level to a label.
       #
       # @param severity [Integer] The severity level to convert.
       # @return [String] The severity label.
-      def level_to_label(severity)
-        return TRACE_LABEL if severity == TRACE
-        SEVERITY_LABELS[severity] || SEVERITY_LABELS.last
+      def level_to_label(severity, padded = false)
+        if padded
+          PADDED_SEVERITY_LABELS[severity + 1] || PADDED_SEVERITY_LABELS.last
+        else
+          SEVERITY_LABELS[severity + 1] || SEVERITY_LABELS.last
+        end
       end
 
       # Convert a severity label to a level.
@@ -35,7 +38,7 @@ module Lumberjack
       # @return [Integer] The severity level.
       def label_to_level(label)
         label = label.to_s.upcase
-        SEVERITY_LABELS.index(label) || ((label == TRACE_LABEL) ? TRACE : UNKNOWN)
+        (SEVERITY_LABELS.index(label) || UNKNOWN + 1) - 1
       end
 
       # Coerce a value to a severity level.

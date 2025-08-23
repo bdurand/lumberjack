@@ -14,6 +14,17 @@ RSpec.describe Lumberjack::Severity do
       expect(Lumberjack::Severity.level_to_label(Logger::UNKNOWN)).to eq("ANY")
       expect(Lumberjack::Severity.level_to_label(100)).to eq("ANY")
     end
+
+    it "converts a level to a padded label" do
+      expect(Lumberjack::Severity.level_to_label(Logger::DEBUG, true)).to eq("DEBUG")
+      expect(Lumberjack::Severity.level_to_label(Logger::INFO, true)).to eq("INFO ")
+      expect(Lumberjack::Severity.level_to_label(Logger::WARN, true)).to eq("WARN ")
+      expect(Lumberjack::Severity.level_to_label(Logger::ERROR, true)).to eq("ERROR")
+      expect(Lumberjack::Severity.level_to_label(Logger::FATAL, true)).to eq("FATAL")
+      expect(Lumberjack::Severity.level_to_label(Lumberjack::Logger::TRACE, true)).to eq("TRACE")
+      expect(Lumberjack::Severity.level_to_label(Logger::UNKNOWN, true)).to eq("ANY  ")
+      expect(Lumberjack::Severity.level_to_label(100, true)).to eq("ANY  ")
+    end
   end
 
   describe "#label_to_level" do

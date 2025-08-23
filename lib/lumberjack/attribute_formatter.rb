@@ -260,6 +260,18 @@ module Lumberjack
       formated_attributes(attributes)
     end
 
+    # Get the formatter for a specific class or attribute.
+    #
+    # @param class_or_attribute [String, Module] The class or attribute to get the formatter for.
+    # @return [#call, nil] The formatter for the class or attribute, or nil if not found.
+    def formatter_for(class_or_attribute)
+      if class_or_attribute.is_a?(Module)
+        @class_formatter.formatter_for(class_or_attribute)
+      else
+        @attribute_formatters[class_or_attribute.to_s]
+      end
+    end
+
     private
 
     # Recursively format all attributes in a hash, handling nested structures.
