@@ -89,6 +89,10 @@ module Lumberjack
       template: nil, message_formatter: nil, attribute_formatter: nil, **kwargs)
       init_fiber_locals!
 
+      if shift_age.is_a?(Hash)
+        raise ArgumentError.new("options must be passed as keyword arguments instead of a Hash")
+      end
+
       # Include standard args that affect devices with the optional kwargs which may
       # contain device specific options.
       device_options = kwargs.merge(shift_age: shift_age, shift_size: shift_size, binmode: binmode, shift_period_suffix: shift_period_suffix)
@@ -290,6 +294,47 @@ module Lumberjack
       Utils.deprecated(:remove_tag, "Use untag or untag! instead.") do
         attributes = current_context&.attributes
         AttributesHelper.new(attributes).delete(*tag_names) if attributes
+      end
+    end
+
+    # Minimal support for the ActiveSupport::TaggedLogging API. This functionality has been
+    # moved to the lumberjack_rails gem. Note that in the lumberjack_rails version tags will
+    # be appended to the "tags" attribute instead of the "tagged" attribute.
+    #
+    # @deprecated This implementation is deprecated. Install the lumberjack_rails gem for full support.
+    def tagged(*tags, &block)
+      deprecation_message = "Install the lumberjack_rails gem for full support of the tagged method."
+      Utils.deprecated(:tagged, deprecation_message) do
+        return self unless in_context?
+
+        current_tags = attributes["tagged"] || []
+        all_tags = current_tags + tags.flatten
+        tag("tagged" => all_tags, &block)
+        self
+      end
+    end
+
+    # Alias for with_level for compatibility with ActiveSupport loggers. This functionality
+    # has been moved to the lumberjack_rails gem.
+    #
+    # @see with_level
+    # @deprecated This implementation is deprecated. Install the lumberjack_rails gem for full support.
+    def log_at(level, &block)
+      deprecation_message = "Install the lumberjack_rails gem for full support of the log_at method."
+      Utils.deprecated(:log_at, deprecation_message) do
+        with_level(level, &block)
+      end
+    end
+
+    # Alias for with_level for compatibilty with ActiveSupport loggers. This functionality
+    # has been moved to the lumberjack_rails gem.
+    #
+    # @see with_level
+    # @deprecated This implementation is deprecated. Install the lumberjack_rails gem for full support.
+    def silence(level = Logger::ERROR, &block)
+      deprecation_message = "Install the lumberjack_rails gem for full support of the silence method."
+      Utils.deprecated(:silence, deprecation_message) do
+        with_level(level, &block)
       end
     end
 
