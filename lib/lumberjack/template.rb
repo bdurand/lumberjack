@@ -56,8 +56,9 @@ module Lumberjack
       # Create a new wrapper for a standard Ruby Logger formatter.
       #
       # @param formatter [Logger::Formatter] The formatter to wrap
-      def initialize(formatter)
+      def initialize(formatter, pad_severity: false)
         @formatter = formatter
+        @pad_severity = pad_severity
       end
 
       # Format a log entry using the wrapped formatter.
@@ -65,7 +66,7 @@ module Lumberjack
       # @param entry [Lumberjack::LogEntry] The log entry to format
       # @return [String] The formatted log entry
       def call(entry)
-        @formatter.call(entry.severity_label, entry.time, entry.progname, entry.message)
+        @formatter.call(entry.severity_label(@pad_severity), entry.time, entry.progname, entry.message)
       end
 
       # Set the datetime format on the wrapped formatter if supported.

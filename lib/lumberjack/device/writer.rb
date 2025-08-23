@@ -57,13 +57,19 @@ module Lumberjack
       @binmode = options[:binmode]
 
       if options[:standard_logger_formatter]
-        @template = Template::StandardFormatterTemplate.new(options[:standard_logger_formatter])
+        @template = Template::StandardFormatterTemplate.new(options[:standard_logger_formatter], pad_severity: options[:pad_severity])
       else
         template = options[:template]
         @template = if template.respond_to?(:call)
           template
         else
-          Template.new(template, additional_lines: options[:additional_lines], time_format: options[:time_format], attribute_format: options[:attribute_format])
+          Template.new(
+            template,
+            additional_lines: options[:additional_lines],
+            time_format: options[:time_format],
+            attribute_format: options[:attribute_format],
+            pad_severity: options[:pad_severity]
+          )
         end
       end
     end
