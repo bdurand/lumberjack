@@ -1,34 +1,64 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  # Logger is a thread safe implementation of the standard library Logger class. TODO: update this
+  # Logger is a thread-safe, feature-rich logging implementation that extends Ruby's standard
+  # library Logger class with advanced capabilities for structured logging.
   #
-  # === Example
+  # Key features include:
+  # - Structured logging with attributes (key-value pairs) attached to log entries
+  # - Context isolation for scoping logging behavior to specific code blocks
+  # - Flexible output devices supporting files, streams, and custom destinations
+  # - Customizable formatters for messages and attributes
+  # - Built-in log rotation and file management
+  # - Thread and fiber safety for concurrent applications
   #
-  #   logger = Lumberjack::Logger.new
+  # The Logger maintains full API compatibility with Ruby's standard Logger while adding
+  # powerful extensions for modern logging needs.
+  #
+  # @example Basic usage
+  #   logger = Lumberjack::Logger.new(STDOUT)
   #   logger.info("Starting processing")
   #   logger.debug("Processing options #{options.inspect}")
   #   logger.fatal("OMG the application is on fire!")
   #
-  # Log entries are written to a logging Device if their severity meets or exceeds the log level.
+  # @example Structured logging with attributes
+  #   logger = Lumberjack::Logger.new("/var/log/app.log")
+  #   logger.info("User logged in", user_id: 123, ip: "192.168.1.1")
+  #   logger.tag(request_id: "abc123") do
+  #     logger.info("Processing request")  # Will include request_id: "abc123"
+  #   end
   #
+  # @example Log rotation
+  #   # Keep 10 files, rotate when each reaches 10MB
+  #   logger = Lumberjack::Logger.new("/var/log/app.log", 10, 10 * 1024 * 1024)
+  #
+  # @example Using different devices
+  #   logger = Lumberjack::Logger.new("logs/application.log")  # Log to file
+  #   logger = Lumberjack::Logger.new(STDOUT, template: ":severity - :message")  # Log to a stream with a template
+  #   logger = Lumberjack::Logger.new(:test)  # Log to a buffer for testing
+  #   logger = Lumberjack::Logger.new(another_logger) # Proxy logs to another logger
+  #   logger = Lumberjack::Logger.new(MyDevice.new)  # Log to a custom Lumberjack::Device
+  #
+  # Log entries are written to a logging Device if their severity meets or exceeds the log level.
   # Each log entry records the log message and severity along with the time it was logged, the
-  # program name, process id, and an optional hash of attributes. The message will be converted to a string, but
-  # otherwise, it is up to the device how these values are recorded. Messages are converted to strings
+  # program name, process id, and an optional hash of attributes. Messages are converted to strings
   # using a Formatter associated with the logger.
+  #
+  # @see Lumberjack::ContextLogger
+  # @see Lumberjack::Device
+  # @see Lumberjack::Template
+  # @see Lumberjack::EntryFormatter
   class Logger < ::Logger
     include ContextLogger
 
     # Create a new logger to log to a Device.
     #
-    # The +device+ argument can be in any one of several formats.
-    #
-    # If it is a Device object, that object will be used.
-    # If it has a +write+ method, it will be wrapped in a Device::Writer class.
-    # If it is :null, it will be a Null device that won't record any output.
-    # Otherwise, it will be assumed to be file path and wrapped in a Device::LogFile class.
-    #
-    # All other options are passed to the device constuctor.
+    # The +device+ argument can be in any one of several formats:
+    # - A Device object will be used directly
+    # - An object with a +write+ method will be wrapped in a Device::Writer
+    # - The symbol +:null+ creates a Null device that discards all output
+    # - The symbol +:test+ creates a Test device for capturing output in tests
+    # - A file path string creates a Device::LogFile for file-based logging
     #
     # @param device [Lumberjack::Device, Object, Symbol, String] The device to log to.
     # @param shift_age [Integer, String, Symbol] If this is an integer greater than zero, then
@@ -36,13 +66,12 @@ module Lumberjack
     #   files to keep will be determined by this value. Otherwise it will be interpreted as a date
     #   rolling value and must be one of "daily", "weekly", or "monthly". This parameter has no
     #   effect unless the device parameter is a file path or file stream.
-    # @param shift_size [Integer] The size in bytes of the log files to before rolling them.
-    # @param options [Hash] The options for the logger.
+    # @param shift_size [Integer] The size in bytes of the log files before rolling them.
     # @param level [Integer, Symbol, String] The logging level below which messages will be ignored.
     # @param progname [String] The name of the program that will be recorded with each log entry.
     # @param formatter [Lumberjack::EntryFormatter, Lumberjack::Formatter, ::Logger::Formatter, #call]
     #   The formatter to use for outputting messages to the log. If this is a Lumberjack::EntryFormatter
-    #   or a Lumberjack::Formatter, it will be used to format strutured log entries. If it is
+    #   or a Lumberjack::Formatter, it will be used to format structured log entries. If it is
     #   a ::Logger::Formatter or a callable object that takes 4 arguments (severity, time, progname, msg),
     #   it will be used to format log entries in lieu of the `template` argument when writing to a
     #   stream.
@@ -50,8 +79,10 @@ module Lumberjack
     # @param binmode [Boolean] Whether to open the log file in binary mode.
     # @param shift_period_suffix [String] The suffix to use for the shifted log file names.
     # @param template [String] The template to use for serializing log entries to a string.
-    # @param message_formatter [Lumberjack::Formatter] The MessageFormatter to use for formatting log messages.
-    # @param attribute_formatter [Lumberjack::AttributeFormatter] The AttributeFormatter to use for formatting attributes.
+    # @param message_formatter [Lumberjack::Formatter] The formatter to use for formatting log messages.
+    # @param attribute_formatter [Lumberjack::AttributeFormatter] The formatter to use for formatting attributes.
+    # @param kwargs [Hash] Additional device-specific options.
+    # @return [Lumberjack::Logger] A new logger instance.
     def initialize(logdev, shift_age = 0, shift_size = 1048576,
       level: DEBUG, progname: nil, formatter: nil, datetime_format: nil,
       binmode: false, shift_period_suffix: "%Y%m%d",
@@ -110,6 +141,11 @@ module Lumberjack
       @logdev = device.nil? ? nil : open_device(device, {})
     end
 
+    # Set the formatter used for log entries. This can be an EntryFormatter, a standard Logger::Formatter,
+    # or any callable object that formats log entries.
+    #
+    # @param value [Lumberjack::EntryFormatter, ::Logger::Formatter, #call] The formatter to use.
+    # @return [void]
     def formatter=(value)
       @formatter = build_entry_formatter(value, nil, nil)
     end
@@ -131,18 +167,32 @@ module Lumberjack
       end
     end
 
+    # Get the message formatter used to format log messages.
+    #
+    # @return [Lumberjack::Formatter] The message formatter.
     def message_formatter
       formatter.message_formatter
     end
 
+    # Set the message formatter used to format log messages.
+    #
+    # @param value [Lumberjack::Formatter] The message formatter to use.
+    # @return [void]
     def message_formatter=(value)
       formatter.message_formatter = value
     end
 
+    # Get the attribute formatter used to format log entry attributes.
+    #
+    # @return [Lumberjack::AttributeFormatter] The attribute formatter.
     def attribute_formatter
       formatter.attributes.attribute_formatter
     end
 
+    # Set the attribute formatter used to format log entry attributes.
+    #
+    # @param value [Lumberjack::AttributeFormatter] The attribute formatter to use.
+    # @return [void]
     def attribute_formatter=(value)
       formatter.attribute_formatter = value
     end
@@ -251,13 +301,6 @@ module Lumberjack
     # @param attributes [Hash] The attributes to add to the log entry.
     # @return [void]
     # @api private
-    #
-    # @example
-    #
-    #   logger.add_entry(Logger::ERROR, exception)
-    #   logger.add_entry(Logger::INFO, "Request completed")
-    #   logger.add_entry(:warn, "Request took a long time")
-    #   logger.add_entry(Logger::DEBUG){"Start processing with options #{options.inspect}"}
     def add_entry(severity, message, progname = nil, attributes = nil)
       return false unless device
       return false if fiber_local_value(:logging)
@@ -282,6 +325,9 @@ module Lumberjack
       true
     end
 
+    # Return a human-readable representation of the logger showing its key configuration.
+    #
+    # @return [String] A string representation of the logger.
     def inspect
       formatted_object_id = object_id.to_s(16).rjust(16, "0")
       "#<Lumberjack::Logger:0x#{formatted_object_id} level:#{Severity.level_to_label(level)} device:#{device.class.name} progname:#{progname.inspect} attributes:#{attributes.inspect}>"
@@ -313,7 +359,7 @@ module Lumberjack
       elsif device.is_a?(Device)
         device
       elsif device.is_a?(ContextLogger)
-        Device::Logger.new(device)
+        Device::LoggerWrapper.new(device)
       elsif device.respond_to?(:write) && !device.respond_to?(:path)
         Device::Writer.new(device, options)
       else

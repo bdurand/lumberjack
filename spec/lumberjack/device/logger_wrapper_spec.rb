@@ -2,10 +2,10 @@
 
 require "spec_helper"
 
-RSpec.describe Lumberjack::Device::Logger do
+RSpec.describe Lumberjack::Device::LoggerWrapper do
   it "wraps another logger as a device" do
     logger = Lumberjack::Logger.new(:test)
-    outer_logger = Lumberjack::Logger.new(Lumberjack::Device::Logger.new(logger), progname: "MyApp")
+    outer_logger = Lumberjack::Logger.new(Lumberjack::Device::LoggerWrapper.new(logger), progname: "MyApp")
     outer_logger.info("Test log message", foo: "bar")
     expect(logger.device).to(
       include(severity: :info, message: "Test log message", progname: "MyApp", attributes: {"foo" => "bar"})

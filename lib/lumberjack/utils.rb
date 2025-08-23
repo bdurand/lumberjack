@@ -3,6 +3,7 @@
 require "socket"
 
 module Lumberjack
+  # Utils provides utility methods and helper functions used throughout the Lumberjack logging framework.
   module Utils
     UNDEFINED = Object.new.freeze
     private_constant :UNDEFINED
@@ -15,14 +16,25 @@ module Lumberjack
     @hostname = UNDEFINED
 
     class << self
-      # Print warning when deprecated methods are called the first time. This can be disabled
-      # by setting the environment variable `LUMBERJACK_NO_DEPRECATION_WARNINGS` to "true".
-      # You can see every usage of a deprecated method along with a full stack trace by setting
-      # the environment variable `VERBOSE_LUMBERJACK_DEPRECATION_WARNING` to "true".
+      # Print warning when deprecated methods are called the first time. This system helps
+      # manage API transitions by warning users about deprecated functionality while still
+      # allowing the code to work.
       #
-      # @param method [String] The name of the deprecated method.
-      # @param message [String] Optional message to include in the warning.
-      # @yield The block to execute after the warning.
+      # Deprecation warnings can be controlled via environment variables:
+      # - Set `LUMBERJACK_NO_DEPRECATION_WARNINGS=true` to disable warnings entirely
+      # - Set `VERBOSE_LUMBERJACK_DEPRECATION_WARNING=true` to show full stack traces
+      #
+      # @param method [String, Symbol] The name of the deprecated method.
+      # @param message [String] The deprecation message explaining what to use instead.
+      # @yield The block containing the deprecated functionality to execute.
+      # @return [Object] The result of the yielded block.
+      #
+      # @example
+      #   def old_method
+      #     Utils.deprecated(:old_method, "Use new_method instead.") do
+      #       # deprecated implementation
+      #     end
+      #   end
       def deprecated(method, message)
         if (Warning[:deprecated] || $VERBOSE) && !@deprecations&.include?(method)
           @deprecations_lock ||= Mutex.new
@@ -44,8 +56,9 @@ module Lumberjack
       end
 
       # Get the hostname of the machine. The returned value will be in UTF-8 encoding.
+      # The hostname is cached after the first call for performance.
       #
-      # @return [String] The hostname of the machine.
+      # @return [String] The hostname of the machine in UTF-8 encoding.
       def hostname
         if @hostname.equal?(UNDEFINED)
           @hostname = force_utf8(Socket.gethostname)
@@ -53,28 +66,43 @@ module Lumberjack
         @hostname
       end
 
-      # Get the current line of code that calls this method. This can be useful for debugging
-      # purposes in your logs to record the line of code that is calling the logger.
+      # Get the current line of code that calls this method. This is useful for debugging
+      # purposes to record the exact location in your code that generated a log entry.
       #
-      # @return [String] The line of code that called this method.
+      # @param root_path [String, Pathname, nil] An optional root path to strip from the file path.
+      # @return [String] A string representation of the caller location (file:line:method).
       #
-      # @example
-      #   logger.info("Something happened", code: Lumberjack::Utils.current_line)
-      def current_line
-        caller_locations(1, 1)[0].to_s
+      # @example Adding source location to log entries
+      #   logger.info("Something happened", source: Lumberjack::Utils.current_line)
+      #   # Logs: "Something happened" with source: "/path/to/file.rb:123:in `method_name'"
+      def current_line(root_path = nil)
+        location = caller_locations(1, 1)[0]
+        path = location.path
+        if root_path
+          root_path = root_path.to_s
+          root_path = "#{root_path}#{File::SEPARATOR}" unless root_path.end_with?(File::SEPARATOR)
+          path = path.delete_prefix(root_path)
+        end
+        "#{path}:#{location.lineno}:in `#{location.label}'"
       end
 
-      # Set the hostname to a specific value. If this is not specified, it will use the system hostname.
+      # Set the hostname to a specific value. This overrides the system hostname.
+      # Useful for testing or when you want to use a specific identifier.
       #
-      # @param hostname [String]
+      # @param hostname [String] The hostname to use.
       # @return [void]
       def hostname=(hostname)
         @hostname = force_utf8(hostname)
       end
 
-      # Generate a global process ID that includes the hostname and process ID.
+      # Generate a global process identifier that includes the hostname and process ID.
+      # This creates a unique identifier that can distinguish processes across different machines.
       #
-      # @return [String] The global process ID.
+      # @return [String] The global process ID in the format "hostname-pid".
+      #
+      # @example
+      #   Lumberjack::Utils.global_pid
+      #   # => "server1-12345"
       def global_pid
         if hostname
           "#{hostname}-#{Process.pid}"
@@ -83,51 +111,80 @@ module Lumberjack
         end
       end
 
-      # Generate a global thread ID that includes the global process ID and the thread name.
+      # Generate a global thread identifier that includes the global process ID and thread name.
+      # This creates a unique identifier for threads across processes and machines.
       #
-      # @return [String] The global thread ID.
+      # @return [String] The global thread ID in the format "hostname-pid-threadname".
+      #
+      # @example
+      #   Lumberjack::Utils.global_thread_id
+      #   # => "server1-12345-main" or "server1-12345-worker-1"
       def global_thread_id
         "#{global_pid}-#{thread_name}"
       end
 
-      # Get the name of a thread. The value will be based on the thread's name if it exists.
-      # Otherwise a unique id is generated based on the thread's object id. Only alphanumeric
-      # characters, underscores, dashes, and periods are kept in thread name.
+      # Get a safe name for a thread. Uses the thread's assigned name if available,
+      # otherwise generates a unique identifier based on the thread's object ID.
+      # Non-alphanumeric characters (except underscores, dashes, and periods) are replaced
+      # with dashes to create URL-safe identifiers.
       #
       # @param thread [Thread] The thread to get the name for. Defaults to the current thread.
-      # @return [String] The name of the thread.
+      # @return [String] A safe string identifier for the thread.
+      #
+      # @example
+      #   Thread.current.name = "worker-thread"
+      #   Lumberjack::Utils.thread_name  # => "worker-thread"
+      #
+      #   # For unnamed threads
+      #   Lumberjack::Utils.thread_name  # => "2c001a80c" (based on object_id)
       def thread_name(thread = Thread.current)
         thread.name ? slugify(thread.name) : thread.object_id.to_s(36)
       end
 
-      # Force encode a string to UTF-8. Any invalid byte sequences will be
-      # ignored and replaced with an empty string.
+      # Force encode a string to UTF-8, handling invalid byte sequences gracefully.
+      # Any invalid or undefined byte sequences will be replaced with an empty string,
+      # ensuring the result is always valid UTF-8.
       #
-      # @param str [String] The string to encode.
-      # @return [String] The UTF-8 encoded string.
+      # @param str [String, nil] The string to encode. Returns nil if input is nil.
+      # @return [String, nil] The UTF-8 encoded string, or nil if input was nil.
+      #
+      # @example
+      #   # Handles strings with invalid encoding
+      #   bad_string = "Hello\xff\xfeWorld".force_encoding("ASCII-8BIT")
+      #   Lumberjack::Utils.force_utf8(bad_string)  # => "HelloWorld"
       def force_utf8(str)
         return nil if str.nil?
 
         str.dup.force_encoding("ASCII-8BIT").encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
       end
 
-      # Flatten an attribute hash to a single level hash with dot notation for nested keys.
+      # Flatten a nested attribute hash into a single-level hash using dot notation for nested keys.
+      # This is useful for converting structured data into a flat format suitable for logging systems
+      # that don't support nested structures.
       #
-      # @param attr_hash [Hash] The hash to flatten.
-      # @return [Hash<String, Object>] The flattened hash.
-      # @example
-      #   expand_attributes(user: {id: 123, name: "Alice"}, action: "login")})
-      #   # => {"user.id" => 123, "user.name" => "Alice", "action" => "login"}
+      # @param attr_hash [Hash] The hash to flatten. Non-hash values are ignored.
+      # @return [Hash<String, Object>] A flattened hash with dot-notation keys.
+      #
+      # @example Basic flattening
+      #   hash = {user: {id: 123, profile: {name: "Alice"}}, action: "login"}
+      #   Lumberjack::Utils.flatten_attributes(hash)
+      #   # => {"user.id" => 123, "user.profile.name" => "Alice", "action" => "login"}
+      #
+      # @example With mixed types
+      #   hash = {config: {db: {host: "localhost", port: 5432}}, debug: true}
+      #   Lumberjack::Utils.flatten_attributes(hash)
+      #   # => {"config.db.host" => "localhost", "config.db.port" => 5432, "debug" => true}
       def flatten_attributes(attr_hash)
         return {} unless attr_hash.is_a?(Hash)
 
         flatten_hash_recursive(attr_hash)
       end
 
-      # Alias to flatten_attributes for compatibility with the 1.x API. This method will eventually
-      # be removed
+      # Alias for {#flatten_attributes} to provide compatibility with the 1.x API.
+      # This method will eventually be removed in a future version.
       #
-      # @return [Hash]
+      # @param tag_hash [Hash] The hash to flatten.
+      # @return [Hash<String, Object>] The flattened hash.
       # @deprecated Use {#flatten_attributes} instead.
       def flatten_tags(tag_hash)
         Utils.deprecated(:flatten_tags, "Use flatten_attributes instead.") do
@@ -135,25 +192,38 @@ module Lumberjack
         end
       end
 
-      # Expand a hash of attributes that may contain nested hashes or dot notation keys. Dot notation attributes
-      # will be expanded into nested hashes.
+      # Expand a hash containing dot notation keys into a nested hash structure.
+      # This is the inverse operation of {#flatten_attributes} and is useful for converting
+      # flat attribute structures back into nested hashes.
       #
-      # @param attributes [Hash] The hash of attributes to expand.
-      # @return [Hash] The expanded hash with dot notation keys.
+      # @param attributes [Hash] The hash with dot notation keys to expand. Non-hash values are ignored.
+      # @return [Hash] A nested hash with dot notation keys expanded into nested structures.
       #
-      # @example
-      #   expand_attributes({"user.id" => 123, "user.name" => "Alice", "action" => "login"})
+      # @example Basic expansion
+      #   flat = {"user.id" => 123, "user.name" => "Alice", "action" => "login"}
+      #   Lumberjack::Utils.expand_attributes(flat)
       #   # => {"user" => {"id" => 123, "name" => "Alice"}, "action" => "login"}
+      #
+      # @example Deep nesting
+      #   flat = {"app.db.host" => "localhost", "app.db.port" => 5432, "app.debug" => true}
+      #   Lumberjack::Utils.expand_attributes(flat)
+      #   # => {"app" => {"db" => {"host" => "localhost", "port" => 5432}, "debug" => true}}
+      #
+      # @example Mixed with existing nested structures
+      #   mixed = {"user.id" => 123, "settings" => {"theme" => "dark"}}
+      #   Lumberjack::Utils.expand_attributes(mixed)
+      #   # => {"user" => {"id" => 123}, "settings" => {"theme" => "dark"}}
       def expand_attributes(attributes)
         return {} unless attributes.is_a?(Hash)
 
         expand_dot_notation_hash(attributes)
       end
 
-      # Alias to expand_attributes for compatibility with the 1.x API. This method will eventually
-      # be removed
+      # Alias for {#expand_attributes} to provide compatibility with the 1.x API.
+      # This method will eventually be removed in a future version.
       #
-      # @return [Hash]
+      # @param tags [Hash] The hash to expand.
+      # @return [Hash] The expanded hash.
       # @deprecated Use {#expand_attributes} instead.
       def expand_tags(tags)
         Utils.deprecated(:expand_tags, "Use expand_attributes instead.") do
@@ -163,6 +233,12 @@ module Lumberjack
 
       private
 
+      # Recursively flatten a hash, building dot notation keys for nested structures.
+      #
+      # @param hash [Hash] The hash to flatten.
+      # @param prefix [String, nil] The current key prefix for nested structures.
+      # @return [Hash<String, Object>] The flattened hash.
+      # @api private
       def flatten_hash_recursive(hash, prefix = nil)
         hash.each_with_object({}) do |(key, value), result|
           full_key = prefix ? "#{prefix}.#{key}" : key.to_s
@@ -174,6 +250,12 @@ module Lumberjack
         end
       end
 
+      # Convert a string to a URL-safe slug by replacing non-alphanumeric characters
+      # (except underscores, dashes, and periods) with dashes, and removing leading/trailing dashes.
+      #
+      # @param str [String, nil] The string to slugify.
+      # @return [String, nil] The slugified string, or nil if input was nil.
+      # @api private
       def slugify(str)
         return nil if str.nil?
 
@@ -183,6 +265,12 @@ module Lumberjack
         str
       end
 
+      # Recursively expand dot notation keys in a hash into nested structures.
+      #
+      # @param hash [Hash] The hash containing dot notation keys to expand.
+      # @param expanded [Hash] The target hash to store expanded results.
+      # @return [Hash] The expanded hash with nested structures.
+      # @api private
       def expand_dot_notation_hash(hash, expanded = {})
         return hash unless hash.is_a?(Hash)
 

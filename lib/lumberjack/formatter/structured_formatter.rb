@@ -5,16 +5,29 @@ require "set"
 module Lumberjack
   class Formatter
     # Dereference arrays and hashes and recursively call formatters on each element.
+    # This formatter provides deep traversal of nested data structures, applying
+    # formatting to all contained elements while handling circular references safely.
+    #
+    # The StructuredFormatter is essential for formatting complex nested objects
+    # like configuration hashes, API responses, or any hierarchical data structures
+    # that need consistent formatting throughout their entire structure.
     class StructuredFormatter
+      # Exception raised when a circular reference is detected during traversal.
+      # This prevents infinite recursion when formatting objects that reference themselves.
       class RecusiveReferenceError < StandardError
       end
 
-      # @param formatter [Formatter] The formatter to call on each element
-      #   in the structure.
+      # @param formatter [Formatter, nil] The formatter to call on each element
+      #   in the structure. If nil, elements are returned unchanged.
       def initialize(formatter = nil)
         @formatter = formatter
       end
 
+      # Format a structured object by recursively processing all nested elements.
+      #
+      # @param obj [Object] The object to format. Arrays and hashes are traversed
+      #   recursively, while other objects are passed to the configured formatter.
+      # @return [Object] The formatted structure with all nested elements processed.
       def call(obj)
         call_with_references(obj, Set.new)
       end

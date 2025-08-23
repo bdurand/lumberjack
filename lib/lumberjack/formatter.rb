@@ -1,16 +1,46 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  # This class controls the conversion of log entry messages into a loggable format. This allows you
-  # to log any object you want and have the logging system deal with converting it into a string.
+  # Formatter controls the conversion of log entry messages into a loggable format, allowing you
+  # to log any object type and have the logging system handle the string conversion automatically.
   #
-  # Formats are added to a Formatter by associating them with a class using the +add+ method. Formats
-  # are any object that responds to the +call+ method.
+  # The formatter system works by associating formatting rules with specific classes using the {#add} method.
+  # When an object is logged, the formatter finds the most specific formatter for that object's class
+  # hierarchy and applies it to convert the object into a string representation.
   #
-  # By default, all object will be converted to strings using their inspect method except for Strings
-  # and Exceptions. Strings are not converted and Exceptions are converted using the ExceptionFormatter.
+  # ## Default Behavior
   #
-  # Enumerable objects (including Hash and Array) will call the formatter recursively for each element.
+  # By default, the formatter includes these mappings:
+  # - **Object**: Uses `inspect` method for a readable representation
+  # - **Exception**: Uses {ExceptionFormatter} to format stack traces and error details
+  # - **Enumerable** (Hash, Array, etc.): Uses {StructuredFormatter} to recursively format elements
+  # - **String**: No formatting (passed through unchanged)
+  #
+  # ## Formatter Types
+  #
+  # Formatters can be:
+  # - **Predefined formatters**: Accessed by symbol (e.g., `:pretty_print`, `:truncate`)
+  # - **Custom objects**: Any object responding to `#call(object)`
+  # - **Blocks**: Inline formatting logic
+  # - **Classes**: Instantiated automatically with optional arguments
+  #
+  # ## Performance Optimization
+  #
+  # The formatter includes optimizations for common primitive types (String, Integer, Float, Boolean)
+  # to avoid unnecessary formatting overhead when custom formatters aren't defined for these types.
+  #
+  # @example Basic formatter usage
+  #   formatter = Lumberjack::Formatter.new
+  #   formatter.add(MyClass, :pretty_print)
+  #   formatter.add(SecretClass) { |obj| "[REDACTED]" }
+  #   result = formatter.format(my_object)
+  #
+  # @example Building a custom formatter
+  #   formatter = Lumberjack::Formatter.build do
+  #     add(User, :id)  # Only log user IDs
+  #     add(Password) { |pwd| "[HIDDEN]" }  # Hide password values
+  #     add(BigDecimal, :round, 2)  # Round decimals to 2 places
+  #   end
   class Formatter
     require_relative "formatter/date_time_formatter"
     require_relative "formatter/exception_formatter"
@@ -28,22 +58,26 @@ module Lumberjack
     require_relative "formatter/tagged_message"
 
     class << self
-      # Returns a new empty formatter with no mapping. For historical reasons, a formatter
-      # is initialized with mappings to help output objects as strings. This will return one
-      # without the default mappings.
+      # Create a new empty formatter with no default mappings. Unlike the standard constructor,
+      # this returns a formatter without any predefined formatters, giving you complete control
+      # over all formatting behavior.
       #
-      # @return [Lumberjack::Formatter] a new empty formatter
+      # @return [Lumberjack::Formatter] A new formatter with no default mappings.
       def empty
         new.clear
       end
 
-      # Build a new formatter using the given block. The block will be yielded to with
-      # the new formatter in context.
+      # Build a new formatter using a configuration block. The block is evaluated in the context
+      # of the new formatter, allowing you to use `add`, `remove`, and other methods directly.
+      #
+      # @yield [formatter] A block that configures the formatter.
+      # @return [Lumberjack::Formatter] A new configured formatter.
       #
       # @example
-      #   Lumberjack::Formatter.build do
-      #     add(MyClass, :pretty_print)
-      #     add(YourClass) { |obj| obj.humanize }
+      #   formatter = Lumberjack::Formatter.build do
+      #     add(User, :id)  # Only show user IDs
+      #     add(SecretToken) { |token| "[REDACTED]" }
+      #     remove(Exception)  # Don't format exceptions specially
       #   end
       def build(&block)
         formatter = new
@@ -52,6 +86,13 @@ module Lumberjack
       end
     end
 
+    # Create a new formatter with default mappings for common Ruby types.
+    # The default configuration provides sensible formatting for most use cases:
+    # - Object: Uses inspect for debugging-friendly output
+    # - Exception: Formats with stack trace details
+    # - Enumerable: Recursively formats collections (Arrays, Hashes, etc.)
+    #
+    # @return [Lumberjack::Formatter] A new formatter with default mappings.
     def initialize
       @class_formatters = {}
       @has_string_formatter = false
@@ -64,52 +105,63 @@ module Lumberjack
       add(Enumerable, structured_formatter)
     end
 
-    # Add a formatter for a class. The formatter can be specified as either an object
-    # that responds to the +call+ method or as a symbol representing one of the predefined
-    # formatters, or as a block to the method call.
+    # Add a formatter for a specific class or classes. The formatter determines how objects
+    # of that class will be converted to strings when logged.
     #
-    # The predefined formatters are:
-    #   - :date_time
-    #   - :exception
-    #   - :id
-    #   - :inspect
-    #   - :object
-    #   - :pretty_print
-    #   - :string
-    #   - :strip
-    #   - :structured
-    #   - :truncate
+    # ## Formatter Types
     #
-    # You can add multiple classes at once by passing an array of classes.
+    # The formatter can be specified in several ways:
+    # - **Symbol**: References a predefined formatter (see list below)
+    # - **Class**: Will be instantiated with optional arguments
+    # - **Object**: Must respond to `#call(object)` method
+    # - **Block**: Inline formatting logic
     #
-    # You can also pass class names as strings instead of the classes themselves. This can
-    # help avoid loading dependency issues. This applies only to classes; modules cannot be
-    # passed in as strings.
+    # ## Predefined Formatters
     #
-    # @param klass [Class, Module, String, Array<Class, Module, String>] The class or module to add a formatter for.
-    # @param formatter [Symbol, Class, String, #call] The formatter to use for the class.
-    #   If a symbol is passed in, it will be used to load one of the predefined formatters.
-    #   If a class is passed in, it will be initialized with the args passed in.
-    #   Otherwise, the object will be used as the formatter and must respond to call method.
-    # @param args [Array] Arguments to pass to the formatter when it is initialized.
-    # @yield [obj] A block that will be used as the formatter for the class.
-    # @yieldparam [Object] obj The object to format.
-    # @yieldreturn [String] The formatted string.
-    # @return [self] Returns itself so that add statements can be chained together.
+    # Available predefined formatters (accessed by symbol):
+    # - `:date_time` - Formats time objects with a customizable format
+    # - `:exception` - Formats exceptions with stack trace details
+    # - `:id` - Extracts object ID or specified ID field
+    # - `:inspect` - Uses Ruby's inspect method for debugging output
+    # - `:multiply` - Multiplies numeric values by a factor
+    # - `:object` - Generic object formatter with custom methods
+    # - `:pretty_print` - Pretty-prints objects using PP library
+    # - `:redact` - Redacts sensitive information from objects
+    # - `:round` - Rounds numeric values to specified precision
+    # - `:string` - Converts objects to strings using to_s
+    # - `:strip` - Strips whitespace from string representations
+    # - `:structured` - Recursively formats structured data (Arrays, Hashes)
+    # - `:truncate` - Truncates long strings to specified length
     #
-    # @example
+    # ## Class Specification
     #
-    #   # Use a predefined formatter
-    #   formatter.add(MyClass, :pretty_print)
+    # Classes can be specified as:
+    # - **Class objects**: Direct class references
+    # - **Arrays**: Multiple classes at once
+    # - **Strings**: Class names to avoid loading dependencies
     #
-    #   # Pass in a formatter object
-    #   formatter.add(MyClass, Lumberjack::Formatter::PrettyPrintFormatter.new)
+    # @param klass [Class, Module, String, Array<Class, Module, String>] The class(es) to format.
+    # @param formatter [Symbol, Class, String, #call, nil] The formatter to use.
+    # @param args [Array] Arguments passed to formatter constructor (when formatter is a Class).
+    # @yield [obj] Block-based formatter that receives the object to format.
+    # @yieldparam obj [Object] The object to format.
+    # @yieldreturn [String] The formatted string representation.
+    # @return [self] Returns self for method chaining.
     #
-    #   # Use a block
-    #   formatter.add(MyClass){|obj| obj.humanize}
+    # @example Using predefined formatters
+    #   formatter.add(Float, :round, 2)  # Round floats to 2 decimal places
+    #   formatter.add(Time, :date_time, "%Y-%m-%d")  # Custom time format
+    #   formatter.add([User, Admin], :id)  # Show only IDs for user objects
     #
-    #   # Add statements can be chained together
-    #   formatter.add(MyClass, :pretty_print).add(YourClass){|obj| obj.humanize}
+    # @example Using custom formatters
+    #   formatter.add(MyClass, MyFormatter.new)  # Custom formatter object
+    #   formatter.add(SecretData) { |obj| "[REDACTED]" }  # Block formatter
+    #   formatter.add("BigDecimal", RoundFormatter, 4)  # Class with arguments
+    #
+    # @example Method chaining
+    #   formatter.add(User, :id)
+    #            .add(Password) { |pwd| "[HIDDEN]" }
+    #            .add(BigDecimal, :round, 2)
     def add(klass, formatter = nil, *args, &block)
       formatter ||= block
       if formatter.nil?
@@ -139,16 +191,11 @@ module Lumberjack
       self
     end
 
-    # Remove the formatter associated with a class. Remove statements can be chained together.
+    # Remove formatter associations for one or more classes. This reverts the classes
+    # to use the default Object formatter (inspect method) or no formatting if no default exists.
     #
-    # You can remove multiple classes at once by passing an array of classes.
-    #
-    # You can also pass class names as strings instead of the classes themselves. This can
-    # help avoid loading dependency issues. This applies only to classes; modules cannot be
-    # passed in as strings.
-    #
-    # @param klass [Class, Module, String, Array<Class, Module, String>] The class or module to remove the formatters for.
-    # @return [self] Returns itself so that remove statements can be chained together.
+    # @param klass [Class, Module, String, Array<Class, Module, String>] The class(es) to remove formatters for.
+    # @return [self] Returns self for method chaining.
     def remove(klass)
       Array(klass).each do |k|
         @class_formatters.delete(k.to_s)
@@ -159,9 +206,10 @@ module Lumberjack
       self
     end
 
-    # Remove all formatters including the default formatter. Can be chained to add method calls.
+    # Remove all formatter associations, including defaults. This creates a completely
+    # empty formatter where all objects will be passed through unchanged.
     #
-    # @return [self] Returns itself so that clear statements can be chained together.
+    # @return [self] Returns self for method chaining.
     def clear
       @class_formatters.clear
       set_optimized_flags!
@@ -169,17 +217,23 @@ module Lumberjack
       self
     end
 
-    # Return true if their are no registered formatters.
+    # Check if the formatter has any registered formatters.
     #
-    # @return [Boolean] true if there are no registered formatters, false otherwise.
+    # @return [Boolean] true if no formatters are registered, false otherwise.
     def empty?
       @class_formatters.empty?
     end
 
-    # Format a message object by applying all formatters attached to it.
+    # Format an object by applying the appropriate formatter based on its class hierarchy.
+    # The formatter searches up the class hierarchy to find the most specific formatter available.
     #
-    # @param message [Object] The message object to format.
-    # @return [Object] The formatted object.
+    # ## Performance Optimization
+    #
+    # Common primitive types (String, Integer, Float, Boolean) are optimized to bypass
+    # formatter lookup when no custom formatters are defined for these types.
+    #
+    # @param message [Object] The object to format.
+    # @return [Object] The formatted representation (usually a String).
     def format(message)
       # These primitive types are the most common in logs and so are optimized here
       # for the normal case where a custom formatter has not been defined.
@@ -204,21 +258,26 @@ module Lumberjack
       end
     end
 
-    # Compatibility with the Logger::Formatter signature. This method will just convert the message
-    # object to a string and ignores the other parameters.
+    # Compatibility method for Ruby's standard Logger::Formatter interface. This allows
+    # the Formatter to be used directly as a logger formatter, though it only uses the
+    # message parameter and ignores severity, timestamp, and progname.
     #
-    # @param severity [Integer, String, Symbol] The severity of the message.
-    # @param timestamp [Time] The time the message was logged.
-    # @param progname [String] The name of the program logging the message.
+    # @param severity [Integer, String, Symbol] The log severity (ignored).
+    # @param timestamp [Time] The log timestamp (ignored).
+    # @param progname [String] The program name (ignored).
     # @param msg [Object] The message object to format.
+    # @return [String] The formatted message with line separator.
     def call(severity, timestamp, progname, msg)
       formatted_message = format(msg)
       formatted_message = formatted_message.message if formatted_message.is_a?(TaggedMessage)
       "#{formatted_message}#{Lumberjack::LINE_SEPARATOR}"
     end
 
-    # Find the formatter for a class by looking it up using the class hierarchy.
+    # Find the most appropriate formatter for a class by searching up the class hierarchy.
+    # Returns the first formatter found by walking through the class's ancestors.
     #
+    # @param klass [Class] The class to find a formatter for.
+    # @return [#call, nil] The formatter object, or nil if no formatter is found.
     # @api private
     def formatter_for(klass)
       return nil if @class_formatters.empty?
@@ -228,6 +287,11 @@ module Lumberjack
       formatter
     end
 
+    # Update internal optimization flags based on currently registered formatters.
+    # This enables fast-path optimization for common primitive types.
+    #
+    # @return [void]
+    # @api private
     def set_optimized_flags!
       @has_string_formatter = @class_formatters.include?("String")
       @has_numeric_formatter = @class_formatters.slice("Integer", "Float", "BigDecimal", "Numeric").any?

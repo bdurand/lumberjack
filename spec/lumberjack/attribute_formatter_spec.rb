@@ -39,8 +39,8 @@ RSpec.describe Lumberjack::AttributeFormatter do
 
   it "should be able to add attribute formatters with add_attribute" do
     attribute_formatter = Lumberjack::AttributeFormatter.new
-    attribute_formatter.add_attribute("foo") { |val| {"bar" => val.to_s} }
-    expect(attribute_formatter.format({"foo" => 12})).to eq({"foo" => {"bar" => "12"}})
+    attribute_formatter.add_attribute("foo") { |val| val * 2 }
+    expect(attribute_formatter.format({"foo" => 12})).to eq({"foo" => 24})
   end
 
   it "should be able to add class formatters" do

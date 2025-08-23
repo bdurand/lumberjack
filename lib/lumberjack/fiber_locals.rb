@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Lumberjack
+  # Provides isolated fiber-local storage for thread-safe data access.
   module FiberLocals
     private
 
