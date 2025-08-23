@@ -26,6 +26,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Added `Lumberjack::Utils.current_line` as a helper method for getting the current line of code.
 - Added `Lumberjack.build_formatter` as a helper method for building entry formatters.
 - Templates can now be use a left padded severity label with the option `pad_severity: true`. This will left pad the severity strings to five characters so that they can all be aligned in the log output.
+- Added `Lumberjack::Formatter::Tags` for formatting attributes as "tags" in the logs. Arrays of values will be formatted as "[val1] [val2]" and hashes will be formatted as "[key1=value1] [key2=value2]".
 
 ### Changed
 

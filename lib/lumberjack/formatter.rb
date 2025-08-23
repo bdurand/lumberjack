@@ -54,6 +54,7 @@ module Lumberjack
     require_relative "formatter/string_formatter"
     require_relative "formatter/strip_formatter"
     require_relative "formatter/structured_formatter"
+    require_relative "formatter/tags_formatter"
     require_relative "formatter/truncate_formatter"
     require_relative "formatter/tagged_message"
 
@@ -131,6 +132,7 @@ module Lumberjack
     # - `:string` - Converts objects to strings using to_s
     # - `:strip` - Strips whitespace from string representations
     # - `:structured` - Recursively formats structured data (Arrays, Hashes)
+    # - `:tags` - Formats an array or hash of values in the format "[a] [b] [c=d]"
     # - `:truncate` - Truncates long strings to specified length
     #
     # ## Class Specification
