@@ -20,6 +20,8 @@ module Lumberjack
   #   console_device = Lumberjack::Device::Writer.new(STDOUT, template: ":message")
   #   multi_device = Lumberjack::Device::Multi.new(file_device, console_device)
   class Device::Multi < Device
+    attr_reader :devices
+
     # Initialize a new Multi device with the specified target devices. The device
     # accepts multiple devices either as individual arguments or as arrays,
     # automatically flattening nested arrays for convenient configuration.
@@ -42,7 +44,7 @@ module Lumberjack
     # @param entry [Lumberjack::LogEntry] The log entry to broadcast to all devices
     # @return [void]
     def write(entry)
-      @devices.each do |device|
+      devices.each do |device|
         device.write(entry)
       end
     end
@@ -53,7 +55,7 @@ module Lumberjack
     #
     # @return [void]
     def flush
-      @devices.each do |device|
+      devices.each do |device|
         device.flush
       end
     end
@@ -64,7 +66,7 @@ module Lumberjack
     #
     # @return [void]
     def close
-      @devices.each do |device|
+      devices.each do |device|
         device.close
       end
     end
@@ -77,7 +79,7 @@ module Lumberjack
     #   to each device's reopen method
     # @return [void]
     def reopen(logdev = nil)
-      @devices.each do |device|
+      devices.each do |device|
         device.reopen(logdev = nil)
       end
     end
@@ -89,7 +91,7 @@ module Lumberjack
     # @return [String, nil] The datetime format string from the first device
     #   that has one configured, or nil if no devices have a format set
     def datetime_format
-      @devices.detect(&:datetime_format).datetime_format
+      devices.detect(&:datetime_format).datetime_format
     end
 
     # Set the datetime format on all configured devices that support it.
@@ -99,7 +101,7 @@ module Lumberjack
     # @param format [String] The datetime format string to apply to all devices
     # @return [void]
     def datetime_format=(format)
-      @devices.each do |device|
+      devices.each do |device|
         device.datetime_format = format
       end
     end

@@ -27,6 +27,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Added `Lumberjack.build_formatter` as a helper method for building entry formatters.
 - Templates can now be use a left padded severity label with the option `pad_severity: true`. This will left pad the severity strings to five characters so that they can all be aligned in the log output.
 - Added `Lumberjack::Formatter::Tags` for formatting attributes as "tags" in the logs. Arrays of values will be formatted as "[val1] [val2]" and hashes will be formatted as "[key1=value1] [key2=value2]".
+- Added `Lumberjack::DeviceRegistry` as a means for other devices to be associated with a symbol that can then be passed to the constructor when creating a logger with that device rather than having to instantiate the device first.
 
 ### Changed
 

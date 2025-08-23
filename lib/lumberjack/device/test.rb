@@ -53,6 +53,8 @@ module Lumberjack
   #
   # @see LogEntryMatcher
   class Device::Test < Device
+    DeviceRegistry.add(:test, self)
+
     # @!attribute [rw] max_entries
     #   @return [Integer] The maximum number of entries to retain in the buffer
     attr_accessor :max_entries

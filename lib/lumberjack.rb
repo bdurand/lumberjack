@@ -42,6 +42,7 @@ module Lumberjack
   require_relative "lumberjack/io_compatibility"
   require_relative "lumberjack/log_entry"
   require_relative "lumberjack/log_entry_matcher"
+  require_relative "lumberjack/device_registry"
   require_relative "lumberjack/device"
   require_relative "lumberjack/entry_formatter"
   require_relative "lumberjack/formatter"

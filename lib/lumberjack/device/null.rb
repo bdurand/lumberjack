@@ -18,6 +18,8 @@ module Lumberjack
   #   logger = Lumberjack::Logger.new(:null)
   #   logger.error("This error is also discarded")
   class Device::Null < Device
+    DeviceRegistry.add(:null, self)
+
     def initialize(*args)
     end
 

@@ -397,14 +397,16 @@ module Lumberjack
     def open_device(device, options) # :nodoc:
       device = device.to_s if device.is_a?(Pathname)
 
-      if device.nil? || device == :null
+      if device.nil?
         Device::Null.new
-      elsif device == :test
-        Device::Test.new(options)
       elsif device.is_a?(Device)
         device
+      elsif device.is_a?(Symbol)
+        DeviceRegistry.new_device(device, options)
       elsif device.is_a?(ContextLogger)
         Device::LoggerWrapper.new(device)
+      elsif device.is_a?(Array)
+        Device::Multi.new(device.collect { |d| open_device(d, options) })
       elsif io_but_not_file_stream?(device)
         Device::Writer.new(device, options)
       else

@@ -396,17 +396,14 @@ logger = Lumberjack::Logger.new("/var/log/app.log", 'daily')
 
 ##### Multi Device
 
-The `Multi` device broadcasts log entries to multiple devices simultaneously:
+The `Multi` device broadcasts log entries to multiple devices simultaneously. You can
+instantiate a multi device by passing in an array of values.
 
 ```ruby
-# Log to both file and console
-file_device = Lumberjack::Device::Writer.new("/var/log/app.log")
-console_device = Lumberjack::Device::Writer.new(STDOUT, template: ":message")
+# Log to both file and STDOUT using the same template.
+logger = Lumberjack::Logger.new(["/var/log/app.log", $stdout], template: ":severity :message")
 
-multi_device = Lumberjack::Device::Multi.new(file_device, console_device)
-logger = Lumberjack::Logger.new(multi_device)
-
-logger.info("Application started")  # Appears in both file AND console
+logger.info("Application started")  # Appears in both file AND STDOUT
 ```
 
 ##### LoggerWrapper Device
@@ -477,6 +474,16 @@ There are separate gems implementing custom devices for different use cases:
 - [`lumberjack_capture_device`](https://github.com/bdurand/lumberjack_capture_device) - Device designed for capturing logs in tests to make assertions easier
 - [`lumberjack_syslog_device`](https://github.com/bdurand/lumberjack_syslog_device) - Device for logging to a syslog server
 - [`lumberjack_redis_device`](https://github.com/bdurand/lumberjack_redis_device) - Device for logging to a Redis database
+
+You can register a custom device with Lumberjack using the device registry. This associates the device with the device class and can make using the device easier to setup since the user can just pass the symbol and options when instantiating the Logger rather than having to instantiate the device separately.
+
+```ruby
+  Lumberjack::Device.register(:my_device, MyDevice)
+
+  # Now logger can be instantiated with the name and all options will be passed to
+  # the MyDevice constructor.
+  logger = Lumberjack::Logger.new(:my_device, autoflush: true)
+```
 
 ### Testing Utilities
 

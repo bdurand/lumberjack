@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "device_registry"
+
 module Lumberjack
   # Abstract base class defining the interface for logging output devices.
   # Devices are responsible for the final output of log entries to various
