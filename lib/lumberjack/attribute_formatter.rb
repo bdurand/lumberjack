@@ -308,6 +308,10 @@ module Lumberjack
         value
       end
 
+      if formatted_value.is_a?(Formatter::TaggedMessage)
+        formatted_value = formatted_value.attributes
+      end
+
       if formatted_value.is_a?(Enumerable)
         skip_classes ||= []
         skip_classes << value.class if using_class_formatter

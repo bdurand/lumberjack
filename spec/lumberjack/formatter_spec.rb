@@ -116,6 +116,17 @@ RSpec.describe Lumberjack::Formatter do
     expect(formatter.format(:test)).to eq(:test)
   end
 
+  it "applies the to_log_format method if there is no registered formatter" do
+    obj = TestToLogFormat.new("test")
+    expect(formatter.format(obj)).to eq("LOG FORMAT: test")
+  end
+
+  it "overrides the to_log_format method if there is a registered formatter" do
+    formatter.add(TestToLogFormat) { |obj| obj.value.upcase }
+    obj = TestToLogFormat.new("test")
+    expect(formatter.format(obj)).to eq("TEST")
+  end
+
   describe "clear" do
     it "should clear all mappings" do
       expect(formatter.format(:test)).to eq(":test")
