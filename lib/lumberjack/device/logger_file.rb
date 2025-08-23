@@ -71,5 +71,13 @@ module Lumberjack
     def path
       stream.filename
     end
+
+    # Expose the underlying stream.
+    #
+    # @return [IO]
+    # @api private
+    def dev
+      stream.dev
+    end
   end
 end

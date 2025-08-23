@@ -91,5 +91,13 @@ module Lumberjack
     # @return [void]
     def datetime_format=(format)
     end
+
+    # Expose the underlying stream if any.
+    #
+    # @return [IO, Lumberjacke::Device, nil]
+    # @api private
+    def dev
+      self
+    end
   end
 end

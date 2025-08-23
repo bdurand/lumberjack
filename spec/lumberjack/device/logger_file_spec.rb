@@ -27,4 +27,12 @@ RSpec.describe Lumberjack::Device::LoggerFile do
       file.unlink
     end
   end
+
+  describe "#dev" do
+    it "returns the underlying stream" do
+      stream = StringIO.new
+      device = Lumberjack::Device::LoggerFile.new(stream)
+      expect(device.dev).to eq(stream)
+    end
+  end
 end

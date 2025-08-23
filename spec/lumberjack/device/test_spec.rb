@@ -101,4 +101,11 @@ RSpec.describe Lumberjack::Device::Test do
       expect(device.match(attributes: {foo: "qux"})).to be_nil
     end
   end
+
+  describe "#dev" do
+    it "returns self underlying stream" do
+      device = Lumberjack::Device::Test.new
+      expect(device.dev).to eq(device)
+    end
+  end
 end

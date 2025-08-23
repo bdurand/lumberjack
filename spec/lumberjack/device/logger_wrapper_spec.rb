@@ -20,4 +20,13 @@ RSpec.describe Lumberjack::Device::LoggerWrapper do
       include(severity: :info, message: "Test log message", progname: "MyApp", attributes: {"foo" => "bar"})
     )
   end
+
+  describe "#dev" do
+    it "returns the logger deviceunderlying stream" do
+      stream = StringIO.new
+      logger = Lumberjack::Logger.new(stream)
+      device = Lumberjack::Device::LoggerWrapper.new(logger)
+      expect(device.dev).to eq(stream)
+    end
+  end
 end
