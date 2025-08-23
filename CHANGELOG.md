@@ -45,7 +45,6 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 
 ### Removed
 
-- Removed Rails integration code (`tagged`, `silence`, `log_at` methods on `Lumberjack::Logger`). Rails support is now moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem. **Breaking Change**
 - Removed deprecated unit of work id code. These have been replaced with tags. **Breaking Change**
 - Removed deprecated support for setting global tags with `Lumberjack::Logger#tag`. Now calling `tag` outside of a block or context will be ignored. Use `tag!` to set default tags on a logger. **Breaking Change**
 - Removed the devices that handled logging to files (`Lumberjack::Device::LogFile`, `Lumberjack::Device::RollingLogFile`, `Lumberjack::Device::DateRollingLogFile`, and `Lumberjack::Device::SizeRollingLogFile`) since file logging is now handled by the standard library `Logger::LogDevice` class. **Breaking Change**
@@ -71,6 +70,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
   - `Lumberjack::Logger::TagContext`
   - `Lumberjack::Logger::TagFormatter`
   - `Lumberjack::Logger::Tags`
+- Deprecated Rails compatibility methods on `Lumberjack::Logger` (`tagged`, `silence`, `log_at`). Rails support is now moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem.
 
 ## 1.4.0
 
