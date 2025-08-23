@@ -46,7 +46,10 @@ module Lumberjack
       # @return [Lumberjack::Device]
       def new_device(name, options)
         klass = device_class(name)
-        raise ArgumentError.new("#{name.inspect} is not registered as a device name") unless klass
+        unless klass
+          valid_names = @device_registry.keys.map(&:inspect).join(", ")
+          raise ArgumentError.new("#{name.inspect} is not registered as a device name; valid names are: #{valid_names}")
+        end
 
         klass.new(options)
       end
