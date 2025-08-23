@@ -71,13 +71,10 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.device.class).to eq(Lumberjack::Device::LoggerWrapper)
     end
 
-    it "should open STDOUT in a Writer device" do
-      logger = Lumberjack::Logger.new($stdout)
-      expect(logger.device.class).to eq(Lumberjack::Device::Writer)
-    end
-
-    it "should open STDERR in a Writer device" do
-      logger = Lumberjack::Logger.new($stderr)
+    it "should open a tty stream in a Writer device" do
+      out = StringIO.new
+      allow(out).to receive(:tty?).and_return(true)
+      logger = Lumberjack::Logger.new(out)
       expect(logger.device.class).to eq(Lumberjack::Device::Writer)
     end
 
