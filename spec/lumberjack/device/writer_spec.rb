@@ -129,4 +129,12 @@ RSpec.describe Lumberjack::Device::Writer do
       expect(stream.string).to eq("[2011-01-15T14:23:45.123 INFO app(12345)] line 1 [foo:ABCD] // line 2 // line 3#{Lumberjack::LINE_SEPARATOR}")
     end
   end
+
+  describe "#dev" do
+    it "returns the underlying stream" do
+      stream = StringIO.new
+      device = Lumberjack::Device::Writer.new(stream)
+      expect(device.dev).to eq(stream)
+    end
+  end
 end

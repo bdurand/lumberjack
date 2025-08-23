@@ -108,5 +108,13 @@ module Lumberjack
     def flush
       @logger.flush
     end
+
+    # Expose the underlying stream if any.
+    #
+    # @return [IO, Lumberjack::Device, nil]
+    # @api private
+    def dev
+      @logger.device&.dev
+    end
   end
 end
