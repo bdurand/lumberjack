@@ -148,6 +148,15 @@ module Lumberjack
       end
     end
 
+    # Helper method to build an entry formatter.
+    #
+    # @param block [Proc] The block to use for building the entry formatter.
+    # @return [Lumberjack::EntryFormatter] The built entry formatter.
+    # @see Lumberjack::EntryFormatter.build
+    def build_formatter(&block)
+      EntryFormatter.build(&block)
+    end
+
     private
 
     def current_context

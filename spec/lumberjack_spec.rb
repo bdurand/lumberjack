@@ -84,4 +84,12 @@ RSpec.describe Lumberjack do
       expect(Lumberjack.context_attributes).to be_nil
     end
   end
+
+  it "can build a formatter" do
+    formatter = Lumberjack.build_formatter do
+      add(Integer) { |i| i * 2 }
+    end
+    expect(formatter).to be_a(Lumberjack::EntryFormatter)
+    expect(formatter.format(12, nil).first).to eq(24)
+  end
 end

@@ -24,6 +24,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Added `TRACE` logging level for logging at an even lower level than `DEBUG`. `Lumberjack::Logger#trace` can be used to log messages at this level.
 - Added `Lumberjack::ForkedLogger` which is a wrapper around a logger with a separate context. A local logger has a parent logger which it will write it's log entries through. It will inherit the level, progname, and tags from a parent logger, but has its own local context isolated from the parent logger. You can change the level, progname, and add tags on the local logger without impacting the parent logger. Local loggers can be gotten from the current logger by calling `Lumberjack::Logger#fork`.
 - Added `Lumberjack::Utils.current_line` as a helper method for getting the current line of code.
+- Added `Lumberjack.build_formatter` as a helper method for building entry formatters.
 
 ### Changed
 
