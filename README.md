@@ -39,9 +39,11 @@ logger.debug("Processing data",
 )
 ```
 
-#### Using the Tag Method
+#### Adding attributes to the logger
 
-The `tag` method can be used to add attributes to the current log [context](#context-blocks). The attributes will be included in all log entries for that context.
+Attributes added to the logger will be included in all log entries.
+
+Use the  `tag` method to tag the the current context with attributes. The attributes will be included in all log entries within that context.
 
 ```ruby
 logger.context do
@@ -141,6 +143,19 @@ Attributes use dot notation for nested structures, so there is no difference bet
 ```ruby
 logger.info("User signed in", user: {id: 123})
 logger.info("User signed in", "user.id" => 123)
+```
+
+#### Using the tagged method
+
+A common practice is to add an array of tags to log entries. The `tagged` method can be used to append tags to the current context. Tags are stored in the "tags" attribute. Like the `tag` method, this method can be called with a block to create a new context or without a block to update the current context.
+
+```ruby
+logger.tagged("api", "v1") do
+  logger.info("API request started") # Includes tags: ["api", "v1"]
+
+  logger.tagged("users")
+  logger.info("Processing user data") # Includes tags: ["api", "v1", "users"]
+end
 ```
 
 ### Context Isolation

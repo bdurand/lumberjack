@@ -297,23 +297,6 @@ module Lumberjack
       end
     end
 
-    # Minimal support for the ActiveSupport::TaggedLogging API. This functionality has been
-    # moved to the lumberjack_rails gem. Note that in the lumberjack_rails version tags will
-    # be appended to the "tags" attribute instead of the "tagged" attribute.
-    #
-    # @deprecated This implementation is deprecated. Install the lumberjack_rails gem for full support.
-    def tagged(*tags, &block)
-      deprecation_message = "Install the lumberjack_rails gem for full support of the tagged method."
-      Utils.deprecated(:tagged, deprecation_message) do
-        return self unless in_context?
-
-        current_tags = attributes["tagged"] || []
-        all_tags = current_tags + tags.flatten
-        tag("tagged" => all_tags, &block)
-        self
-      end
-    end
-
     # Alias for with_level for compatibility with ActiveSupport loggers. This functionality
     # has been moved to the lumberjack_rails gem.
     #

@@ -42,6 +42,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Logging to files will now use the standard library `Logger::LogDevice` class for file output and rolling.
 - The `Lumberjack::Device::Writer` class now takes an `autoflush` option. Setting it to false will disable synchronous I/O.
 - `Lumberjack#tag` can now be called with a block to set up a new context.
+- The `tagged` method is now adds tags to the "tags" attribute instead of the "tagged" attribute. **Breaking Change**
 
 ### Removed
 
@@ -70,7 +71,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
   - `Lumberjack::Logger::TagContext`
   - `Lumberjack::Logger::TagFormatter`
   - `Lumberjack::Logger::Tags`
-- Deprecated Rails compatibility methods on `Lumberjack::Logger` (`tagged`, `silence`, `log_at`). Rails support is now moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem.
+- Deprecated Rails compatibility methods on `Lumberjack::Logger` (`silence`, `log_at`). Rails support is now moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem.
 
 ## 1.4.0
 

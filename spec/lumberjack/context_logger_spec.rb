@@ -451,6 +451,53 @@ RSpec.describe Lumberjack::ContextLogger do
     end
   end
 
+  describe "#tagged" do
+    it "does nothing if there is no context" do
+      expect(logger.tagged(:foo)).to eq(logger)
+      expect(logger.attributes).to be_empty
+    end
+
+    it "appends tags to the tags attribute in the current context" do
+      logger.context do
+        logger.tagged(:foo, :bar)
+        expect(logger.attributes["tags"]).to eq([:foo, :bar])
+
+        logger.tagged(:baz)
+        expect(logger.attributes["tags"]).to eq([:foo, :bar, :baz])
+
+        logger.context do
+          logger.tagged(:qux)
+          expect(logger.attributes["tags"]).to eq([:foo, :bar, :baz, :qux])
+        end
+
+        expect(logger.attributes["tags"]).to eq([:foo, :bar, :baz])
+      end
+    end
+
+    it "appends to the tags attribute inside a block" do
+      logger.tagged(:foo, :bar) do
+        expect(logger.attributes["tags"]).to eq([:foo, :bar])
+
+        logger.tagged(:baz) do
+          expect(logger.attributes["tags"]).to eq([:foo, :bar, :baz])
+        end
+
+        expect(logger.attributes["tags"]).to eq([:foo, :bar])
+      end
+    end
+
+    it "returns the logger instance when called without a block" do
+      logger.context do
+        expect(logger.tagged(:foo)).to eq(logger)
+      end
+    end
+
+    it "returns the result of the block" do
+      result = logger.tagged(:foo) { :foobar }
+      expect(result).to eq(:foobar)
+    end
+  end
+
   describe "#untagged" do
     it "removes all attributes from the current, default, and global contexts for the duration of the block" do
       Lumberjack.tag(foo: "bar") do

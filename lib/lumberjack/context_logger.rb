@@ -346,6 +346,24 @@ module Lumberjack
       nil
     end
 
+    # Add tags the logger "tags" attribute. This method supports a common pattern of adding
+    # an array of tags to log entries. Calling this method will append the specified tags to any
+    # existing values on the "tags" attribute. If this is called with a block, it will create a
+    # new context for the block and add the tags to that context. Otherwise it will add the tags
+    # to the current context. If there is no current context, then nothing will happen.
+    #
+    # @param tags [Array<String, Symbol, Hash>] The tags to add.
+    # @return [Lumberjack::Logger] Returns self so calls can be chained.
+    def tagged(*tags, &block)
+      return self unless block || in_context?
+
+      current_tags = attributes["tags"] || []
+      current_tags = [current_tags] unless current_tags.is_a?(Array)
+      new_tags = current_tags + tags.flatten
+
+      tag(tags: new_tags, &block)
+    end
+
     # Set up a context block for the logger. All attributes added within the block will be cleared when
     # the block exits.
     #
