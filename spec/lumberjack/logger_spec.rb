@@ -88,6 +88,15 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.device.class).to eq(Lumberjack::Device::Test)
     end
 
+    it "should create a multi device if the stream is an array" do
+      stream_1 = StringIO.new
+      stream_2 = StringIO.new
+      logger = Lumberjack::Logger.new([stream_1, stream_2])
+      device = logger.device
+      expect(device).to be_a(Lumberjack::Device::Multi)
+      expect(device.devices.collect(&:dev)).to eq [stream_1, stream_2]
+    end
+
     it "should set the level with a numeric" do
       logger = Lumberjack::Logger.new(:null, level: Logger::WARN)
       expect(logger.level).to eq(Logger::WARN)
