@@ -527,50 +527,6 @@ RSpec.describe Lumberjack::Logger do
     end
   end
 
-  describe "#tagged" do
-    let(:logger) { Lumberjack::Logger.new(:test) }
-
-    around do |example|
-      silence_deprecations do
-        example.run
-      end
-    end
-
-    it "does nothing if there is no context" do
-      expect(logger.tagged).to eq(logger)
-      expect(logger.tags).to be_empty
-    end
-
-    it "appends tags to the tags attribute in the current context" do
-      logger.context do
-        logger.tagged(:foo, :bar)
-        expect(logger.attributes["tagged"]).to eq([:foo, :bar])
-
-        logger.tagged(:baz)
-        expect(logger.attributes["tagged"]).to eq([:foo, :bar, :baz])
-
-        logger.context do
-          logger.tagged(:qux)
-          expect(logger.attributes["tagged"]).to eq([:foo, :bar, :baz, :qux])
-        end
-
-        expect(logger.attributes["tagged"]).to eq([:foo, :bar, :baz])
-      end
-    end
-
-    it "appends to the tags attribute inside a block" do
-      logger.tagged(:foo, :bar) do
-        expect(logger.attributes["tagged"]).to eq([:foo, :bar])
-
-        logger.tagged(:baz) do
-          expect(logger.attributes["tagged"]).to eq([:foo, :bar, :baz])
-        end
-
-        expect(logger.attributes["tagged"]).to eq([:foo, :bar])
-      end
-    end
-  end
-
   describe "#log_at" do
     let(:logger) { Lumberjack::Logger.new(:test) }
 
