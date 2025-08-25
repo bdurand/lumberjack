@@ -527,6 +527,42 @@ RSpec.describe Lumberjack::Logger do
     end
   end
 
+  describe "#tagged" do
+    let(:logger) { Lumberjack::Logger.new(:test) }
+
+    around do |example|
+      silence_deprecations do
+        example.run
+      end
+    end
+
+    it "adds tags to the tagged attribute" do
+      logger.tagged("foo", "bar") do
+        expect(logger.attributes).to eq({"tagged" => ["foo", "bar"]})
+        logger.tagged("baz")
+        expect(logger.attributes).to eq({"tagged" => ["foo", "bar", "baz"]})
+      end
+    end
+  end
+
+  describe "#untagged" do
+    let(:logger) { Lumberjack::Logger.new(:test) }
+
+    around do |example|
+      silence_deprecations do
+        example.run
+      end
+    end
+
+    it "removes tags from the tagged attribute" do
+      logger.tag(foo: "bar") do
+        logger.untagged do
+          expect(logger.attributes).to be_empty
+        end
+      end
+    end
+  end
+
   describe "#log_at" do
     let(:logger) { Lumberjack::Logger.new(:test) }
 

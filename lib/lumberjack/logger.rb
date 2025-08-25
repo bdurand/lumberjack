@@ -297,6 +297,29 @@ module Lumberjack
       end
     end
 
+    # Alias for append_to(:tagged) for compatibility with ActiveSupport support in Lumberjack 1.x.
+    # This functionality has been moved to the lumberjack_rails gem. Note that in that gem the
+    # tags are added to the :tags attribute instead of the :tagged attribute.
+    #
+    # @see append_to
+    # @deprecated This implementation is deprecated. Install the lumberjack_rails gem for full support.
+    def tagged(*tags, &block)
+      deprecation_message = "Install the lumberjack_rails gem for full support of the tagged method."
+      Utils.deprecated(:tagged, deprecation_message) do
+        append_to(:tagged, *tags, &block)
+      end
+    end
+
+    # Alias for clear_attributes.
+    #
+    # @see clear_attributes
+    # @deprecated Use clear_attributes instead.
+    def untagged(&block)
+      Utils.deprecated(:untagged, "Use clear_attributes instead.") do
+        clear_attributes(&block)
+      end
+    end
+
     # Alias for with_level for compatibility with ActiveSupport loggers. This functionality
     # has been moved to the lumberjack_rails gem.
     #
