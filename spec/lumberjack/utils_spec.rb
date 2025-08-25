@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-describe Lumberjack::Utils do
+RSpec.describe Lumberjack::Utils do
   describe ".hostname" do
     it "returns the hostname in UTF-8 encoding" do
       expect(Lumberjack::Utils.hostname).to be_a(String)
@@ -49,19 +49,19 @@ describe Lumberjack::Utils do
     end
   end
 
-  describe ".flatten_tags" do
-    it "flattens a nested tag hash" do
-      tag_hash = {"user" => {"id" => 123, "name" => "Alice"}, "action" => "login"}
-      expect(Lumberjack::Utils.flatten_tags(tag_hash)).to eq(
+  describe ".flatten_attributes" do
+    it "flattens a nested attribute hash" do
+      attribute_hash = {"user" => {"id" => 123, "name" => "Alice"}, "action" => "login"}
+      expect(Lumberjack::Utils.flatten_attributes(attribute_hash)).to eq(
         "user.id" => 123,
         "user.name" => "Alice",
         "action" => "login"
       )
     end
 
-    it "flattens a deeply nested tag hash" do
-      tag_hash = {"a" => {"b" => {"c" => 3, "d" => 4}}, "e" => 5}
-      expect(Lumberjack::Utils.flatten_tags(tag_hash)).to eq(
+    it "flattens a deeply nested attribute hash" do
+      attribute_hash = {"a" => {"b" => {"c" => 3, "d" => 4}}, "e" => 5}
+      expect(Lumberjack::Utils.flatten_attributes(attribute_hash)).to eq(
         "a.b.c" => 3,
         "a.b.d" => 4,
         "e" => 5
@@ -69,21 +69,21 @@ describe Lumberjack::Utils do
     end
 
     it "returns an empty hash for non-hash input" do
-      expect(Lumberjack::Utils.flatten_tags("not a hash")).to eq({})
+      expect(Lumberjack::Utils.flatten_attributes("not a hash")).to eq({})
     end
 
-    it "handles mixing dot notation with nested tags with dot notation tags first" do
-      tag_hash = {"user.id" => 123, user: {"name" => "Alice"}, "user.action": "login"} # rubocop:disable Style/HashSyntax
-      expect(Lumberjack::Utils.flatten_tags(tag_hash)).to eq(
+    it "handles mixing dot notation with nested attributes with dot notation attributes first" do
+      attribute_hash = {"user.id" => 123, user: {"name" => "Alice"}, "user.action": "login"} # rubocop:disable Style/HashSyntax
+      expect(Lumberjack::Utils.flatten_attributes(attribute_hash)).to eq(
         "user.id" => 123,
         "user.name" => "Alice",
         "user.action" => "login"
       )
     end
 
-    it "handles mixing dot notation with structured tags first" do
-      tag_hash = {user: {id: 123, name: "Alice"}, "user.action": "login"}
-      expect(Lumberjack::Utils.flatten_tags(tag_hash)).to eq(
+    it "handles mixing dot notation with structured attributes first" do
+      attribute_hash = {user: {id: 123, name: "Alice"}, "user.action": "login"}
+      expect(Lumberjack::Utils.flatten_attributes(attribute_hash)).to eq(
         "user.id" => 123,
         "user.name" => "Alice",
         "user.action" => "login"
@@ -91,25 +91,25 @@ describe Lumberjack::Utils do
     end
   end
 
-  describe ".expand_tags" do
+  describe ".expand_attributes" do
     it "expands a hash with nested hashes and dot notation keys" do
-      tag_hash = {"user.id" => 123, "user.name" => "Alice", "action" => "login"}
-      expect(Lumberjack::Utils.expand_tags(tag_hash)).to eq(
+      attribute_hash = {"user.id" => 123, "user.name" => "Alice", "action" => "login"}
+      expect(Lumberjack::Utils.expand_attributes(attribute_hash)).to eq(
         "user" => {"id" => 123, "name" => "Alice"},
         "action" => "login"
       )
     end
 
-    it "handles mixed dot notation and nested hashes with dot notation tags first" do
-      tag_hash = {"user.id" => 123, user: {"name" => "Alice"}, "user.action": "login"} # rubocop:disable Style/HashSyntax
-      expect(Lumberjack::Utils.expand_tags(tag_hash)).to eq(
+    it "handles mixed dot notation and nested hashes with dot notation attributes first" do
+      attribute_hash = {"user.id" => 123, user: {"name" => "Alice"}, "user.action": "login"} # rubocop:disable Style/HashSyntax
+      expect(Lumberjack::Utils.expand_attributes(attribute_hash)).to eq(
         "user" => {"id" => 123, "name" => "Alice", "action" => "login"}
       )
     end
 
-    it "handles mix dot notation with structured tags first" do
-      tag_hash = {user: {id: 123, name: "Alice"}, "user.action": "login"}
-      expect(Lumberjack::Utils.expand_tags(tag_hash)).to eq(
+    it "handles mix dot notation with structured attributes first" do
+      attribute_hash = {user: {id: 123, name: "Alice"}, "user.action": "login"}
+      expect(Lumberjack::Utils.expand_attributes(attribute_hash)).to eq(
         "user" => {"id" => 123, "name" => "Alice", "action" => "login"}
       )
     end
@@ -117,12 +117,15 @@ describe Lumberjack::Utils do
 
   describe ".deprecated" do
     around do |example|
-      original_value = ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"]
+      original_verbose = $VERBOSE
+      original_deprecated = Warning[:deprecated]
       begin
-        ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = "false"
+        $VERBOSE = false
+        Warning[:deprecated] = true
         example.run
       ensure
-        ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = original_value
+        $VERBOSE = original_verbose
+        Warning[:deprecated] = original_deprecated
       end
     end
 
@@ -135,6 +138,16 @@ describe Lumberjack::Utils do
     it "does not print the warning again for subsequent calls" do
       expect { Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :foo } }.to output(/DEPRECATION WARNING: This is deprecated/).to_stderr
       expect { Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :bar } }.not_to output.to_stderr
+    end
+  end
+
+  describe ".current_line" do
+    it "returns the line of code that calls the method" do
+      expect(Lumberjack::Utils.current_line).to start_with("#{__FILE__}:#{__LINE__}")
+    end
+
+    it "can strip a root path from the line" do
+      expect(Lumberjack::Utils.current_line(__dir__)).to start_with("#{File.basename(__FILE__)}:#{__LINE__}")
     end
   end
 end

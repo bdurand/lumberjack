@@ -1,7 +1,39 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 
 RSpec.describe Lumberjack::Formatter do
   let(:formatter) { Lumberjack::Formatter.new }
+
+  describe "optimized formatters for primitive types" do
+    let(:formatter) { Lumberjack::Formatter.empty.add(Object, :inspect) }
+
+    it "should have an optimized set of formatters that return self for primitive types" do
+      expect(formatter.format("foo")).to eq("foo")
+      expect(formatter.format(1)).to eq(1)
+      expect(formatter.format(2.1)).to eq(2.1)
+      expect(formatter.format(true)).to eq(true)
+      expect(formatter.format(false)).to eq(false)
+      expect(formatter.format(:foo)).to eq(":foo")
+    end
+
+    it "should be able to override the optimized formatters" do
+      formatter.add(String) { |s| s.upcase }
+      expect(formatter.format("foo")).to eq("FOO")
+      expect(formatter.format(1)).to eq(1) # Still uses optimized formatter
+    end
+  end
+
+  describe "#build" do
+    it "builds a formatter in a block" do
+      formatter = Lumberjack::Formatter.build do
+        add(String) { |s| s.upcase }
+        add(Integer) { |obj| "number: #{obj}" }
+      end
+      expect(formatter.format("foo")).to eq("FOO")
+      expect(formatter.format(10)).to eq("number: 10")
+    end
+  end
 
   it "should have a default set of formatters" do
     expect(formatter.format("abc")).to eq("abc")
@@ -41,18 +73,29 @@ RSpec.describe Lumberjack::Formatter do
   end
 
   it "should be able to remove a formatter for a class" do
-    formatter.remove(String)
-    expect(formatter.format("abc")).to eq("\"abc\"")
+    formatter = Lumberjack::Formatter.empty
+    formatter.add(Symbol, :inspect)
+    expect(formatter.format(:foo)).to eq(":foo")
+    formatter.remove(Symbol)
+    expect(formatter.format(:foo)).to eq(:foo)
   end
 
   it "should be able to remove a formatter for a class" do
-    formatter.remove("String")
-    expect(formatter.format("abc")).to eq("\"abc\"")
+    formatter = Lumberjack::Formatter.empty
+    formatter.add([Symbol, Array], :inspect)
+    expect(formatter.format(:foo)).to eq(":foo")
+    formatter.remove([Symbol, Array])
+    expect(formatter.format(:foo)).to eq(:foo)
   end
 
   it "should be able to remove multiple formatters" do
-    formatter.remove([String, Numeric])
-    expect(formatter.format("abc")).to eq("\"abc\"")
+    formatter = Lumberjack::Formatter.empty
+    formatter.add([Symbol, Array], :inspect)
+    expect(formatter.format(:foo)).to eq(":foo")
+    expect(formatter.format([1, 2, 3])).to eq([1, 2, 3].inspect)
+    formatter.remove([Symbol, Array])
+    expect(formatter.format(:foo)).to eq(:foo)
+    expect(formatter.format([1, 2, 3])).to eq([1, 2, 3])
   end
 
   it "should be able to chain add and remove calls" do
@@ -71,6 +114,17 @@ RSpec.describe Lumberjack::Formatter do
     expect(formatter.format(:test)).to eq(":test")
     formatter.remove(Object)
     expect(formatter.format(:test)).to eq(:test)
+  end
+
+  it "applies the to_log_format method if there is no registered formatter" do
+    obj = TestToLogFormat.new("test")
+    expect(formatter.format(obj)).to eq("LOG FORMAT: test")
+  end
+
+  it "overrides the to_log_format method if there is a registered formatter" do
+    formatter.add(TestToLogFormat) { |obj| obj.value.upcase }
+    obj = TestToLogFormat.new("test")
+    expect(formatter.format(obj)).to eq("TEST")
   end
 
   describe "clear" do
