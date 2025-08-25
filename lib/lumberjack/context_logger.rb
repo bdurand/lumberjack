@@ -346,22 +346,23 @@ module Lumberjack
       nil
     end
 
-    # Add tags the logger "tags" attribute. This method supports a common pattern of adding
-    # an array of tags to log entries. Calling this method will append the specified tags to any
-    # existing values on the "tags" attribute. If this is called with a block, it will create a
-    # new context for the block and add the tags to that context. Otherwise it will add the tags
-    # to the current context. If there is no current context, then nothing will happen.
+    # Append a value to an attribute. This method can be used to add "tags" to a logger by appending
+    # values to the same attribute. The tag values will be appended to any value that is already
+    # in the attribute. If a block is passed, then a new context will be opened as well. If no
+    # block is passed, then the values will be appended to the attribute in the current context.
+    # If there is no current context, then nothing will happen.
     #
     # @param tags [Array<String, Symbol, Hash>] The tags to add.
-    # @return [Lumberjack::Logger] Returns self so calls can be chained.
-    def tagged(*tags, &block)
+    # @return [Object, Lumberjack::Logger] If a block is passed then returns the result of the block.
+    #   Otherwise returns self so that calls can be chained.
+    def append_to(attribute_name, *tags, &block)
       return self unless block || in_context?
 
-      current_tags = attributes["tags"] || []
+      current_tags = attribute_value(attribute_name) || []
       current_tags = [current_tags] unless current_tags.is_a?(Array)
       new_tags = current_tags + tags.flatten
 
-      tag(tags: new_tags, &block)
+      tag(attribute_name => new_tags, &block)
     end
 
     # Set up a context block for the logger. All attributes added within the block will be cleared when
@@ -466,21 +467,21 @@ module Lumberjack
     end
 
     # Remove all attributes on the current logger and logging context within a block.
-    # You can still set new block scoped attributes within the untagged block and provide
+    # You can still set new block scoped attributes within the block and provide
     # attributes on individual log methods.
     #
     # @return [void]
-    def untagged(&block)
+    def clear_attributes(&block)
       Lumberjack.use_context(nil) do
-        untagged = fiber_local_value(:logger_untagged)
+        cleared = fiber_local_value(:logger_cleared)
         begin
-          set_fiber_local_value(:logger_untagged, true)
+          set_fiber_local_value(:logger_cleared, true)
           context do |ctx|
             ctx.clear_attributes
             block.call
           end
         ensure
-          set_fiber_local_value(:logger_untagged, untagged)
+          set_fiber_local_value(:logger_cleared, cleared)
         end
       end
     end
@@ -573,7 +574,7 @@ module Lumberjack
     def merge_all_attributes
       attributes = nil
 
-      unless fiber_local_value(:logger_untagged)
+      unless fiber_local_value(:logger_cleared)
         global_context_attributes = Lumberjack.context_attributes
         if global_context_attributes && !global_context_attributes.empty?
           attributes ||= {}

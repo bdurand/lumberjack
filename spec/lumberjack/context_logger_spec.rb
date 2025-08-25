@@ -451,22 +451,22 @@ RSpec.describe Lumberjack::ContextLogger do
     end
   end
 
-  describe "#tagged" do
+  describe "#append_to" do
     it "does nothing if there is no context" do
-      expect(logger.tagged(:foo)).to eq(logger)
+      expect(logger.append_to(:tags, :foo)).to eq(logger)
       expect(logger.attributes).to be_empty
     end
 
     it "appends tags to the tags attribute in the current context" do
       logger.context do
-        logger.tagged(:foo, :bar)
+        logger.append_to(:tags, :foo, :bar)
         expect(logger.attributes["tags"]).to eq([:foo, :bar])
 
-        logger.tagged(:baz)
+        logger.append_to(:tags, [:baz])
         expect(logger.attributes["tags"]).to eq([:foo, :bar, :baz])
 
         logger.context do
-          logger.tagged(:qux)
+          logger.append_to(:tags, :qux)
           expect(logger.attributes["tags"]).to eq([:foo, :bar, :baz, :qux])
         end
 
@@ -475,10 +475,10 @@ RSpec.describe Lumberjack::ContextLogger do
     end
 
     it "appends to the tags attribute inside a block" do
-      logger.tagged(:foo, :bar) do
+      logger.append_to(:tags, [:foo, :bar]) do
         expect(logger.attributes["tags"]).to eq([:foo, :bar])
 
-        logger.tagged(:baz) do
+        logger.append_to(:tags, [:baz]) do
           expect(logger.attributes["tags"]).to eq([:foo, :bar, :baz])
         end
 
@@ -488,24 +488,24 @@ RSpec.describe Lumberjack::ContextLogger do
 
     it "returns the logger instance when called without a block" do
       logger.context do
-        expect(logger.tagged(:foo)).to eq(logger)
+        expect(logger.append_to(:tags, [:foo])).to eq(logger)
       end
     end
 
     it "returns the result of the block" do
-      result = logger.tagged(:foo) { :foobar }
+      result = logger.append_to(:tags, [:foo]) { :foobar }
       expect(result).to eq(:foobar)
     end
   end
 
-  describe "#untagged" do
+  describe "#clear_attributes" do
     it "removes all attributes from the current, default, and global contexts for the duration of the block" do
       Lumberjack.tag(foo: "bar") do
         logger_with_default_context.tag!(baz: "qux")
         logger_with_default_context.tag(bip: "bap") do
           expect(logger_with_default_context.attributes.length).to eq(3)
 
-          logger_with_default_context.untagged do
+          logger_with_default_context.clear_attributes do
             expect(logger_with_default_context.attributes).to be_empty
 
             logger_with_default_context.tag(moo: "mip") do
@@ -517,7 +517,7 @@ RSpec.describe Lumberjack::ContextLogger do
     end
 
     it "returns the result of the block" do
-      result = logger.untagged { :foobar }
+      result = logger.clear_attributes { :foobar }
       expect(result).to eq(:foobar)
     end
   end

@@ -28,6 +28,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Templates can now be use a left padded severity label with the option `pad_severity: true`. This will left pad the severity strings to five characters so that they can all be aligned in the log output.
 - Added `Lumberjack::Formatter::Tags` for formatting attributes as "tags" in the logs. Arrays of values will be formatted as "[val1] [val2]" and hashes will be formatted as "[key1=value1] [key2=value2]".
 - Added `Lumberjack::DeviceRegistry` as a means for other devices to be associated with a symbol that can then be passed to the constructor when creating a logger with that device rather than having to instantiate the device first.
+- Added `Lumberjack::Logger#clear_attributes` to remove all attributes from the logger.
 
 ### Changed
 
@@ -43,7 +44,6 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Logging to files will now use the standard library `Logger::LogDevice` class for file output and rolling.
 - The `Lumberjack::Device::Writer` class now takes an `autoflush` option. Setting it to false will disable synchronous I/O.
 - `Lumberjack#tag` can now be called with a block to set up a new context.
-- The `tagged` method is now adds tags to the "tags" attribute instead of the "tagged" attribute. **Breaking Change**
 
 ### Removed
 
@@ -59,6 +59,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
   - `Lumberjack.context_tags`
   - `Lumberjack::Logger#tags`
   - `Lumberjack::Logger#tag_value`
+  - `Lumberjack::Logger#untagged`
   - `Lumberjack::Logger#tag_formatter`
   - `Lumberjack::Logger#in_tag_context?`
   - `Lumberjack::Logger#tag_globally`
@@ -72,7 +73,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
   - `Lumberjack::Logger::TagContext`
   - `Lumberjack::Logger::TagFormatter`
   - `Lumberjack::Logger::Tags`
-- Deprecated Rails compatibility methods on `Lumberjack::Logger` (`silence`, `log_at`). Rails support is now moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem.
+- Deprecated Rails compatibility methods on `Lumberjack::Logger` (`tagged`, `silence`, `log_at`). Rails support is now moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem.
 
 ## 1.4.0
 
