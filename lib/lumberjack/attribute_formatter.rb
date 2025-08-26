@@ -43,6 +43,26 @@ module Lumberjack
   #   formatter.add("user.email") { |email| email.downcase }
   #   formatter.add("config.database.password") { |pwd| "[HIDDEN]" }
   #
+  # ## Remapping attributes
+  #
+  # If the value returned by a formatter is a `Lumberjack::RemapAttributes` instance, then
+  # the attributes will be remapped to the new attributes.
+  #
+  # @example
+  #   formatter = Lumberjack::AttributeFormatter.new
+  #   formatter.add("duration_ms") { |value| Lumberjack::RemapAttributes.new(duration: value.to_f / 1000) }
+  #   formatter.format({ "duration_ms" => 1234 }) # => { "duration" => 1.234 }
+  #
+  # ## Remapping attributes
+  #
+  # If the value returned by a formatter is a `Lumberjack::RemapAttributes` instance, then
+  # the attributes will be remapped to the new attributes.
+  #
+  # @example
+  #   formatter = Lumberjack::AttributeFormatter.new
+  #   formatter.add("user.email") { |email| email.downcase }
+  #   formatter.add("config.database.password") { |pwd| "[HIDDEN]" }
+  #
   # @see Lumberjack::Formatter
   # @see Lumberjack::EntryFormatter
   class AttributeFormatter
@@ -307,7 +327,12 @@ module Lumberjack
 
       attributes.each do |name, value|
         name = name.to_s
-        formatted[name] = formatted_attribute_value(name, value, skip_classes: skip_classes, prefix: prefix)
+        value = formatted_attribute_value(name, value, skip_classes: skip_classes, prefix: prefix)
+        if value.is_a?(RemapAttribute)
+          formatted.merge!(value.attributes)
+        else
+          formatted[name] = value
+        end
       end
 
       formatted
@@ -340,7 +365,7 @@ module Lumberjack
         value
       end
 
-      if formatted_value.is_a?(Formatter::TaggedMessage)
+      if formatted_value.is_a?(MessageAttributes)
         formatted_value = formatted_value.attributes
       end
 

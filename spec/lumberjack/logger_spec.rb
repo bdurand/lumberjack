@@ -466,9 +466,9 @@ RSpec.describe Lumberjack::Logger do
         expect(out.string.chomp).to eq "tset"
       end
 
-      it "should copy attributes from the message if the formatter returns a Lumberjack::Formatter::TaggedMessage" do
+      it "should copy attributes from the message if the formatter returns a Lumberjack::MessageAttributes" do
         logger = Lumberjack::Logger.new(out, template: ":message :attributes")
-        logger.formatter.add(String) { |msg| Lumberjack::Formatter::TaggedMessage.new(msg.upcase, tag: msg.downcase) }
+        logger.formatter.add(String) { |msg| Lumberjack::MessageAttributes.new(msg.upcase, tag: msg.downcase) }
         logger.info("Test")
         expect(out.string.chomp).to eq "TEST [tag:test]"
       end
@@ -514,9 +514,9 @@ RSpec.describe Lumberjack::Logger do
         expect(logger.attributes).to eq({"wip" => "wap"})
       end
 
-      it "should be able to extract attributes from an object with a formatter that returns Lumberjack::Formatter::TaggedMessage" do
+      it "should be able to extract attributes from an object with a formatter that returns Lumberjack::MessageAttributes" do
         logger.formatter.add(Exception, ->(e) {
-          Lumberjack::Formatter::TaggedMessage.new(e.inspect, {message: e.message, class: e.class.name})
+          Lumberjack::MessageAttributes.new(e.inspect, {message: e.message, class: e.class.name})
         })
         error = StandardError.new("foobar")
         logger.info(error)

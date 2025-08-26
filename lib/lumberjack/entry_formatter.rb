@@ -16,7 +16,7 @@ module Lumberjack
   # - Delegates attribute formatting to an AttributeFormatter instance
   # - Provides a unified configuration interface through method chaining
   # - Handles the coordination between message and attribute formatting
-  # - Manages special message types like TaggedMessage that carry embedded attributes
+  # - Manages special message types like MessageAttributes that carry embedded attributes
   #
   # @example Complete entry formatting setup
   #   formatter = Lumberjack::EntryFormatter.build do
@@ -184,7 +184,7 @@ module Lumberjack
       message = message_formatter.format(message) if message_formatter.respond_to?(:format)
 
       message_attributes = nil
-      if message.is_a?(Formatter::TaggedMessage)
+      if message.is_a?(MessageAttributes)
         message_attributes = message.attributes
         message = message.message
       end
@@ -214,7 +214,7 @@ module Lumberjack
     private
 
     # Merge two attribute hashes, handling nil values gracefully.
-    # Used to combine explicit log attributes with attributes embedded in TaggedMessage objects.
+    # Used to combine explicit log attributes with attributes embedded in MessageAttributes objects.
     #
     # @param current_attributes [Hash, nil] The primary attributes hash.
     # @param attributes [Hash, nil] Additional attributes to merge in.

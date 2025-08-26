@@ -294,7 +294,7 @@ module Lumberjack
     # @return [String] The formatted message with line separator.
     def call(severity, timestamp, progname, msg)
       formatted_message = format(msg)
-      formatted_message = formatted_message.message if formatted_message.is_a?(TaggedMessage)
+      formatted_message = formatted_message.message if formatted_message.is_a?(MessageAttributes)
       "#{formatted_message}#{Lumberjack::LINE_SEPARATOR}"
     end
 

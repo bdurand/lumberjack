@@ -287,11 +287,11 @@ end
 logger.formatter.add(SecureString, PasswordFormatter.new)
 ```
 
-For log messages you can use the `Lumberjack::Formatter::TaggedMessage` to extract structured data from a log message. This can be used to allow logging objects directly and extracting metadata from the objects in the log attributes.
+For log messages you can use the `Lumberjack::MessageAttributes` class to extract structured data from a log message. This can be used to allow logging objects directly and extracting metadata from the objects in the log attributes.
 
 ```ruby
 logger.formatter.add(Exception) do |error|
-  Lumberjack::Formatter::TaggedMessage.new(
+  Lumberjack::MessageAttributes.new(
     error.inspect,
     error: {
       type: error.class.name,
@@ -352,6 +352,13 @@ logger.info("Data processed",
   created_at: Time.now,          # → "2025-08-22 14:30:00"
   price: 29.099,                 # → 29.10
 )
+```
+
+You can remap attributes to other attribute names by returning a `Lumberjack::RemapAttribute` instance.
+
+```ruby
+# Move the email attribute under the user attributes.
+logger.attribute_formatter.add("email") { |value| Lumberjack::RemapAttribute.new("user.email" => value) }
 ```
 
 Finally, you can add a default formatter for all other attributes:

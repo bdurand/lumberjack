@@ -237,11 +237,11 @@ logger.message_formatter.add(String, :truncate, 1000)  # Will truncate all strin
 
 ##### Extracting Tags from Messages
 
-If you are using structured logging, you can use a formatter to extract tags from the log message by adding a formatter that returns a `Lumberjack::Formatter::TaggedMessage`. For example, if you want to extract metadata from exceptions and add them as tags, you could do this:
+If you are using structured logging, you can use a formatter to extract tags from the log message by adding a formatter that returns a `Lumberjack::MessageAttributes`. For example, if you want to extract metadata from exceptions and add them as tags, you could do this:
 
 ```ruby
 logger.message_formatter.add(Exception, ->(e) {
-  Lumberjack::Formatter::TaggedMessage.new(e.inspect, {
+  Lumberjack::MessageAttributes.new(e.inspect, {
     "error.message": e.message,
     "error.class": e.class.name,
     "error.trace": e.backtrace

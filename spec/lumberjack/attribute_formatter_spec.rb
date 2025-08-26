@@ -132,10 +132,23 @@ RSpec.describe Lumberjack::AttributeFormatter do
       expect(attribute_formatter.format(attributes).object_id).to eq attributes.object_id
     end
 
-    it "uses the attributes from a TaggedMessage" do
+    it "uses the attributes from a MessageAttributes" do
       attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add("foo") { |val| Lumberjack::Formatter::TaggedMessage.new(val.upcase, "attr" => val) }
+      attribute_formatter.add("foo") { |val| Lumberjack::MessageAttributes.new(val.upcase, "attr" => val) }
       expect(attribute_formatter.format({"foo" => "bar"})).to eq({"foo" => {"attr" => "bar"}})
+    end
+
+    it "remaps attributes if the value is a Lumberjack::RemapAttribute instance" do
+      attribute_formatter = Lumberjack::AttributeFormatter.new
+      attribute_formatter.add("duration_ms") { |value| Lumberjack::RemapAttribute.new(duration: value.to_f / 1000) }
+      expect(attribute_formatter.format({"duration_ms" => 1500})).to eq({"duration" => 1.5})
+    end
+
+    it "remaps structured attributes correctly" do
+      attribute_formatter = Lumberjack::AttributeFormatter.new
+      attribute_formatter.add(:email) { |value| Lumberjack::RemapAttribute.new(user: {email: value}) }
+      attributes = {"user.id" => 42, "email" => "user@example.com"}
+      expect(attribute_formatter.format(attributes)).to eq({"user.id" => 42, "user.email" => "user@example.com"})
     end
   end
 
