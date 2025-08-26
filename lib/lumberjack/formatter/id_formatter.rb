@@ -11,6 +11,8 @@ module Lumberjack
     # This is particularly useful for ActiveRecord models, database objects, or any objects that
     # have a unique identifier attribute.
     class IdFormatter
+      FormatterRegistry.add(:id, self)
+
       # @param id_attribute [Symbol, String] The attribute to use as the id (defaults to :id).
       def initialize(id_attribute = :id)
         @id_attribute = id_attribute

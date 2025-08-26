@@ -13,7 +13,7 @@ module Lumberjack
   #   Lumberjack::Device.register(:my_device, MyDevice)
   #   logger = Lumberjack::Logger.new(:my_device)
   module DeviceRegistry
-    @device_registry = {}
+    @registry = {}
 
     class << self
       # Register a device name. Device names can be used to associate a symbol with a device
@@ -28,7 +28,7 @@ module Lumberjack
       def add(name, klass)
         raise ArgumentError.new("name must be a symbol") unless name.is_a?(Symbol)
 
-        @device_registry[name] = klass
+        @registry[name] = klass
       end
 
       # Remove a device from the registry.
@@ -36,7 +36,15 @@ module Lumberjack
       # @param name [Symbol] The name of the device to remove
       # @return [void]
       def remove(name)
-        @device_registry.delete(name)
+        @registry.delete(name)
+      end
+
+      # Check if a device is registered.
+      #
+      # @param name [Symbol] The name of the device
+      # @return [Boolean] True if the device is registered, false otherwise
+      def registered?(name)
+        @registry.include?(name)
       end
 
       # Instantiate a new device with the specified options from the device registry.
@@ -47,7 +55,7 @@ module Lumberjack
       def new_device(name, options)
         klass = device_class(name)
         unless klass
-          valid_names = @device_registry.keys.map(&:inspect).join(", ")
+          valid_names = @registry.keys.map(&:inspect).join(", ")
           raise ArgumentError.new("#{name.inspect} is not registered as a device name; valid names are: #{valid_names}")
         end
 
@@ -59,14 +67,14 @@ module Lumberjack
       # @param name [Symbol] The name of the device
       # @return [Class, nil] The registered device class or nil if not found
       def device_class(name)
-        @device_registry[name]
+        @registry[name]
       end
 
       # Return the map of registered device class names.
       #
       # @return [Hash]
       def registered_devices
-        @device_registry.dup
+        @registry.dup
       end
     end
   end

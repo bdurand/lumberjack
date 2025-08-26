@@ -45,6 +45,7 @@ module Lumberjack
   require_relative "lumberjack/device_registry"
   require_relative "lumberjack/device"
   require_relative "lumberjack/entry_formatter"
+  require_relative "lumberjack/formatter_registry"
   require_relative "lumberjack/formatter"
   require_relative "lumberjack/forked_logger"
   require_relative "lumberjack/logger"

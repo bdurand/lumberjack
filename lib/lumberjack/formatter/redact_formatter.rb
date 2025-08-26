@@ -10,6 +10,8 @@ module Lumberjack
     # This formatter is useful for logging sensitive data while still providing
     # enough context to distinguish between different values during debugging.
     class RedactFormatter
+      FormatterRegistry.add(:redact, self)
+
       # Redact a string value by showing only the first and last characters.
       #
       # @param obj [Object] The object to format. Only strings are redacted.

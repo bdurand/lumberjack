@@ -72,8 +72,8 @@ module Lumberjack
     #
     # @return [Lumberjack::AttributeFormatter] A new empty attribute formatter.
     def initialize
-      @attribute_formatters = {}
-      @class_formatter = Formatter.empty
+      @attribute_formatter = {}
+      @class_formatter = Formatter.new
       @default_formatter = nil
     end
 
@@ -81,15 +81,17 @@ module Lumberjack
     # This serves as the fallback formatting behavior for any attributes not covered by
     # attribute-specific or class-specific formatters.
     #
-    # @param formatter [Lumberjack::Formatter, #call, nil] The formatter to use.
-    #   If nil, the block will be used as the formatter.
+    # @param formatter [Lumberjack::Formatter, #call, Class, nil] The formatter to use.
+    #   If nil, the block will be used as the formatter. If a class is passed, it will be
+    #   instantiated with the args passed in.
+    # @params args [Array] The arguments to pass to the constructor if formatter is a Class.
     # @yield [value] Block-based formatter that receives the attribute value.
     # @yieldparam value [Object] The attribute value to format.
     # @yieldreturn [Object] The formatted attribute value.
     # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
-    def default(formatter = nil, &block)
+    def default(formatter = nil, *args, &block)
       formatter ||= block
-      formatter = dereference_formatter(formatter)
+      formatter = dereference_formatter(formatter, args)
       @default_formatter = formatter
       self
     end
@@ -139,7 +141,9 @@ module Lumberjack
     # nested hashes and arrays.
     #
     # @param classes_or_names [String, Module, Array<String, Module>] Class names or modules.
-    # @param formatter [Lumberjack::Formatter, #call, Symbol, nil] The formatter to use.
+    # @param formatter [Lumberjack::Formatter, #call, Symbol, Class, nil] The formatter to use.
+    #   If a Class is provided, it will be instantiated with the provided args.
+    # @params args [Array] The arguments to pass to the constructor if formatter is a Class.
     # @yield [value] Block-based formatter that receives the attribute value.
     # @yieldparam value [Object] The attribute value to format.
     # @yieldreturn [Object] The formatted attribute value.
@@ -151,9 +155,9 @@ module Lumberjack
     #
     # @example Security formatting
     #   formatter.add_class(SecretToken) { |token| "[TOKEN:#{token.id}]" }
-    def add_class(classes_or_names, formatter = nil, &block)
+    def add_class(classes_or_names, formatter = nil, *args, &block)
       formatter ||= block
-      formatter = dereference_formatter(formatter)
+      formatter = dereference_formatter(formatter, args)
 
       Array(classes_or_names).each do |class_or_name|
         class_name = class_or_name.to_s
@@ -190,15 +194,15 @@ module Lumberjack
     #
     # @example Multiple attributes
     #   formatter.add_attribute(["secret", "token", "api_key"]) { "[REDACTED]" }
-    def add_attribute(attribute_names, formatter = nil, &block)
+    def add_attribute(attribute_names, formatter = nil, *args, &block)
       formatter ||= block
-      formatter = dereference_formatter(formatter)
+      formatter = dereference_formatter(formatter, args)
 
       Array(attribute_names).collect(&:to_s).each do |attribute_name|
         if formatter.nil?
-          @attribute_formatters.delete(attribute_name)
+          @attribute_formatter.delete(attribute_name)
         else
-          @attribute_formatters[attribute_name] = formatter
+          @attribute_formatter[attribute_name] = formatter
         end
       end
 
@@ -216,9 +220,27 @@ module Lumberjack
         if key.is_a?(Module)
           @class_formatter.remove(key)
         else
-          @attribute_formatters.delete(key.to_s)
+          @attribute_formatter.delete(key.to_s)
         end
       end
+      self
+    end
+
+    # Extend this formatter by merging the formats defined in the provided formatter into this one.
+    #
+    # @param formatter [Lumberjack::AttributeFormatter] The formatter to merge.
+    # @return [self] Returns self for method chaining.
+    def merge(formatter)
+      unless formatter.is_a?(Lumberjack::AttributeFormatter)
+        raise ArgumentError.new("formatter must be a Lumberjack::AttributeFormatter")
+      end
+
+      @class_formatter.merge(formatter.instance_variable_get(:@class_formatter))
+      @attribute_formatter.merge!(formatter.instance_variable_get(:@attribute_formatter))
+
+      default_formatter = formatter.instance_variable_get(:@default_formatter)
+      @default_formatter = default_formatter if default_formatter
+
       self
     end
 
@@ -228,7 +250,7 @@ module Lumberjack
     # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
     def clear
       @default_formatter = nil
-      @attribute_formatters.clear
+      @attribute_formatter.clear
       @class_formatter.clear
       self
     end
@@ -237,7 +259,7 @@ module Lumberjack
     #
     # @return [Boolean] true if no formatters are configured, false otherwise.
     def empty?
-      @attribute_formatters.empty? && @class_formatter.empty? && @default_formatter.nil?
+      @attribute_formatter.empty? && @class_formatter.empty? && @default_formatter.nil?
     end
 
     # Format a hash of attributes using the configured formatters. This is the main
@@ -268,7 +290,7 @@ module Lumberjack
       if class_or_attribute.is_a?(Module)
         @class_formatter.formatter_for(class_or_attribute)
       else
-        @attribute_formatters[class_or_attribute.to_s]
+        @attribute_formatter[class_or_attribute.to_s]
       end
     end
 
@@ -280,7 +302,6 @@ module Lumberjack
     # @param skip_classes [Array<Class>, nil] Classes to skip during recursive formatting.
     # @param prefix [String, nil] Dot notation prefix for nested attribute names.
     # @return [Hash] The formatted attributes hash.
-    # @api private
     def formated_attributes(attributes, skip_classes: nil, prefix: nil)
       formatted = {}
 
@@ -299,12 +320,11 @@ module Lumberjack
     # @param skip_classes [Array<Class>, nil] Classes to skip during recursive formatting.
     # @param prefix [String, nil] Dot notation prefix for nested attribute names.
     # @return [Object] The formatted attribute value.
-    # @api private
     def formatted_attribute_value(name, value, skip_classes: nil, prefix: nil)
       prefixed_name = prefix ? "#{prefix}#{name}" : name
       using_class_formatter = false
 
-      formatter = @attribute_formatters[prefixed_name]
+      formatter = @attribute_formatter[prefixed_name]
       if formatter.nil? && (skip_classes.nil? || !skip_classes.include?(value.class))
         formatter = @class_formatter.formatter_for(value.class)
         using_class_formatter = true if formatter
@@ -343,13 +363,12 @@ module Lumberjack
 
     # Convert symbol formatter references to actual formatter instances.
     #
-    # @param formatter [Symbol, Object] The formatter to dereference.
-    # @return [Object] The actual formatter instance.
-    # @api private
-    def dereference_formatter(formatter)
+    # @param formatter [Symbol, Class, #call] The formatter to dereference.
+    # @param args [Array] The arguments to pass to the constructor if formatter is a Class.
+    # @return [#call] The actual formatter instance.
+    def dereference_formatter(formatter, args)
       if formatter.is_a?(Symbol)
-        formatter_class_name = "#{formatter.to_s.gsub(/(^|_)([a-z])/) { |m| $~[2].upcase }}Formatter"
-        Formatter.const_get(formatter_class_name).new
+        FormatterRegistry.formatter(formatter, *args)
       else
         formatter
       end

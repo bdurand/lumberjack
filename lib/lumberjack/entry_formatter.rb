@@ -87,10 +87,10 @@ module Lumberjack
     # @param attribute_formatter [Lumberjack::AttributeFormatter, nil] The attribute formatter to use.
     #   If nil, no attribute formatting will be performed unless configured later.
     def initialize(message_formatter: nil, attribute_formatter: nil)
-      if message_formatter.nil? || message_formatter == :default
+      if message_formatter == :default
+        message_formatter = Lumberjack::Formatter.default
+      elsif message_formatter.nil?
         message_formatter = Lumberjack::Formatter.new
-      elsif message_formatter == :none
-        message_formatter = Lumberjack::Formatter.empty
       end
 
       @message_formatter = message_formatter
@@ -151,6 +151,24 @@ module Lumberjack
     def attributes(&block)
       @attribute_formatter ||= Lumberjack::AttributeFormatter.new
       attribute_formatter.instance_exec(&block) if block
+      self
+    end
+
+    # Extend this formatter by merging the formats defined in the provided formatter into this one.
+    #
+    # @param formatter [Lumberjack::EntryFormatter] The formatter to merge.
+    # @return [self] Returns self for method chaining.
+    def merge(formatter)
+      unless formatter.is_a?(Lumberjack::EntryFormatter)
+        raise ArgumentError.new("formatter must be a Lumberjack::EntryFormatter")
+      end
+
+      @message_formatter ||= Lumberjack::Formatter.new
+      @message_formatter.merge(formatter.message_formatter)
+
+      @attribute_formatter ||= Lumberjack::AttributeFormatter.new
+      @attribute_formatter.merge(formatter.attribute_formatter)
+
       self
     end
 

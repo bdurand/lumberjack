@@ -5,6 +5,10 @@ require "spec_helper"
 RSpec.describe Lumberjack::Device::Test do
   let(:device) { Lumberjack::Device::Test.new }
 
+  it "is registered as :test" do
+    expect(Lumberjack::DeviceRegistry.device_class(:test)).to eq(Lumberjack::Device::Test)
+  end
+
   describe "#max_entries" do
     it "is 1000 by default" do
       expect(device.max_entries).to eq(1000)

@@ -38,6 +38,12 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.formatter).to be
     end
 
+    it "uses the default message formatter by default" do
+      logger = Lumberjack::Logger.new(:test)
+      obj = Object.new
+      expect(logger.message_formatter.format(obj)).to eq(obj.inspect)
+    end
+
     it "should have a message formatter" do
       out = StringIO.new
       logger = Lumberjack::Logger.new(out)

@@ -12,6 +12,8 @@ module Lumberjack
     # The formatter uses Ruby's built-in PP (Pretty Print) library to generate
     # well-formatted output with appropriate indentation and line breaks.
     class PrettyPrintFormatter
+      FormatterRegistry.add(:pretty_print, self)
+
       # @!attribute [rw] width
       #   @return [Integer] The maximum width of the message.
       attr_accessor :width

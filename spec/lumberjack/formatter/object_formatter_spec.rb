@@ -3,6 +3,10 @@
 require "spec_helper"
 
 RSpec.describe Lumberjack::Formatter::ObjectFormatter do
+  it "is registered as :object" do
+    expect(Lumberjack::FormatterRegistry.formatter(:object)).to be_a(Lumberjack::Formatter::ObjectFormatter)
+  end
+
   it "should return the object itself" do
     formatter = Lumberjack::Formatter::ObjectFormatter.new
     obj = Object.new

@@ -12,6 +12,8 @@ module Lumberjack
     # like configuration hashes, API responses, or any hierarchical data structures
     # that need consistent formatting throughout their entire structure.
     class StructuredFormatter
+      FormatterRegistry.add(:structured, self)
+
       # Exception raised when a circular reference is detected during traversal.
       # This prevents infinite recursion when formatting objects that reference themselves.
       class RecusiveReferenceError < StandardError

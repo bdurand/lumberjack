@@ -8,6 +8,8 @@ module Lumberjack
     # This is useful for unit conversions (e.g., converting seconds to milliseconds)
     # or scaling values for display purposes. Non-numeric values are passed through unchanged.
     class MultiplyFormatter
+      FormatterRegistry.add(:multiply, self)
+
       # @param multiplier [Numeric] The multiplier to apply to the value.
       # @param decimals [Integer, nil] The number of decimal places to round the result to.
       #   If nil, no rounding is applied.

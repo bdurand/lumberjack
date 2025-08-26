@@ -87,6 +87,13 @@ RSpec.describe Lumberjack::AttributeFormatter do
       })
     end
 
+    it "can pass arguments to class formatters" do
+      attribute_formatter = Lumberjack::AttributeFormatter.new
+      attribute_formatter.add_class(String, :truncate, 3)
+      attribute_formatter.add_attribute(:foo, :truncate, 4)
+      expect(attribute_formatter.format({"foo" => "foobar", "bar" => "bazqux"})).to eq({"foo" => "foo…", "bar" => "ba…"})
+    end
+
     it "applies name formatters inside hashes using dot syntax" do
       attribute_formatter = Lumberjack::AttributeFormatter.new
       attribute_formatter.add("foo.bar", &:reverse)
@@ -145,6 +152,26 @@ RSpec.describe Lumberjack::AttributeFormatter do
       expect(formatter.formatter_for(:upcase).call("Foo")).to eq("FOO")
       expect(formatter.formatter_for(:downcase).call("Foo")).to eq("foo")
       expect(formatter.formatter_for(:other)).to be_nil
+    end
+  end
+
+  describe "#merge" do
+    it "merges the formats from the formatter" do
+      formatter_1 = Lumberjack::AttributeFormatter.new
+      formatter_1.add_class(String) { |val| val.to_s.upcase }
+      formatter_1.add_class(Float, :round, 1)
+      formatter_1.add_attribute(:tags) { |val| val.join(", ") }
+
+      formatter_2 = Lumberjack::AttributeFormatter.new
+      formatter_2.add_class(String) { |val| val.to_s.downcase }
+      formatter_2.add_attribute(:foo) { |val| val.to_s.downcase }
+
+      expect(formatter_2.merge(formatter_1)).to eq formatter_2
+
+      expect(formatter_2.format("test" => "Test")).to eq("test" => "TEST")
+      expect(formatter_2.format("pi" => 3.14)).to eq("pi" => 3.1)
+      expect(formatter_2.format("tags" => ["foo", "bar"])).to eq("tags" => "foo, bar")
+      expect(formatter_2.format("foo" => "FOO")).to eq("foo" => "foo")
     end
   end
 end
