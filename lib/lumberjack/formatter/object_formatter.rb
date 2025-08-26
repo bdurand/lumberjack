@@ -10,6 +10,8 @@ module Lumberjack
     # the original data structure and let downstream components handle the actual
     # formatting, or when you need a placeholder formatter in the formatter chain.
     class ObjectFormatter
+      FormatterRegistry.add(:object, self)
+
       # Return the object unchanged.
       #
       # @param obj [Object] The object to format.

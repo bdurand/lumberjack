@@ -432,7 +432,7 @@ module Lumberjack
 
       unless entry_formatter
         message_formatter ||= formatter if formatter.is_a?(Lumberjack::Formatter)
-        entry_formatter = Lumberjack::EntryFormatter.new
+        entry_formatter = Lumberjack::EntryFormatter.new(message_formatter: :default)
       end
 
       entry_formatter.message_formatter = message_formatter if message_formatter

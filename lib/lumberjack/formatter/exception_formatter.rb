@@ -7,6 +7,8 @@ module Lumberjack
     # passed to this object and the returned array is what will be logged. You can
     # use this to clean out superfluous lines.
     class ExceptionFormatter
+      FormatterRegistry.add(:exception, self)
+
       # @!attribute [rw] backtrace_cleaner
       #   @return [#call, nil] An object that responds to `call` and takes
       #     an array of strings (the backtrace) and returns an array of strings.

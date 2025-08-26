@@ -4,8 +4,16 @@ require "spec_helper"
 
 RSpec.describe Lumberjack::EntryFormatter do
   describe "building formatters" do
-    it "starts with a default message formatter and no attribute formatter" do
+    it "starts with an empty message formatter and no attribute formatter" do
       entry_formatter = Lumberjack::EntryFormatter.new
+      expect(entry_formatter.message_formatter).to_not be_nil
+      expect(entry_formatter.attribute_formatter).to be_nil
+      obj = Object.new
+      expect(entry_formatter.message_formatter.format(obj)).to equal(obj)
+    end
+
+    it "uses the default formatter if message_formatter is :default" do
+      entry_formatter = Lumberjack::EntryFormatter.new(message_formatter: :default)
       expect(entry_formatter.message_formatter).to_not be_nil
       expect(entry_formatter.attribute_formatter).to be_nil
       obj = Object.new
@@ -52,6 +60,31 @@ RSpec.describe Lumberjack::EntryFormatter do
 
       expect(entry_formatter.message_formatter.format("foobar")).to eq("FOOBAR")
       expect(entry_formatter.attribute_formatter.format("status" => "new")).to eq({"status" => "[new]"})
+    end
+  end
+
+  describe "#merge" do
+    it "merges the formats from the formatter" do
+      formatter_1 = Lumberjack::EntryFormatter.build do
+        add(String) { |obj| obj.to_s.upcase }
+        attributes do
+          add("status") { |obj| "[#{obj}]" }
+        end
+      end
+
+      formatter_2 = Lumberjack::EntryFormatter.build do
+        add(String) { |obj| obj.to_s.downcase }
+        attributes do
+          add("foo") { |obj| "(#{obj})" }
+        end
+      end
+
+      expect(formatter_2.merge(formatter_1)).to eq formatter_2
+
+      message, attributes = formatter_2.format("foobar", {"status" => "new", "foo" => "bar"})
+
+      expect(message).to eq("FOOBAR")
+      expect(attributes).to eq({"status" => "[new]", "foo" => "(bar)"})
     end
   end
 

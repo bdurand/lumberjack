@@ -3,6 +3,10 @@
 require "spec_helper"
 
 RSpec.describe Lumberjack::Formatter::ExceptionFormatter do
+  it "is registered as :exception" do
+    expect(Lumberjack::FormatterRegistry.formatter(:exception)).to be_a(Lumberjack::Formatter::ExceptionFormatter)
+  end
+
   it "should convert an exception without a backtrace to a string" do
     e = ArgumentError.new("not expected")
     formatter = Lumberjack::Formatter::ExceptionFormatter.new

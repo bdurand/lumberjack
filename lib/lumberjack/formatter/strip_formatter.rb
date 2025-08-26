@@ -10,6 +10,8 @@ module Lumberjack
     # making it ideal for attribute values that should be clean and consistent
     # in log output.
     class StripFormatter
+      FormatterRegistry.add(:strip, self)
+
       # Convert an object to a string and remove leading and trailing whitespace.
       #
       # @param obj [Object] The object to format.

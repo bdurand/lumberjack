@@ -3,6 +3,10 @@
 require "spec_helper"
 
 RSpec.describe Lumberjack::Formatter::StructuredFormatter do
+  it "is registered as :structured" do
+    expect(Lumberjack::FormatterRegistry.formatter(:structured)).to be_a(Lumberjack::Formatter::StructuredFormatter)
+  end
+
   it "should recursively format arrays and hashes" do
     formatter = Lumberjack::Formatter.new.clear
     formatter.add(Enumerable, Lumberjack::Formatter::StructuredFormatter.new(formatter))

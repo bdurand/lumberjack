@@ -386,6 +386,24 @@ end
 logger = Lumberjack::Logger.new(STDOUT, formatter: entry_formatter)
 ```
 
+#### Merging Formatters
+
+You can merge other formatters into your formatter with the `merge` method. Doing so will copy all of the format definitions.
+
+```ruby
+# Translate the duration tag to microseconds.
+duration_formatter = Lumberjack::EntryFormatter.build do
+  attributes do
+    add_attribute(:duration) { |seconds| (seconds.to_f * 1_000_000).round }
+  end
+end
+
+formatter = Lumberjack::EntryFormatter.build do
+  # Adds the duration attribute formatter
+  merge(duration_formatter)
+end
+```
+
 ### Output Devices
 
 Output devices control where and how log entries are written. Lumberjack provides a variety of built-in devices that can write to files, streams, multiple destinations, or serve special purposes like testing. All devices implement a common interface, making them interchangeable.

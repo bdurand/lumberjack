@@ -9,6 +9,8 @@ module Lumberjack
     # This makes it safe to use as a general-purpose formatter for attributes that
     # might contain various data types.
     class RoundFormatter
+      FormatterRegistry.add(:round, self)
+
       # @param precision [Integer] The number of decimal places to round to (defaults to 3).
       def initialize(precision = 3)
         @precision = precision

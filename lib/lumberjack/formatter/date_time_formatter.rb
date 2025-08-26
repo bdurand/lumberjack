@@ -9,6 +9,8 @@ module Lumberjack
     # The formatter supports custom strftime patterns for complete control over output format,
     # while defaulting to ISO-8601 for standards compliance and readability.
     class DateTimeFormatter
+      FormatterRegistry.add(:date_time, self)
+
       # @!attribute [r] format
       #   @return [String, nil] The strftime format string, or nil for ISO-8601 default.
       attr_reader :format

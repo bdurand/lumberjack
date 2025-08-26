@@ -3,6 +3,10 @@
 require "spec_helper"
 
 RSpec.describe Lumberjack::Formatter::DateTimeFormatter do
+  it "is registered as :date_time" do
+    expect(Lumberjack::FormatterRegistry.formatter(:date_time, "YYYY-mm-dd")).to be_a(Lumberjack::Formatter::DateTimeFormatter)
+  end
+
   it "should format a time object" do
     time = Time.now
     formatter = Lumberjack::Formatter::DateTimeFormatter.new("%Y-%m-%d %H:%M")

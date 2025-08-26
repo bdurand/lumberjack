@@ -8,6 +8,8 @@ module Lumberjack
   # - Hashes will be formatted as "[key1=value1] [key2=value2]"
   # - Hashes in arrays will be formatted as "[key=value]"
   class Formatter::TagsFormatter
+    FormatterRegistry.add(:tags, self)
+
     def call(tags)
       tags = tags.collect { |key, value| "#{key}=#{value}" } if tags.is_a?(Hash)
       if tags.is_a?(Array)

@@ -6,6 +6,8 @@ module Lumberjack
     # implementation and is commonly used as a fallback for objects that don't
     # have specialized formatters.
     class StringFormatter
+      FormatterRegistry.add(:string, self)
+
       # Convert an object to its string representation.
       #
       # @param obj [Object] The object to format.

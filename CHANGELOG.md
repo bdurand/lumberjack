@@ -25,9 +25,11 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Added `Lumberjack::ForkedLogger` which is a wrapper around a logger with a separate context. A local logger has a parent logger which it will write it's log entries through. It will inherit the level, progname, and tags from a parent logger, but has its own local context isolated from the parent logger. You can change the level, progname, and add tags on the local logger without impacting the parent logger. Local loggers can be gotten from the current logger by calling `Lumberjack::Logger#fork`.
 - Added `Lumberjack::Utils.current_line` as a helper method for getting the current line of code.
 - Added `Lumberjack.build_formatter` as a helper method for building entry formatters.
+- Added merge method on formatters to allow merging in formats from other formatters.
 - Templates can now be use a left padded severity label with the option `pad_severity: true`. This will left pad the severity strings to five characters so that they can all be aligned in the log output.
 - Added `Lumberjack::Formatter::Tags` for formatting attributes as "tags" in the logs. Arrays of values will be formatted as "[val1] [val2]" and hashes will be formatted as "[key1=value1] [key2=value2]".
-- Added `Lumberjack::DeviceRegistry` as a means for other devices to be associated with a symbol that can then be passed to the constructor when creating a logger with that device rather than having to instantiate the device first.
+- Added `Lumberjack::FormatterRegistry` as a means of associating formatters with a symbol. Symbols can be used when adding class and attribute formatters. This extends the behavior previously limited to the built in formatters so that users can define their own formatters and register them for use.
+- Added `Lumberjack::DeviceRegistry` as a means for associating devices with a symbol. Symbols can then be passed to the constructor when creating a logger and the logger will take care of instantiating the device.
 - Added `Lumberjack::Logger#clear_attributes` to remove all attributes from the logger.
 
 ### Changed
@@ -40,6 +42,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - `LumberJack::Logger#context` now yields a `Lumberjack::Context` rather than a `Lumberjack::TagContext`. It must be called with a block and can no longer be used to return the current context. `Lumberjack#context` must also now be called with a block. **Breaking Change**
 - `Lumberjack::TagContext` has been renamed to `Lumberjack::AttributesHelper`.
 - `Lumberjack::TagFormatter` has been renamed to `Lumberjack::AttributeFormatter`.
+- `Lumberjack::Formatter` no longer includes any default formats. You can still get the default formatter with `Lumberjack::Formatter.default`. This formatter will still be used when instantiating a logger without specifying a formatter. You can use the new `merge` method to merge in the default formats from this formatter. The `empty` method has been deprecated since it is no longer needed. **Breaking Change**
 - `Lumberjack::Logger#add_entry` does not check the logger level and will add the entry regardless of the severity. This method is an internal API method and is now documented as such.
 - Logging to files will now use the standard library `Logger::LogDevice` class for file output and rolling.
 - The `Lumberjack::Device::Writer` class now takes an `autoflush` option. Setting it to false will disable synchronous I/O.
@@ -51,6 +54,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Removed deprecated support for setting global tags with `Lumberjack::Logger#tag`. Now calling `tag` outside of a block or context will be ignored. Use `tag!` to set default tags on a logger. **Breaking Change**
 - Removed the devices that handled logging to files (`Lumberjack::Device::LogFile`, `Lumberjack::Device::RollingLogFile`, `Lumberjack::Device::DateRollingLogFile`, and `Lumberjack::Device::SizeRollingLogFile`) since file logging is now handled by the standard library `Logger::LogDevice` class. **Breaking Change**
 - Removed internal buffer from the `Lumberjack::Device::Writer` class. This functionality was more useful in the days of slower I/O operations when logs were written to spinning hard disks. The functionality is no longer as useful and is not worth the overhead. The `Lumberjack::Logger.last_flushed_at` method has also been removed.
+- Formatters can no longer be passed as a class name in `Lumberjack::Formatter.add`. **Breaking Change**
 - Removed support for Ruby versions < 2.7.
 
 ### Deprecated
@@ -59,21 +63,24 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
   - `Lumberjack.context_tags`
   - `Lumberjack::Logger#tags`
   - `Lumberjack::Logger#tag_value`
+  - `Lumberjack::Logger#tagged`
+  - `Lumberjack::Logger#silence`
+  - `Lumberjack::Logger#log_at`
   - `Lumberjack::Logger#untagged`
   - `Lumberjack::Logger#tag_formatter`
   - `Lumberjack::Logger#in_tag_context?`
   - `Lumberjack::Logger#tag_globally`
   - `Lumberjack::Logger#remove_tag`
+  - `Lumberjack::Logger#set_progname`
   - `Lumberjack::LogEntry#tag`
   - `Lumberjack::LogEntry#tags`
   - `Lumberjack::LogEntry#nested_tags`
-  - `Lumberjack::Logger#set_progname`
   - `Lumberjack::Logger::Utils.flatten_tags`
   - `Lumberjack::Logger::Utils.expand_tags`
   - `Lumberjack::Logger::TagContext`
   - `Lumberjack::Logger::TagFormatter`
   - `Lumberjack::Logger::Tags`
-- Deprecated Rails compatibility methods on `Lumberjack::Logger` (`tagged`, `silence`, `log_at`). Rails support is now moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem.
+- The Rails compatibility methods on `Lumberjack::Logger` (`tagged`, `silence`, `log_at`) have been moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem. Installing that gem will restore these methods in a non-deprecated form.
 
 ## 1.4.0
 

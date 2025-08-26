@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "formatter_registry"
+
 module Lumberjack
   # Formatter controls the conversion of log entry messages into a loggable format, allowing you
   # to log any object type and have the logging system handle the string conversion automatically.
@@ -59,15 +61,6 @@ module Lumberjack
     require_relative "formatter/tagged_message"
 
     class << self
-      # Create a new empty formatter with no default mappings. Unlike the standard constructor,
-      # this returns a formatter without any predefined formatters, giving you complete control
-      # over all formatting behavior.
-      #
-      # @return [Lumberjack::Formatter] A new formatter with no default mappings.
-      def empty
-        new.clear
-      end
-
       # Build a new formatter using a configuration block. The block is evaluated in the context
       # of the new formatter, allowing you to use `add`, `remove`, and other methods directly.
       #
@@ -85,6 +78,31 @@ module Lumberjack
         formatter.instance_eval(&block)
         formatter
       end
+
+      # Create a new empty formatter with no mappings. This is an alias for #new.
+      #
+      # @return [Lumberjack::Formatter] A new formatter with no default mappings.
+      # @deprecated Use #new instead.
+      def empty
+        Utils.deprecated(:empty, "Use new instead.") do
+          new
+        end
+      end
+
+      # Create a new formatter with default mappings.
+      #
+      #   Object: inspect formatter
+      #   Exception: exception formatter
+      #   Enumerable: structured formatter
+      #
+      # @return [Lumberjack::Formatter] A new formatter with default mappings.
+      def default
+        build do
+          add(Object, :inspect)
+          add(Exception, :exception)
+          add(Enumerable, :structured)
+        end
+      end
     end
 
     # Create a new formatter with default mappings for common Ruby types.
@@ -99,11 +117,6 @@ module Lumberjack
       @has_string_formatter = false
       @has_numeric_formatter = false
       @has_boolean_formatter = false
-
-      structured_formatter = StructuredFormatter.new(self)
-      add(Object, InspectFormatter.new)
-      add(Exception, :exception)
-      add(Enumerable, structured_formatter)
     end
 
     # Add a formatter for a specific class or classes. The formatter determines how objects
@@ -117,23 +130,25 @@ module Lumberjack
     # - **Object**: Must respond to `#call(object)` method
     # - **Block**: Inline formatting logic
     #
-    # ## Predefined Formatters
+    # ## Formatter Registry
     #
-    # Available predefined formatters (accessed by symbol):
-    # - `:date_time` - Formats time objects with a customizable format
+    # Formatters can be referenced by name from the formatter registry. These formatters
+    # are available out of the box. Some of them require an argument to be provided as well.
+    #
+    # - `:date_time` - Formats time objects with a customizable format (takes the format string as an argument)
     # - `:exception` - Formats exceptions with stack trace details
     # - `:id` - Extracts object ID or specified ID field
     # - `:inspect` - Uses Ruby's inspect method for debugging output
-    # - `:multiply` - Multiplies numeric values by a factor
+    # - `:multiply` - Multiplies numeric values by a factor (requires the factor as an argument)
     # - `:object` - Generic object formatter with custom methods
     # - `:pretty_print` - Pretty-prints objects using PP library
     # - `:redact` - Redacts sensitive information from objects
-    # - `:round` - Rounds numeric values to specified precision
+    # - `:round` - Rounds numeric values to specified precision (takes the precision as an argument; defaults to 3 decimal places)
     # - `:string` - Converts objects to strings using to_s
     # - `:strip` - Strips whitespace from string representations
     # - `:structured` - Recursively formats structured data (Arrays, Hashes)
     # - `:tags` - Formats an array or hash of values in the format "[a] [b] [c=d]"
-    # - `:truncate` - Truncates long strings to specified length
+    # - `:truncate` - Truncates long strings to specified length (takes the length as an argument)
     #
     # ## Class Specification
     #
@@ -143,7 +158,7 @@ module Lumberjack
     # - **Strings**: Class names to avoid loading dependencies
     #
     # @param klass [Class, Module, String, Array<Class, Module, String>] The class(es) to format.
-    # @param formatter [Symbol, Class, String, #call, nil] The formatter to use.
+    # @param formatter [Symbol, Class, #call, nil] The formatter to use.
     # @param args [Array] Arguments passed to formatter constructor (when formatter is a Class).
     # @yield [obj] Block-based formatter that receives the object to format.
     # @yieldparam obj [Object] The object to format.
@@ -166,26 +181,19 @@ module Lumberjack
     #            .add(BigDecimal, :round, 2)
     def add(klass, formatter = nil, *args, &block)
       formatter ||= block
-      if formatter.nil?
-        remove(klass)
-      else
-        formatter_class_name = nil
-        if formatter.is_a?(Symbol)
-          formatter_class_name = "#{formatter.to_s.gsub(/(^|_)([a-z])/) { |m| $~[2].upcase }}Formatter"
-        elsif formatter.is_a?(String)
-          formatter_class_name = formatter
-        end
-        if formatter_class_name
-          formatter = Formatter.const_get(formatter_class_name)
-        end
 
-        if formatter.is_a?(Class)
-          formatter = formatter.new(*args)
-        end
+      return remove(klass) if formatter.nil?
 
-        Array(klass).each do |k|
-          @class_formatters[k.to_s] = formatter
-        end
+      if formatter.is_a?(Symbol)
+        formatter = FormatterRegistry.formatter(formatter, *args)
+      elsif formatter.is_a?(Class)
+        formatter = formatter.new(*args)
+      end
+
+      raise ArgumentError.new("formatter must respond to call") unless formatter.respond_to?(:call)
+
+      Array(klass).each do |k|
+        @class_formatters[k.to_s] = formatter
       end
 
       set_optimized_flags!
@@ -204,6 +212,20 @@ module Lumberjack
       end
 
       set_optimized_flags!
+
+      self
+    end
+
+    # Extend this formatter by merging the formats defined in the provided formatter into this one.
+    #
+    # @param formatter [Lumberjack::Formatter] The formatter to merge.
+    # @return [self] Returns self for method chaining.
+    def merge(formatter)
+      unless formatter.is_a?(Lumberjack::Formatter)
+        raise ArgumentError.new("formatter must be a Lumberjack::Formatter")
+      end
+
+      @class_formatters.merge!(formatter.instance_variable_get(:@class_formatters))
 
       self
     end
@@ -252,13 +274,12 @@ module Lumberjack
         return value unless @has_boolean_formatter
       end
 
-      formatter = formatter_for(value.class)
-      original_value = value
-      value = formatter.call(value) if formatter&.respond_to?(:call)
-      if value.equal?(original_value) && value.respond_to?(:to_log_format)
-        value = value.to_log_format
+      if value.respond_to?(:to_log_format) && !@class_formatters.include?(value.class.name)
+        return value.to_log_format
       end
 
+      formatter = formatter_for(value.class)
+      value = formatter.call(value) if formatter&.respond_to?(:call)
       value
     end
 

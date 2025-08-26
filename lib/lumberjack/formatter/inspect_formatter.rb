@@ -11,6 +11,8 @@ module Lumberjack
     # or custom objects. It relies on Ruby's built-in `inspect` method,
     # which provides detailed object representations.
     class InspectFormatter
+      FormatterRegistry.add(:inspect, self)
+
       # Convert an object to its inspect representation.
       #
       # @param obj [Object] The object to format.

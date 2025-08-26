@@ -3,6 +3,10 @@
 require "spec_helper"
 
 RSpec.describe Lumberjack::Formatter::TagsFormatter do
+  it "is registered as :tags" do
+    expect(Lumberjack::FormatterRegistry.formatter(:tags)).to be_a(Lumberjack::Formatter::TagsFormatter)
+  end
+
   describe "#call" do
     it "formats a hash of tags" do
       formatter = Lumberjack::Formatter::TagsFormatter.new
