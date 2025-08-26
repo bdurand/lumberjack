@@ -111,7 +111,7 @@ RSpec.describe Lumberjack::EntryFormatter do
     end
 
     it "splits the message and attributes if the message formatter is a attributeged message" do
-      entry_formatter.add(String) { |obj| Lumberjack::Formatter::TaggedMessage.new("attributeged: #{obj}", {"attribute" => obj}) }
+      entry_formatter.add(String) { |obj| Lumberjack::MessageAttributes.new("attributeged: #{obj}", {"attribute" => obj}) }
       message, attributes = entry_formatter.format("foobar", {"foo" => "bar"})
       expect(message).to eq("attributeged: foobar")
       expect(attributes).to eq({"attribute" => "foobar", "foo" => "bar"})

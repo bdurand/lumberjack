@@ -49,6 +49,8 @@ module Lumberjack
   require_relative "lumberjack/formatter"
   require_relative "lumberjack/forked_logger"
   require_relative "lumberjack/logger"
+  require_relative "lumberjack/message_attributes"
+  require_relative "lumberjack/remap_attribute"
   require_relative "lumberjack/rack"
   require_relative "lumberjack/severity"
   require_relative "lumberjack/template"

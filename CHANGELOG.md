@@ -31,6 +31,8 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Added `Lumberjack::FormatterRegistry` as a means of associating formatters with a symbol. Symbols can be used when adding class and attribute formatters. This extends the behavior previously limited to the built in formatters so that users can define their own formatters and register them for use.
 - Added `Lumberjack::DeviceRegistry` as a means for associating devices with a symbol. Symbols can then be passed to the constructor when creating a logger and the logger will take care of instantiating the device.
 - Added `Lumberjack::Logger#clear_attributes` to remove all attributes from the logger.
+- Added `Lumberjack::MessageAttributes` to replace `Lumberjack::Formatter::TaggedMessage`.
+- Added `Lumberjack::RemapAttribute` to facilitate attribute remapping in attribute formatters.
 
 ### Changed
 
@@ -80,6 +82,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
   - `Lumberjack::Logger::TagContext`
   - `Lumberjack::Logger::TagFormatter`
   - `Lumberjack::Logger::Tags`
+  - `Lumberjack::Formatter::TaggedMessage`
 - The Rails compatibility methods on `Lumberjack::Logger` (`tagged`, `silence`, `log_at`) have been moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem. Installing that gem will restore these methods in a non-deprecated form.
 
 ## 1.4.0
