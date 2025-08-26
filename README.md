@@ -16,6 +16,29 @@ Lumberjack is an extension to the Ruby standard library `Logger` class, designed
 Lumberjack is ideal for applications that require structured, context-aware logging, and integrates seamlessly with Ruby’s standard logging ecosystem.
 
 ## Usage
+## Table of Contents
+
+1. [Usage](#usage)
+  - [Structured Logging With Attributes](#structured-logging-with-attributes)
+    - [Basic Attribute Logging](#basic-attribute-logging)
+    - [Adding attributes to the logger](#adding-attributes-to-the-logger)
+    - [Global Logger Attributes](#global-logger-attributes)
+    - [Nested Attributes and Complex Data](#nested-attributes-and-complex-data)
+    - [Attribute Inheritance and Merging](#attribute-inheritance-and-merging)
+    - [Using the tagged method](#using-the-tagged-method)
+  - [Context Isolation](#context-isolation)
+    - [Context Blocks](#context-blocks)
+    - [Nested Context Blocks](#nested-context-blocks)
+    - [Forking Loggers](#forking-loggers)
+  - [Formatters](#formatters)
+    - [Object Formatters](#object-formatters)
+    - [Attribute Formatters](#attribute-formatters)
+    - [Entry Formatter](#entry-formatter)
+  - [Devices and Templates](#devices-and-templates)
+  - [Testing Tools](#testing-tools)
+2. [Installation](#installation)
+3. [Contributing](#contributing)
+4. [License](#license)
 
 ### Structured Logging With Attributes
 
@@ -358,7 +381,18 @@ You can remap attributes to other attribute names by returning a `Lumberjack::Re
 
 ```ruby
 # Move the email attribute under the user attributes.
-logger.attribute_formatter.add("email") { |value| Lumberjack::RemapAttribute.new("user.email" => value) }
+logger.attribute_formatter.add("email") do |value|
+  Lumberjack::RemapAttribute.new("user.email" => value)
+end
+
+# Transform duration_millis and duration_micros to seconds and move to
+# the duration attribute.
+logger.attribute_formatter.add("duration_ms") do |value|
+  Lumberjack::RemapAttribute.new("duration" => value.to_f / 1000)
+end
+logger.attribute_formatter.add("duration_micros") do |value|
+  Lumberjack::RemapAttribute.new("duration" => value.to_f / 1_000_000)
+end
 ```
 
 Finally, you can add a default formatter for all other attributes:
