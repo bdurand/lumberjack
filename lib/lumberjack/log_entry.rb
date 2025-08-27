@@ -144,6 +144,22 @@ module Lumberjack
       (message.nil? || message == "") && (attributes.nil? || attributes.empty?)
     end
 
+    # Convert the log entry into a hash suitable for JSON serialization. Attributes will be expanded
+    # into a nested structure (i.e. {"user.id" => 123} becomes {"user" => {"id" => 123}}). Severities will
+    # be converted to their string labels.
+    #
+    # @return [Hash] The JSON representation of the log entry
+    def as_json
+      {
+        "time" => time,
+        "severity" => severity_label,
+        "message" => message,
+        "progname" => progname,
+        "pid" => pid,
+        "attributes" => Utils.expand_attributes(attributes)
+      }
+    end
+
     private
 
     # Generate a string representation of all attributes for inclusion in the

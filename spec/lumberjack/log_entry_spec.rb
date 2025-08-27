@@ -3,7 +3,7 @@
 require "spec_helper"
 
 RSpec.describe Lumberjack::LogEntry do
-  describe "attributes" do
+  describe "entry values" do
     it "should have a time" do
       t = Time.now
       entry = Lumberjack::LogEntry.new(t, Logger::INFO, "test", "app", 1500, "foo" => "ABCD")
@@ -160,6 +160,20 @@ RSpec.describe Lumberjack::LogEntry do
     it "is not equal to an entry with different attributes" do
       other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname, entry.pid, {"foo" => "baz"})
       expect(entry).not_to eq(other_entry)
+    end
+  end
+
+  describe "#as_json" do
+    it "returns a hash representation of the log entry" do
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo.bar" => "baz")
+      expect(entry.as_json).to eq({
+        "time" => entry.time,
+        "severity" => "INFO",
+        "message" => entry.message,
+        "progname" => entry.progname,
+        "pid" => entry.pid,
+        "attributes" => {"foo" => {"bar" => "baz"}}
+      })
     end
   end
 end
