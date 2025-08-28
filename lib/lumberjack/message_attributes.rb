@@ -20,8 +20,8 @@ module Lumberjack
   class MessageAttributes
     attr_reader :message, :attributes
 
-    # @param formatter [Formatter] The formatter to apply the transformation to.
-    # @param transform [Proc] The transformation function to apply to the formatted string.
+    # @param message [Object] The message to be logged.
+    # @param attributes [Hash] The attributes to be associated with the message.
     def initialize(message, attributes)
       @message = message
       @attributes = attributes || {}

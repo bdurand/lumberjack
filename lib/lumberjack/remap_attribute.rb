@@ -6,7 +6,7 @@ module Lumberjack
   class RemapAttribute
     attr_reader :attributes
 
-    # @param remapped_attribute [Hash] The remapped attribute with the new names.
+    # @param remapped_attributes [Hash] The remapped attribute with the new names.
     def initialize(remapped_attributes)
       @attributes = Lumberjack::Utils.flatten_attributes(remapped_attributes)
     end

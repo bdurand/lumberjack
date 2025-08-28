@@ -162,7 +162,6 @@ module Lumberjack
     # change the output destination, which is useful for log rotation or
     # stream redirection scenarios.
     #
-    # @param stream [IO] The new stream to use for output
     # @return [void]
     attr_writer :stream
 

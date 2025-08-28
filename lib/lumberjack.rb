@@ -129,7 +129,7 @@ module Lumberjack
     # This method will eventually be removed.
     #
     # @return [Hash, nil]
-    # @deprecated Use {#context_attributes}
+    # @deprecated Use {.context_attributes}
     def context_tags
       Utils.deprecated(:context_tags, "Use context_attributes instead.") do
         context_attributes

@@ -12,4 +12,5 @@ gemfiles/*.gemfile.lock
 log/*.log
 pkg/
 rdoc/
+doc/
 tmp/

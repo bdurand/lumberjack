@@ -114,8 +114,8 @@ module Lumberjack
     # ::Logger compatible method to add a log entry.
     #
     # @param severity [Integer, Symbol, String] The severity of the message.
-    # @param message [Object] The message to log.
-    # @param progname [String] The name of the program that is logging the message.
+    # @param message_or_progname_or_attributes [Object] The message to log, progname, or attributes.
+    # @param progname_or_attributes [String, Hash] The name of the program or attributes.
     # @return [void]
     def add(severity, message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
       # This convoluted logic is to have API compatibility with ::Logger#add.

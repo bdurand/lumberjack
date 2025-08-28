@@ -104,7 +104,7 @@ module Lumberjack
     # @param formatter [Lumberjack::Formatter, #call, Class, nil] The formatter to use.
     #   If nil, the block will be used as the formatter. If a class is passed, it will be
     #   instantiated with the args passed in.
-    # @params args [Array] The arguments to pass to the constructor if formatter is a Class.
+    # @param args [Array] The arguments to pass to the constructor if formatter is a Class.
     # @yield [value] Block-based formatter that receives the attribute value.
     # @yieldparam value [Object] The attribute value to format.
     # @yieldreturn [Object] The formatted attribute value.
@@ -163,7 +163,7 @@ module Lumberjack
     # @param classes_or_names [String, Module, Array<String, Module>] Class names or modules.
     # @param formatter [Lumberjack::Formatter, #call, Symbol, Class, nil] The formatter to use.
     #   If a Class is provided, it will be instantiated with the provided args.
-    # @params args [Array] The arguments to pass to the constructor if formatter is a Class.
+    # @param args [Array] The arguments to pass to the constructor if formatter is a Class.
     # @yield [value] Block-based formatter that receives the attribute value.
     # @yieldparam value [Object] The attribute value to format.
     # @yieldreturn [Object] The formatted attribute value.
