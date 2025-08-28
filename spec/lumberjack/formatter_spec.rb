@@ -161,7 +161,7 @@ RSpec.describe Lumberjack::Formatter do
       formatter_2.add(String) { |s| s.to_s.downcase }
       formatter_2.add(Integer, :multiply, 2)
 
-      expect(formatter_2.merge(formatter_1)).to eq formatter_2
+      expect(formatter_2.include(formatter_1)).to eq formatter_2
 
       expect(formatter_2.format("test")).to eq("TEST")
       expect(formatter_2.format(3.14)).to eq(3.1)

@@ -44,7 +44,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - `LumberJack::Logger#context` now yields a `Lumberjack::Context` rather than a `Lumberjack::TagContext`. It must be called with a block and can no longer be used to return the current context. `Lumberjack#context` must also now be called with a block. **Breaking Change**
 - `Lumberjack::TagContext` has been renamed to `Lumberjack::AttributesHelper`.
 - `Lumberjack::TagFormatter` has been renamed to `Lumberjack::AttributeFormatter`.
-- `Lumberjack::Formatter` no longer includes any default formats. You can still get the default formatter with `Lumberjack::Formatter.default`. This formatter will still be used when instantiating a logger without specifying a formatter. You can use the new `merge` method to merge in the default formats from this formatter. The `empty` method has been deprecated since it is no longer needed. **Breaking Change**
+- `Lumberjack::Formatter` no longer includes any default formats. You can still get the default formatter with `Lumberjack::Formatter.default`. This formatter will still be used when instantiating a logger without specifying a formatter. You can use the `include` method to merge in the default formats from this formatter. The `empty` method has been deprecated since it is no longer needed. **Breaking Change**
 - `Lumberjack::Logger#add_entry` does not check the logger level and will add the entry regardless of the severity. This method is an internal API method and is now documented as such.
 - Logging to files will now use the standard library `Logger::LogDevice` class for file output and rolling.
 - The `Lumberjack::Device::Writer` class now takes an `autoflush` option. Setting it to false will disable synchronous I/O.

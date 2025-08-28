@@ -41,11 +41,8 @@ module Lumberjack
           @deprecations_lock.synchronize do
             @deprecations ||= {}
             unless @deprecations.include?(method)
-              trace = caller[3..]
-              unless $VERBOSE
-                trace = [trace.first]
-                @deprecations[method] = true
-              end
+              trace = $VERBOSE ? caller[3..] : caller[3, 1]
+              @deprecations[method] = true
               message = "DEPRECATION WARNING: #{message} Called from #{trace.join("\n")}"
               warn(message)
             end

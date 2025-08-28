@@ -429,7 +429,7 @@ logger = Lumberjack::Logger.new(STDOUT, formatter: entry_formatter)
 
 #### Merging Formatters
 
-You can merge other formatters into your formatter with the `merge` method. Doing so will copy all of the format definitions.
+You can merge other formatters into your formatter with the `include` method. Doing so will copy all of the format definitions.
 
 ```ruby
 # Translate the duration tag to microseconds.
@@ -441,7 +441,7 @@ end
 
 formatter = Lumberjack::EntryFormatter.build do
   # Adds the duration attribute formatter
-  merge(duration_formatter)
+  include(duration_formatter)
 end
 ```
 

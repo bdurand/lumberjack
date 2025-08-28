@@ -250,12 +250,12 @@ module Lumberjack
     #
     # @param formatter [Lumberjack::AttributeFormatter] The formatter to merge.
     # @return [self] Returns self for method chaining.
-    def merge(formatter)
+    def include(formatter)
       unless formatter.is_a?(Lumberjack::AttributeFormatter)
         raise ArgumentError.new("formatter must be a Lumberjack::AttributeFormatter")
       end
 
-      @class_formatter.merge(formatter.instance_variable_get(:@class_formatter))
+      @class_formatter.include(formatter.instance_variable_get(:@class_formatter))
       @attribute_formatter.merge!(formatter.instance_variable_get(:@attribute_formatter))
 
       default_formatter = formatter.instance_variable_get(:@default_formatter)
