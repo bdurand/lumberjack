@@ -119,25 +119,46 @@ RSpec.describe Lumberjack::Utils do
     around do |example|
       original_verbose = $VERBOSE
       original_deprecated = Warning[:deprecated]
+      original_stderr = $stderr
       begin
+        $stderr = StringIO.new
         $VERBOSE = false
         Warning[:deprecated] = true
+        Lumberjack::Utils.instance_variable_set(:@deprecations, nil)
         example.run
       ensure
+        $stderr = original_stderr
         $VERBOSE = original_verbose
         Warning[:deprecated] = original_deprecated
       end
     end
 
     it "prints a deprecation warning the first time a deprecated method is called" do
-      retval = nil
-      expect { retval = Lumberjack::Utils.deprecated("test_method_1", "This is deprecated") { :foo } }.to output.to_stderr
+      retval = Lumberjack::Utils.deprecated("test_method_1", "This is deprecated") { :foo }
+      expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
       expect(retval).to eq :foo
     end
 
     it "does not print the warning again for subsequent calls" do
-      expect { Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :foo } }.to output(/DEPRECATION WARNING: This is deprecated/).to_stderr
-      expect { Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :bar } }.not_to output.to_stderr
+      Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :foo }
+      expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
+      $stderr.string = ""
+
+      retval = Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :bar }
+      expect($stderr.string).to be_empty
+      expect(retval).to eq :bar
+    end
+
+    it "prints the current line if $VERBOSE is false" do
+      $VERBOSE = false
+      Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
+      expect($stderr.string.chomp.split("\n").length).to eq 1
+    end
+
+    it "prints the full stack trace if $VERBOSE is true" do
+      $VERBOSE = true
+      Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
+      expect($stderr.string.chomp.split("\n").length).to be > 1
     end
   end
 

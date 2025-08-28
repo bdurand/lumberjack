@@ -158,16 +158,16 @@ module Lumberjack
     #
     # @param formatter [Lumberjack::EntryFormatter] The formatter to merge.
     # @return [self] Returns self for method chaining.
-    def merge(formatter)
+    def include(formatter)
       unless formatter.is_a?(Lumberjack::EntryFormatter)
         raise ArgumentError.new("formatter must be a Lumberjack::EntryFormatter")
       end
 
       @message_formatter ||= Lumberjack::Formatter.new
-      @message_formatter.merge(formatter.message_formatter)
+      @message_formatter.include(formatter.message_formatter)
 
       @attribute_formatter ||= Lumberjack::AttributeFormatter.new
-      @attribute_formatter.merge(formatter.attribute_formatter)
+      @attribute_formatter.include(formatter.attribute_formatter)
 
       self
     end

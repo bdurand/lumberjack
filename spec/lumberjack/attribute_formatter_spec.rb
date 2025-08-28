@@ -179,7 +179,7 @@ RSpec.describe Lumberjack::AttributeFormatter do
       formatter_2.add_class(String) { |val| val.to_s.downcase }
       formatter_2.add_attribute(:foo) { |val| val.to_s.downcase }
 
-      expect(formatter_2.merge(formatter_1)).to eq formatter_2
+      expect(formatter_2.include(formatter_1)).to eq formatter_2
 
       expect(formatter_2.format("test" => "Test")).to eq("test" => "TEST")
       expect(formatter_2.format("pi" => 3.14)).to eq("pi" => 3.1)
