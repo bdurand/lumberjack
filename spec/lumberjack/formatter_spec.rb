@@ -134,6 +134,17 @@ RSpec.describe Lumberjack::Formatter do
       expect(formatter.format(obj)).to eq("LOG FORMAT: test")
     end
 
+    it "returns an error string if there was an error formatting the value" do
+      save_stderr = $stderr
+      begin
+        $stderr = StringIO.new
+        formatter.add(String, lambda { |obj| raise "error" })
+        expect(formatter.format("abc")).to eq("<Error formatting String: RuntimeError error>")
+      ensure
+        $stderr = save_stderr
+      end
+    end
+
     describe "clear" do
       it "should clear all mappings" do
         expect(formatter.format(:test)).to eq(":test")

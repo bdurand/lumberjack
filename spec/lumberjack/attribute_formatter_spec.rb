@@ -150,6 +150,18 @@ RSpec.describe Lumberjack::AttributeFormatter do
       attributes = {"user.id" => 42, "email" => "user@example.com"}
       expect(attribute_formatter.format(attributes)).to eq({"user.id" => 42, "user.email" => "user@example.com"})
     end
+
+    it "returns an error string if there was an error formatting the value" do
+      save_stderr = $stderr
+      begin
+        $stderr = StringIO.new
+        attribute_formatter = Lumberjack::AttributeFormatter.new
+        attribute_formatter.add(String, lambda { |obj| raise "error" })
+        expect(attribute_formatter.format(attributes)["foo"]).to eq("<Error formatting String: RuntimeError error>")
+      ensure
+        $stderr = save_stderr
+      end
+    end
   end
 
   describe "#formatter_for" do

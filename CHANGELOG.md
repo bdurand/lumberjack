@@ -85,6 +85,12 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
   - `Lumberjack::Formatter::TaggedMessage`
 - The Rails compatibility methods on `Lumberjack::Logger` (`tagged`, `silence`, `log_at`) have been moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem. Installing that gem will restore these methods in a non-deprecated form.
 
+## 1.4.1
+
+### Changed
+
+- Catch errors when formatting values so that it doesn't prevent logging. Otherwise there can be no way to log that the error occurred. Values that produced errors in the formatter will now be shown in the logs as "<Error formatting CLASS_NAME: ERROR_CLASS ERROR_MESSAGE>".
+
 ## 1.4.0
 
 ### Changed

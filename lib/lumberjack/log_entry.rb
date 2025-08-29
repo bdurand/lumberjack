@@ -178,7 +178,8 @@ module Lumberjack
     #
     # @param attributes [Hash] The attributes hash to compact
     # @return [Hash] A new hash with empty values removed
-    def compact_attributes(attributes)
+    def compact_attributes(attributes, seen = nil)
+      return {} if seen&.include?(attributes.object_id)
       delete_keys = nil
       compacted_keys = nil
 
@@ -187,7 +188,9 @@ module Lumberjack
           delete_keys ||= []
           delete_keys << key
         elsif value.is_a?(Hash)
-          compacted_value = compact_attributes(value)
+          seen ||= Set.new
+          seen << attributes.object_id
+          compacted_value = compact_attributes(value, seen)
           if compacted_value.empty?
             delete_keys ||= []
             delete_keys << key

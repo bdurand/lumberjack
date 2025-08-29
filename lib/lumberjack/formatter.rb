@@ -270,11 +270,6 @@ module Lumberjack
     # Format an object by applying the appropriate formatter based on its class hierarchy.
     # The formatter searches up the class hierarchy to find the most specific formatter available.
     #
-    # ## Performance Optimization
-    #
-    # Common primitive types (String, Integer, Float, Boolean) are optimized to bypass
-    # formatter lookup when no custom formatters are defined for these types.
-    #
     # @param value [Object] The object to format.
     # @return [Object] The formatted representation (usually a String).
     def format(value)
@@ -300,6 +295,11 @@ module Lumberjack
       formatter = formatter_for(value.class)
       value = formatter.call(value) if formatter&.respond_to?(:call)
       value
+    rescue SystemStackError, StandardError => e
+      error_message = e.class.name
+      error_message = "#{error_message} #{e.message}" if e.message && e.message != ""
+      warn("<Error formatting #{value.class.name}: #{error_message}>")
+      "<Error formatting #{value.class.name}: #{error_message}>"
     end
 
     # Compatibility method for Ruby's standard Logger::Formatter interface. This allows
