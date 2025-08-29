@@ -73,6 +73,11 @@ RSpec.describe Lumberjack::Formatter do
     expect(formatter.format(:test)).to eq(:test)
   end
 
+  it "returns an error string if there was an error formatting the value" do
+    formatter.add(String, lambda { |obj| raise "error" })
+    expect(formatter.format("abc")).to eq("<Error formatting String: RuntimeError error>")
+  end
+
   describe "clear" do
     it "should clear all mappings" do
       expect(formatter.format(:test)).to eq(":test")

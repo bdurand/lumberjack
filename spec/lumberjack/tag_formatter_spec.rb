@@ -52,6 +52,12 @@ RSpec.describe Lumberjack::TagFormatter do
     expect(tag_formatter.format(tags)).to eq({"foo" => "rab", "baz" => "boo", "count" => false})
   end
 
+  it "returns an error string if there was an error formatting the value" do
+    tag_formatter = Lumberjack::TagFormatter.new
+    tag_formatter.add(String, lambda { |obj| raise "error" })
+    expect(tag_formatter.format(tags)["foo"]).to eq("<Error formatting String: RuntimeError error>")
+  end
+
   it "applies class formatters inside arrays and hashes" do
     tag_formatter = Lumberjack::TagFormatter.new
     tag_formatter.add(Integer, &:even?)

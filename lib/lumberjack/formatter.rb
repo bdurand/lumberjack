@@ -170,7 +170,11 @@ module Lumberjack
     def format(message)
       formatter = formatter_for(message.class)
       if formatter&.respond_to?(:call)
-        formatter.call(message)
+        begin
+          formatter.call(message)
+        rescue SystemStackError, StandardError => e
+          "<Error formatting #{message.class.name}: #{e.class.name} #{e.message}>"
+        end
       else
         message
       end
