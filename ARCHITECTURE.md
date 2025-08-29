@@ -119,7 +119,7 @@ classDiagram
         +reopen(logdev) void
     }
 
-    class WriterDevice {
+    class Device::Writer {
         +IO stream
         +Template template
         +initialize(stream, options)
@@ -128,13 +128,13 @@ classDiagram
         +close() void
     }
 
-    class LoggerFileDevice {
+    class Device::LoggerFile {
         +String path
         +initialize(path, options)
         +path() String
     }
 
-    class MultiDevice {
+    class Device::Multi {
         +Array devices
         +initialize(*devices)
         +write(entry) void
@@ -142,7 +142,7 @@ classDiagram
         +close() void
     }
 
-    class TestDevice {
+    class Device::Test {
         +Array entries
         +Integer max_entries
         +write(entry) void
@@ -150,11 +150,11 @@ classDiagram
         +match(**options) LogEntry
     }
 
-    class NullDevice {
+    class Device::Null {
         +write(entry) void
     }
 
-    class LoggerDevice {
+    class Device::LoggerWrapper {
         +Logger logger
         +initialize(logger)
         +write(entry) void
@@ -176,6 +176,9 @@ classDiagram
         +current_line() String
         +flatten_attributes(hash) Hash
         +expand_attributes(hash) Hash
+        +global_pid() String
+        +thread_name() String
+        +global_thread_id() String
     }
 
     class Severity {
