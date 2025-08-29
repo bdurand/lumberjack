@@ -60,7 +60,9 @@ module Lumberjack
     # - The symbol +:test+ creates a Test device for capturing output in tests
     # - A file path string creates a Device::LogFile for file-based logging
     #
-    # @param logdev [Lumberjack::Device, Object, Symbol, String] The device to log to.
+    # @param logdev [Lumberjack::Device, IO, Symbol, String, Pathname] The device to log to.
+    #   If this is a symbol, the device will be looked up from the DeviceRegistry. If it is
+    #   a string or a Pathname, the logs will be sent to the corresponding file path.
     # @param shift_age [Integer, String, Symbol] If this is an integer greater than zero, then
     #   log files will be rolled when they get to the size specified in shift_size and the number of
     #   files to keep will be determined by this value. Otherwise it will be interpreted as a date

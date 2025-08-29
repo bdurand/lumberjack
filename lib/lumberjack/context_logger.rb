@@ -22,6 +22,8 @@ module Lumberjack
     # Constant used for setting trace log level.
     TRACE = Severity::TRACE
 
+    LEADING_OR_TRAILING_WHITESPACE = /(?:\A\s)|(?:\s\z)/
+
     class << self
       def included(base)
         base.include(FiberLocals) unless base.include?(FiberLocals)
@@ -555,6 +557,7 @@ module Lumberjack
       end
 
       message = message.call if message.is_a?(Proc)
+      message = message.strip if message.is_a?(String) && message.match?(/LEADING_OR_TRAILING_WHITESPACE/)
       return if (message.nil? || message == "") && (attributes.nil? || attributes.empty?)
 
       add_entry(severity, message, progname, attributes)

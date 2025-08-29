@@ -8,12 +8,15 @@ module Lumberjack
   # Devices must have a constructor that accepts the options hash as its sole argument in order
   # to use the device registry.
   #
+  # The values :stdout and :stderr are registered by default and map to the standard output
+  # and standard error streams, respectively.
+  #
   # @example
   #
   #   Lumberjack::Device.register(:my_device, MyDevice)
   #   logger = Lumberjack::Logger.new(:my_device)
   module DeviceRegistry
-    @registry = {}
+    @registry = {stdout: :stdout, stderr: :stderr}
 
     class << self
       # Register a device name. Device names can be used to associate a symbol with a device
@@ -59,7 +62,13 @@ module Lumberjack
           raise ArgumentError.new("#{name.inspect} is not registered as a device name; valid names are: #{valid_names}")
         end
 
-        klass.new(options)
+        if klass == :stdout
+          Device::Writer.new($stdout, options)
+        elsif klass == :stderr
+          Device::Writer.new($stderr, options)
+        else
+          klass.new(options)
+        end
       end
 
       # Retrieve the class registered with the given name or nil if the name is not defined.
