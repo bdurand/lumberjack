@@ -98,7 +98,9 @@ module Lumberjack
       tags_string
     end
 
-    def compact_tags(tags)
+    def compact_tags(tags, seen = nil)
+      return {} if seen&.include?(tags.object_id)
+
       delete_keys = nil
       compacted_keys = nil
 
@@ -107,7 +109,9 @@ module Lumberjack
           delete_keys ||= []
           delete_keys << key
         elsif value.is_a?(Hash)
-          compacted_value = compact_tags(value)
+          seen ||= Set.new
+          seen << tags.object_id
+          compacted_value = compact_tags(value, seen)
           if compacted_value.empty?
             delete_keys ||= []
             delete_keys << key

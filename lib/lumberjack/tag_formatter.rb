@@ -106,12 +106,12 @@ module Lumberjack
         return tags
       end
 
-      formated_tags(tags)
+      formatted_tags(tags)
     end
 
     private
 
-    def formated_tags(tags, skip_classes: nil, prefix: nil)
+    def formatted_tags(tags, skip_classes: nil, prefix: nil)
       formatted = {}
 
       tags.each do |name, value|
@@ -134,12 +134,19 @@ module Lumberjack
 
       formatter ||= @default_formatter
 
-      formatted_value = if formatter.is_a?(Lumberjack::Formatter)
-        formatter.format(value)
-      elsif formatter.respond_to?(:call)
-        formatter.call(value)
-      else
-        value
+      formatted_value = begin
+        if formatter.is_a?(Lumberjack::Formatter)
+          formatter.format(value)
+        elsif formatter.respond_to?(:call)
+          formatter.call(value)
+        else
+          value
+        end
+      rescue SystemStackError, StandardError => e
+        error_message = e.class.name
+        error_message = "#{error_message} #{e.message}" if e.message && e.message != ""
+        warn("<Error formatting #{value.class.name}: #{error_message}>")
+        "<Error formatting #{value.class.name}: #{error_message}>"
       end
 
       if formatted_value.is_a?(Enumerable)
@@ -148,7 +155,7 @@ module Lumberjack
         sub_prefix = "#{prefixed_name}."
 
         formatted_value = if formatted_value.is_a?(Hash)
-          formated_tags(formatted_value, skip_classes: skip_classes, prefix: sub_prefix)
+          formatted_tags(formatted_value, skip_classes: skip_classes, prefix: sub_prefix)
         else
           formatted_value.collect do |item|
             formatted_tag_value(nil, item, skip_classes: skip_classes, prefix: sub_prefix)

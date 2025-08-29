@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.4.1
+
+### Changed
+
+- Catch errors when formatting values so that it doesn't prevent logging. Otherwise there can be no way to log that the error occurred. Values that produced errors in the formatter will now be shown in the logs as "<Error formatting CLASS_NAME: ERROR_CLASS ERROR_MESSAGE>".
+
 ## 1.4.0
 
 ### Changed
