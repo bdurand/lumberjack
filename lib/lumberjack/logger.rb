@@ -74,7 +74,8 @@ module Lumberjack
     #   or a Lumberjack::Formatter, it will be used to format structured log entries. If it is
     #   a ::Logger::Formatter or a callable object that takes 4 arguments (severity, time, progname, msg),
     #   it will be used to format log entries in lieu of the `template` argument when writing to a
-    #   stream.
+    #   stream. You can also pass the value `:default` to use the default message formatter which formats
+    #   non-primitive objects with `inspect` and includes the backtrace for exceptions.
     # @param datetime_format [String] The format to use for log timestamps.
     # @param binmode [Boolean] Whether to open the log file in binary mode.
     # @param shift_period_suffix [String] The suffix to use for the shifted log file names.
@@ -431,9 +432,11 @@ module Lumberjack
       entry_formatter = formatter if formatter.is_a?(Lumberjack::EntryFormatter)
 
       unless entry_formatter
-        message_formatter ||= formatter if formatter.is_a?(Lumberjack::Formatter)
-        entry_formatter = Lumberjack::EntryFormatter.new(message_formatter: :default)
+        message_formatter ||= formatter if formatter.is_a?(Lumberjack::Formatter) || formatter == :default
+        entry_formatter = Lumberjack::EntryFormatter.new
       end
+
+      message_formatter = Lumberjack::Formatter.default if message_formatter == :default
 
       entry_formatter.message_formatter = message_formatter if message_formatter
       entry_formatter.attribute_formatter = attribute_formatter if attribute_formatter

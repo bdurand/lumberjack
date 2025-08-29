@@ -100,11 +100,11 @@ module Lumberjack
       # @example
       #   Lumberjack::Utils.global_pid
       #   # => "server1-12345"
-      def global_pid
+      def global_pid(pid = Process.pid)
         if hostname
-          "#{hostname}-#{Process.pid}"
+          "#{hostname}-#{pid}"
         else
-          Process.pid.to_s
+          pid.to_s
         end
       end
 

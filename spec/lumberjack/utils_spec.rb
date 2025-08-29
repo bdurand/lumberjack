@@ -28,6 +28,10 @@ RSpec.describe Lumberjack::Utils do
     it "generates a global process ID" do
       expect(Lumberjack::Utils.global_pid).to eq "#{Lumberjack::Utils.hostname}-#{Process.pid}"
     end
+
+    it "can generate a value for a specific pid" do
+      expect(Lumberjack::Utils.global_pid(12345)).to eq "#{Lumberjack::Utils.hostname}-12345"
+    end
   end
 
   describe ".global_thread_id" do

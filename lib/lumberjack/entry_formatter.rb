@@ -154,7 +154,7 @@ module Lumberjack
       self
     end
 
-    # Extend this formatter by merging the formats defined in the provided formatter into this one.
+    # Extend this formatter by adding the formats defined in the provided formatter into this one.
     #
     # @param formatter [Lumberjack::EntryFormatter] The formatter to merge.
     # @return [self] Returns self for method chaining.
@@ -168,6 +168,25 @@ module Lumberjack
 
       @attribute_formatter ||= Lumberjack::AttributeFormatter.new
       @attribute_formatter.include(formatter.attribute_formatter)
+
+      self
+    end
+
+    # Extend this formatter by adding the formats defined in the provided formatter into this one.
+    # Formats defined in this formatter will take precedence and not be overridden.
+    #
+    # @param formatter [Lumberjack::EntryFormatter] The formatter to merge.
+    # @return [self] Returns self for method chaining.
+    def prepend(formatter)
+      unless formatter.is_a?(Lumberjack::EntryFormatter)
+        raise ArgumentError.new("formatter must be a Lumberjack::EntryFormatter")
+      end
+
+      @message_formatter ||= Lumberjack::Formatter.new
+      @message_formatter.prepend(formatter.message_formatter)
+
+      @attribute_formatter ||= Lumberjack::AttributeFormatter.new
+      @attribute_formatter.prepend(formatter.attribute_formatter)
 
       self
     end

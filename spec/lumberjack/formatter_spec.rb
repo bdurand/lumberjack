@@ -151,7 +151,7 @@ RSpec.describe Lumberjack::Formatter do
     end
   end
 
-  describe "#merge" do
+  describe "#include" do
     it "merges the formats from the formatter" do
       formatter_1 = Lumberjack::Formatter.new
       formatter_1.add(String) { |s| s.to_s.upcase }
@@ -163,7 +163,25 @@ RSpec.describe Lumberjack::Formatter do
 
       expect(formatter_2.include(formatter_1)).to eq formatter_2
 
-      expect(formatter_2.format("test")).to eq("TEST")
+      expect(formatter_2.format("Test")).to eq("TEST")
+      expect(formatter_2.format(3.14)).to eq(3.1)
+      expect(formatter_2.format(2)).to eq(4)
+    end
+  end
+
+  describe "#prepend" do
+    it "prepends the formats from the formatter" do
+      formatter_1 = Lumberjack::Formatter.new
+      formatter_1.add(String) { |s| s.to_s.upcase }
+      formatter_1.add(Float, :round, 1)
+
+      formatter_2 = Lumberjack::Formatter.new
+      formatter_2.add(String) { |s| s.to_s.downcase }
+      formatter_2.add(Integer, :multiply, 2)
+
+      expect(formatter_2.prepend(formatter_1)).to eq formatter_2
+
+      expect(formatter_2.format("Test")).to eq("test")
       expect(formatter_2.format(3.14)).to eq(3.1)
       expect(formatter_2.format(2)).to eq(4)
     end

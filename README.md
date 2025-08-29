@@ -445,6 +445,8 @@ formatter = Lumberjack::EntryFormatter.build do
 end
 ```
 
+You can also call `prepend` in which case any formats already defined will take precedence over the formats being included.
+
 ### Output Devices
 
 Output devices control where and how log entries are written. Lumberjack provides a variety of built-in devices that can write to files, streams, multiple destinations, or serve special purposes like testing. All devices implement a common interface, making them interchangeable.

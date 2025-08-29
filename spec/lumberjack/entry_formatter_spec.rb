@@ -63,12 +63,13 @@ RSpec.describe Lumberjack::EntryFormatter do
     end
   end
 
-  describe "#merge" do
+  describe "#include" do
     it "merges the formats from the formatter" do
       formatter_1 = Lumberjack::EntryFormatter.build do
         add(String) { |obj| obj.to_s.upcase }
         attributes do
           add("status") { |obj| "[#{obj}]" }
+          add("foo") { |obj| "foo:#{obj}" }
         end
       end
 
@@ -84,6 +85,32 @@ RSpec.describe Lumberjack::EntryFormatter do
       message, attributes = formatter_2.format("foobar", {"status" => "new", "foo" => "bar"})
 
       expect(message).to eq("FOOBAR")
+      expect(attributes).to eq({"status" => "[new]", "foo" => "foo:bar"})
+    end
+  end
+
+  describe "#prepend" do
+    it "prepends the formats from the formatter" do
+      formatter_1 = Lumberjack::EntryFormatter.build do
+        add(String) { |obj| obj.to_s.upcase }
+        attributes do
+          add("status") { |obj| "[#{obj}]" }
+          add("foo") { |obj| "foo:#{obj}" }
+        end
+      end
+
+      formatter_2 = Lumberjack::EntryFormatter.build do
+        add(String) { |obj| obj.to_s.downcase }
+        attributes do
+          add("foo") { |obj| "(#{obj})" }
+        end
+      end
+
+      expect(formatter_2.prepend(formatter_1)).to eq formatter_2
+
+      message, attributes = formatter_2.format("Foobar", {"status" => "new", "foo" => "bar"})
+
+      expect(message).to eq("foobar")
       expect(attributes).to eq({"status" => "[new]", "foo" => "(bar)"})
     end
   end
