@@ -620,7 +620,7 @@ logger.puts "This is a warning message" # logged as a warning
 #### Other Integrations
 
 - [`lumberjack_sidekiq`](https://github.com/bdurand/lumberjack_sidekiq) - Integrates Lumberjack with Sidekiq for background job logging
-- [`lumberjack_data_dog`](https://github.com/bdurand/lumberjack_data_dog) - Integrates Lumberjack with DataDog by outputting logs in JSON using DataDog's standard attributes
+- [`lumberjack_data_dog`](https://github.com/bdurand/lumberjack_datadog) - Integrates Lumberjack with Datadog by outputting logs in JSON using Datadog's standard attributes
 - Check [RubyGems](https://rubygems.org/gems) for other integrations
 
 ## Installation
