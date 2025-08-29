@@ -264,6 +264,27 @@ module Lumberjack
       self
     end
 
+    # Extend this formatter by merging the formats defined in the provided formatter into this one.
+    # Formats defined in this formatter will take precedence and not be overridden.
+    #
+    # @param formatter [Lumberjack::AttributeFormatter] The formatter to merge.
+    # @return [self] Returns self for method chaining.
+    def prepend(formatter)
+      unless formatter.is_a?(Lumberjack::AttributeFormatter)
+        raise ArgumentError.new("formatter must be a Lumberjack::AttributeFormatter")
+      end
+
+      @class_formatter.prepend(formatter.instance_variable_get(:@class_formatter))
+
+      formatter.instance_variable_get(:@attribute_formatter).each do |key, value|
+        @attribute_formatter[key] = value unless @attribute_formatter.include?(key)
+      end
+
+      @default_formatter ||= formatter.instance_variable_get(:@default_formatter)
+
+      self
+    end
+
     # Remove all configured formatters, including the default formatter. This resets the
     # formatter to a completely empty state where all attributes pass through unchanged.
     #
