@@ -53,9 +53,15 @@ RSpec.describe Lumberjack::TagFormatter do
   end
 
   it "returns an error string if there was an error formatting the value" do
-    tag_formatter = Lumberjack::TagFormatter.new
-    tag_formatter.add(String, lambda { |obj| raise "error" })
-    expect(tag_formatter.format(tags)["foo"]).to eq("<Error formatting String: RuntimeError error>")
+    save_stderr = $stderr
+    begin
+      $stderr = StringIO.new
+      tag_formatter = Lumberjack::TagFormatter.new
+      tag_formatter.add(String, lambda { |obj| raise "error" })
+      expect(tag_formatter.format(tags)["foo"]).to eq("<Error formatting String: RuntimeError error>")
+    ensure
+      $stderr = save_stderr
+    end
   end
 
   it "applies class formatters inside arrays and hashes" do

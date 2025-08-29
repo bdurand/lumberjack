@@ -143,6 +143,7 @@ module Lumberjack
           value
         end
       rescue SystemStackError, StandardError => e
+        warn("<Error formatting #{value.class.name}: #{e.class.name} #{e.message}>")
         "<Error formatting #{value.class.name}: #{e.class.name} #{e.message}>"
       end
 
