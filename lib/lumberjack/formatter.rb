@@ -174,7 +174,7 @@ module Lumberjack
           formatter.call(message)
         rescue SystemStackError, StandardError => e
           error_message = e.class.name
-          error_message = "#{error_message} #{e.message}" if e.message && !e.message.empty?
+          error_message = "#{error_message} #{e.message}" if e.message && e.message != ""
           warn("<Error formatting #{message.class.name}: #{error_message}>")
           "<Error formatting #{message.class.name}: #{error_message}>"
         end
