@@ -10,11 +10,18 @@ module Lumberjack
     # When a string is truncated, it will have a unicode ellipsis
     # character (U+2026) appended to the end of the string.
     class TruncateFormatter
-      # @param [Integer] length The maximum length of the string (defaults to 32K)
+      FormatterRegistry.add(:truncate, self)
+
+      # @param length [Integer] The maximum length of the string (defaults to 32K).
       def initialize(length = 32768)
         @length = length
       end
 
+      # Truncate a string if it exceeds the maximum length.
+      #
+      # @param obj [Object] The object to format. If it's a string longer than the maximum
+      #   length, it will be truncated. Other objects are returned unchanged.
+      # @return [String, Object] The truncated string or original object.
       def call(obj)
         if obj.is_a?(String) && obj.length > @length
           "#{obj[0, @length - 1]}…"
