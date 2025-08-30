@@ -69,7 +69,7 @@ module Lumberjack
     # The forked logger inherits the parent's initial level and progname but maintains
     # its own independent context for future changes.
     #
-    # @param logger [Lumberjack::Logger, #add_entry] The parent logger to forward entries to.
+    # @param logger [Lumberjack::ContextLogger, #add_entry] The parent logger to forward entries to.
     #   Must respond to either `add_entry` (for Lumberjack loggers) or standard Logger methods.
     def initialize(logger)
       init_fiber_locals!
