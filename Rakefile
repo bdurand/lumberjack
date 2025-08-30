@@ -4,9 +4,6 @@ rescue LoadError
   puts "You must `gem install bundler` and `bundle install` to run rake tasks"
 end
 
-require "yard"
-YARD::Rake::YardocTask.new(:yard)
-
 require "bundler/gem_tasks"
 
 task :verify_release_branch do
@@ -35,8 +32,6 @@ namespace :appraisals do
     exec "bundle exec appraisal install"
   end
 end
-
-require "standard/rake"
 
 namespace :profile do
   desc "Profile logger CPU usage. Set LOGGER=Logger to profile the standard libary logger. Set LOG_LEVEL=warn to profile with a higher log level."

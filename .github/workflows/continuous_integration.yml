@@ -28,6 +28,7 @@ jobs:
         include:
           - ruby: "ruby"
             standardrb: true
+            yard: true
           - ruby: "jruby"
           - ruby: "3.4"
           - ruby: "3.3"
@@ -60,4 +61,7 @@ jobs:
         run: bundle exec rake
       - name: standardrb
         if:   matrix.standardrb == true
-        run:  bundle exec rake standard
+        run:  bundle exec standardrb
+      - name: yard
+        if: matrix.yard == true
+        run:  bundle exec yard --fail-on-warning
