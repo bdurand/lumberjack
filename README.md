@@ -15,7 +15,7 @@ Lumberjack is an extension to the Ruby standard library `Logger` class, designed
 
 Lumberjack is ideal for applications that require structured, context-aware logging, and integrates seamlessly with Ruby’s standard logging ecosystem.
 
-The philosophy behind the library is to promote use of structured logging with the standard Ruby Logger API as a foundation. The developer of a piece of functionality should only need to worry about the data that needs to be logged for that functionality and not how it is logged or formatted.
+The philosophy behind the library is to promote use of structured logging with the standard Ruby Logger API as a foundation. The developer of a piece of functionality should only need to worry about the data that needs to be logged for that functionality and not how it is logged or formatted. Loggers can be initialized with global attributes and formatters that handle these concerns.
 
 ## Table of Contents
 
