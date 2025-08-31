@@ -66,7 +66,7 @@ RSpec.describe Lumberjack::Template do
     end
 
     it "should handle attributes with special characters by surrounding with brackets" do
-      template = Lumberjack::Template.new(":message - :{foo.bar} - :{@baz!} - :attributes")
+      template = Lumberjack::Template.new(":message - :{ foo.bar } - :{@baz!} - :{attributes}")
       entry = Lumberjack::LogEntry.new(time, Logger::INFO, "here", "app", 12345, "foo.bar" => "test", "@baz!" => 1, "tag" => "a")
       expect(template.call(entry)).to eq("here - test - 1 - [tag:a]#{Lumberjack::LINE_SEPARATOR}")
     end

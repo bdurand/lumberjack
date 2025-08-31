@@ -15,7 +15,7 @@ module Lumberjack
   #
   # Custom attribute placeholders can be created using `:attribute_name` syntax.
   # For attribute names containing special characters, use curly bracket notation:
-  # `:{http.request-id}` or `:{user-agent}`.
+  # `:{ http.request-id }` or `:{ user-agent }`.
   #
   # The `:tag` placeholder is supported for backward compatibility with version 1.x
   # and functions identically to `:attributes`.
@@ -229,13 +229,13 @@ module Lumberjack
     # @param template [String] The raw template string with placeholders
     # @return [Array<String, Array<String>>] A tuple of [compiled_template, attribute_vars]
     def compile(template) # :nodoc:
-      template = template.gsub(/:tags\b/, ":attributes") unless template.include?(":attributes")
-      template = template.gsub(/ :attributes\b/, ":attributes")
+      template = template.gsub(/:({ *)?tags(?: *})?\b/, ":\\1attributes") unless template.include?(":attributes")
+      template = template.gsub(/ :({ *)?attributes\b/, ":\\1attributes")
       template = template.gsub(/%(?!%)/, "%%")
 
       attribute_vars = []
       template = template.gsub(PLACEHOLDER_PATTERN) do |match|
-        var_name = match.sub("{", "").sub("}", "")
+        var_name = match.sub(/{ */, "").sub(/ *}/, "")
         position = TEMPLATE_ARGUMENT_ORDER.index(var_name)
         if position
           "%#{position + 1}$s"

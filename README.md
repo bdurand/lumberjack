@@ -341,7 +341,8 @@ class User
   attr_accessor :id, :name
 
   def to_log_format
-    "User[id: #{id}, name: #{name}]"
+    "User[id: #{ id }, name: #{ name }]"
+
   end
 end
 ```
@@ -549,10 +550,10 @@ logger = Lumberjack::Logger.new(db_device)
 
 There are separate gems implementing custom devices for different use cases:
 
-- [`lumberjack_json_device`](https://github.com/bdurand/lumberjack_json_device) - Output logs to JSON
-- [`lumberjack_capture_device`](https://github.com/bdurand/lumberjack_capture_device) - Device designed for capturing logs in tests to make assertions easier
-- [`lumberjack_syslog_device`](https://github.com/bdurand/lumberjack_syslog_device) - Device for logging to a syslog server
-- [`lumberjack_redis_device`](https://github.com/bdurand/lumberjack_redis_device) - Device for logging to a Redis database
+- [lumberjack_json_device](https://github.com/bdurand/lumberjack_json_device) - Output logs to JSON
+- [lumberjack_capture_device](https://github.com/bdurand/lumberjack_capture_device) - Device designed for capturing logs in tests to make assertions easier
+- [lumberjack_syslog_device](https://github.com/bdurand/lumberjack_syslog_device) - Device for logging to a syslog server
+- [lumberjack_redis_device](https://github.com/bdurand/lumberjack_redis_device) - Device for logging to a Redis database
 
 You can register a custom device with Lumberjack using the device registry. This associates the device with the device class and can make using the device easier to setup since the user can just pass the symbol and options when instantiating the Logger rather than having to instantiate the device separately.
 
@@ -583,7 +584,7 @@ expect(logger.device.last_entry.message).to eq("Payment failed")
 expect(logger.device).to include(
   severity: :info,
   message: "User logged in",
-  attributes: {user_id: 123}
+  attributes: { user_id: 123 }
 )
 
 expect(logger.device).to include(severity: :error, message: /Payment/)
@@ -616,15 +617,15 @@ logger.puts "This is a warning message" # logged as a warning
 #### Rails
 
 > [!WARNING]
-> If you are using Rails, you must use the [`lumberjack_rails`](https://github.com/bdurand/lumberjack_rails) gem.
+> If you are using Rails, you must use the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem.
 >
 > Rails does its own monkey patching to the standard library Logger to support tagged logging, silencing logs, and broadcast logging.
 
 #### Other Integrations
 
-- [`lumberjack_sidekiq`](https://github.com/bdurand/lumberjack_sidekiq) - Integrates Lumberjack with Sidekiq for background job logging.
-- [`lumberjack_datadog`](https://github.com/bdurand/lumberjack_datadog) - Integrates Lumberjack with Datadog by outputting logs in JSON using Datadog's standard attributes.
-- [`lumberjack_local_logger`](https://github.com/bdurand/lumberjack_local_logger) - Lightweight wrapper around Lumberjack::Logger that allows contextual logging with custom levels, prognames, and attributes without affecting the parent logger.
+- [lumberjack_sidekiq](https://github.com/bdurand/lumberjack_sidekiq) - Integrates Lumberjack with Sidekiq for background job logging.
+- [lumberjack_datadog](https://github.com/bdurand/lumberjack_datadog) - Integrates Lumberjack with Datadog by outputting logs in JSON using Datadog's standard attributes.
+- [lumberjack_local_logger](https://github.com/bdurand/lumberjack_local_logger) - Lightweight wrapper around Lumberjack::Logger that allows contextual logging with custom levels, prognames, and attributes without affecting the parent logger.
 - Check [RubyGems](https://rubygems.org/gems) for other integrations
 
 ## Installation

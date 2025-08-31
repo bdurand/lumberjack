@@ -148,7 +148,7 @@ module Lumberjack
     #   or numeric Logger constants
     # @option options [Hash] :attributes Hash of attribute patterns to match.
     #   Supports nested attributes using dot notation (e.g., "user.id" matches
-    #   {user: {id: value}}). Values can be exact matches or test framework matchers
+    #   { user: { id: value } }). Values can be exact matches or test framework matchers
     # @option options [String, Regexp, Object] :progname Pattern to match against
     #   the program name that generated the log entry
     #
