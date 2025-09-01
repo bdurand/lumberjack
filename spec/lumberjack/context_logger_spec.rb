@@ -152,12 +152,32 @@ RSpec.describe Lumberjack::ContextLogger do
     end
 
     it "adds a message with the message in a block" do
+      logger.add(:info) { "Test Message" }
+      expect(logger.entries.last).to eq({
+        severity: Logger::INFO,
+        message: "Test Message",
+        progname: nil,
+        attributes: nil
+      })
+    end
+
+    it "adds a message with attributes with the message in a block" do
       logger.add(:info, foo: "bar") { "Test Message" }
       expect(logger.entries.last).to eq({
         severity: Logger::INFO,
         message: "Test Message",
         progname: nil,
         attributes: {foo: "bar"}
+      })
+    end
+
+    it "adds a message with a progname with the message in a block" do
+      logger.add(:info, "MyApp") { "Test Message" }
+      expect(logger.entries.last).to eq({
+        severity: Logger::INFO,
+        message: "Test Message",
+        progname: "MyApp",
+        attributes: nil
       })
     end
 
@@ -603,6 +623,16 @@ RSpec.describe Lumberjack::ContextLogger do
           message: "Message",
           progname: nil,
           attributes: {foo: "bar"}
+        })
+      end
+
+      it "logs an entry as #{severity} with a progname and the message in a block" do
+        logger.public_send(severity, "myApp") { "Message" }
+        expect(logger.entries.first).to eq({
+          severity: Lumberjack::Severity.coerce(severity),
+          message: "Message",
+          progname: "myApp",
+          attributes: nil
         })
       end
 
