@@ -667,6 +667,9 @@ expect(logger.device).to include(severity: :error, message: /Payment/)
 
 You should make sure to call `logger.flush` between tests to clear the captured logs.
 
+> [!NOTE]
+> Log entries are captured after formatters have been applied. This provides a mechanism for including the formatting logic in your tests.
+
 > [!TIP]
 > The [lumberjack_capture_device](https://github.com/bdurand/lumberjack_capture_device) gem provides some additional testing utilities and rspec integration.
 
