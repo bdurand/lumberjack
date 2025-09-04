@@ -437,17 +437,6 @@ module Lumberjack
       merge_all_attributes || {}
     end
 
-    # Alias method for #attributes to provide backward compatibility with version 1.x API. This
-    # method will eventually be removed.
-    #
-    # @return [Hash]
-    # @deprecated Use {#attributes} instead
-    def tags
-      Utils.deprecated(:tags, "Use attributes instead.") do
-        attributes
-      end
-    end
-
     # Get the value of an attribute by name from the current context.
     #
     # @param name [String, Symbol] The name of the attribute to get.
@@ -455,17 +444,6 @@ module Lumberjack
     def attribute_value(name)
       name = name.join(".") if name.is_a?(Array)
       AttributesHelper.new(attributes)[name]
-    end
-
-    # Alias method for #attribute_value to provide backward compatibility with version 1.x API. This
-    # method will eventually be removed.
-    #
-    # @return [Hash]
-    # @deprecated Use {#attribute_value} instead
-    def tag_value(name)
-      Utils.deprecated(:tag_value, "Use attribute_value instead.") do
-        attribute_value(name)
-      end
     end
 
     # Remove all attributes on the current logger and logging context within a block.

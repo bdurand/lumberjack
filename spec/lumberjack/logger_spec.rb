@@ -189,7 +189,7 @@ RSpec.describe Lumberjack::Logger do
 
     it "should only affect the current fiber when changing the progname in a block" do
       out = StringIO.new
-      logger = Lumberjack::Logger.new(out, progname: "thread1", template: ":progname :message")
+      logger = Lumberjack::Logger.new(out, progname: "thread1", template: "{{progname}} {{message}}")
       Fiber.new do
         logger.set_progname("fiber1") do
           expect(logger.progname).to eq("fiber1")
@@ -215,7 +215,7 @@ RSpec.describe Lumberjack::Logger do
   describe "#datetime_format" do
     it "should be able to set the datetime format for timestamps on the log device" do
       out = StringIO.new
-      logger = Lumberjack::Logger.new(out, template: ":time :message", datetime_format: "%Y-%m-%d")
+      logger = Lumberjack::Logger.new(out, template: "{{time}} {{message}}", datetime_format: "%Y-%m-%d")
       expect(logger.datetime_format).to eq "%Y-%m-%d"
       Timecop.freeze do
         logger.info("one")
@@ -262,7 +262,7 @@ RSpec.describe Lumberjack::Logger do
   describe "#close" do
     it "should close the device" do
       out = StringIO.new
-      logger = Lumberjack::Logger.new(out, level: Logger::INFO, template: ":message")
+      logger = Lumberjack::Logger.new(out, level: Logger::INFO, template: "{{message}}")
       expect(logger.device).to receive(:flush).at_least(:once)
       expect(logger.closed?).to eq false
       logger.close
@@ -274,7 +274,7 @@ RSpec.describe Lumberjack::Logger do
   describe "#reopen" do
     it "should reopen the devices" do
       out = StringIO.new
-      logger = Lumberjack::Logger.new(out, level: Logger::INFO, template: ":message")
+      logger = Lumberjack::Logger.new(out, level: Logger::INFO, template: "{{message}}")
       logger.close
       expect(logger.device).to receive(:reopen).and_call_original
       logger.reopen
@@ -284,7 +284,7 @@ RSpec.describe Lumberjack::Logger do
 
   describe "logging methods" do
     let(:out) { StringIO.new }
-    let(:device) { Lumberjack::Device::Writer.new(out, template: "[:time :severity :progname(:pid)] :message :attributes") }
+    let(:device) { Lumberjack::Device::Writer.new(out, template: "[{{time}} {{severity}} {{progname}}({{pid}})] {{message}} {{attributes}}") }
     let(:logger) { Lumberjack::Logger.new(device, level: Logger::INFO, progname: "app") }
     let(:n) { Lumberjack::LINE_SEPARATOR }
 
@@ -458,14 +458,14 @@ RSpec.describe Lumberjack::Logger do
 
     describe "message" do
       it "should apply the default formatter to the message" do
-        logger = Lumberjack::Logger.new(out, template: ":message")
+        logger = Lumberjack::Logger.new(out, template: "{{message}}")
         logger.formatter.add(String) { |msg| msg.upcase }
         logger.info("test")
         expect(out.string.chomp).to eq "TEST"
       end
 
       it "should apply the message formatter instead of the default formatter if it applies" do
-        logger = Lumberjack::Logger.new(out, template: ":message")
+        logger = Lumberjack::Logger.new(out, template: "{{message}}")
         logger.formatter.add(String) { |msg| msg.upcase }
         logger.message_formatter.add(String) { |msg| msg.reverse }
         logger.info("test")
@@ -473,7 +473,7 @@ RSpec.describe Lumberjack::Logger do
       end
 
       it "should copy attributes from the message if the formatter returns a Lumberjack::MessageAttributes" do
-        logger = Lumberjack::Logger.new(out, template: ":message :attributes")
+        logger = Lumberjack::Logger.new(out, template: "{{message}} {{attributes}}")
         logger.formatter.add(String) { |msg| Lumberjack::MessageAttributes.new(msg.upcase, tag: msg.downcase) }
         logger.info("Test")
         expect(out.string.chomp).to eq "TEST [tag:test]"
@@ -487,7 +487,7 @@ RSpec.describe Lumberjack::Logger do
         end
       end
 
-      let(:device) { Lumberjack::Device::Writer.new(out, template: ":message - :count - :attributes") }
+      let(:device) { Lumberjack::Device::Writer.new(out, template: "{{message}} - {{count}} - {{attributes}}") }
 
       it "should be able to add global attributes to the logger" do
         logger.tag_globally(count: 1, foo: "bar")
@@ -506,7 +506,7 @@ RSpec.describe Lumberjack::Logger do
         end
       end
 
-      let(:device) { Lumberjack::Device::Writer.new(out, template: ":message - :count - :attributes") }
+      let(:device) { Lumberjack::Device::Writer.new(out, template: "{{message}} - {{count}} - {{attributes}}") }
 
       it "should remove context attributes in a context block and global attributes outside of one" do
         logger.tag!(foo: "bar", wip: "wap")

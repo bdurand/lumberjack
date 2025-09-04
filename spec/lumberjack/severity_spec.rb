@@ -14,17 +14,6 @@ RSpec.describe Lumberjack::Severity do
       expect(Lumberjack::Severity.level_to_label(Logger::UNKNOWN)).to eq("ANY")
       expect(Lumberjack::Severity.level_to_label(100)).to eq("ANY")
     end
-
-    it "converts a level to a padded label" do
-      expect(Lumberjack::Severity.level_to_label(Logger::DEBUG, true)).to eq("DEBUG")
-      expect(Lumberjack::Severity.level_to_label(Logger::INFO, true)).to eq("INFO ")
-      expect(Lumberjack::Severity.level_to_label(Logger::WARN, true)).to eq("WARN ")
-      expect(Lumberjack::Severity.level_to_label(Logger::ERROR, true)).to eq("ERROR")
-      expect(Lumberjack::Severity.level_to_label(Logger::FATAL, true)).to eq("FATAL")
-      expect(Lumberjack::Severity.level_to_label(Lumberjack::Logger::TRACE, true)).to eq("TRACE")
-      expect(Lumberjack::Severity.level_to_label(Logger::UNKNOWN, true)).to eq("ANY  ")
-      expect(Lumberjack::Severity.level_to_label(100, true)).to eq("ANY  ")
-    end
   end
 
   describe "#label_to_level" do
@@ -58,6 +47,21 @@ RSpec.describe Lumberjack::Severity do
 
     it "coerces trace labels to TRACE" do
       expect(Lumberjack::Severity.coerce("TRACE")).to eq(Lumberjack::Logger::TRACE)
+    end
+  end
+
+  describe "#severity" do
+    it "returns the severity data for a given level" do
+      expect(Lumberjack::Severity.data(Logger::DEBUG)).to be_a(Lumberjack::Severity::Data)
+      expect(Lumberjack::Severity.data(Logger::INFO).label).to eq("INFO")
+      expect(Lumberjack::Severity.data(:error).emoji).to eq("❌")
+      expect(Lumberjack::Severity.data("WARN").padded_label).to eq("WARN ")
+      expect(Lumberjack::Severity.data("ERROR").padded_label).to eq("ERROR")
+      expect(Lumberjack::Severity.data(Logger::FATAL).char).to eq("F")
+      expect(Lumberjack::Severity.data(Lumberjack::Logger::TRACE).label).to eq("TRACE")
+      expect(Lumberjack::Severity.data(Logger::UNKNOWN).emoji).to eq("❓")
+      expect(Lumberjack::Severity.data(Logger::UNKNOWN).label).to eq("ANY")
+      expect(Lumberjack::Severity.data(100)).to eq(Lumberjack::Severity.data(Logger::UNKNOWN))
     end
   end
 end

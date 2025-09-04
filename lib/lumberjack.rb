@@ -113,7 +113,7 @@ module Lumberjack
     end
 
     def context?
-      Utils.deprecated(:context?, "Use in_context? instead.") do
+      Utils.deprecated("Lumberjack.context?", "Lumberjack.context? is deprecated; use in_context? instead.") do
         in_context?
       end
     end
@@ -131,7 +131,7 @@ module Lumberjack
     # @return [Hash, nil]
     # @deprecated Use {.context_attributes}
     def context_tags
-      Utils.deprecated(:context_tags, "Use context_attributes instead.") do
+      Utils.deprecated("Lumberjack.context_tags", "Lumberjack.context_tags is deprecated; use context_attributes instead.") do
         context_attributes
       end
     end

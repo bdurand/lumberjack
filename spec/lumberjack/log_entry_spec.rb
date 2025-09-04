@@ -32,7 +32,6 @@ RSpec.describe Lumberjack::LogEntry do
       expect(Lumberjack::LogEntry.new(Time.now, Logger::FATAL, "test", "app", 1500, nil).severity_label).to eq("FATAL")
       expect(Lumberjack::LogEntry.new(Time.now, -100, "test", "app", 1500, nil).severity_label).to eq("ANY")
       expect(Lumberjack::LogEntry.new(Time.now, 1000, "test", "app", 1500, nil).severity_label).to eq("ANY")
-      expect(Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, nil).severity_label(true)).to eq("INFO ")
     end
 
     it "should have a message" do
@@ -54,6 +53,13 @@ RSpec.describe Lumberjack::LogEntry do
       expect(entry.pid).to eq(1500)
       entry.pid = 150
       expect(entry.pid).to eq(150)
+    end
+  end
+
+  describe "#severity_data" do
+    it "returns the severity data object" do
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo" => "ABCD")
+      expect(entry.severity_data).to eq(Lumberjack::Severity.data(Logger::INFO))
     end
   end
 

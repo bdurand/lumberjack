@@ -68,3 +68,19 @@ namespace :profile do
     end.pretty_print
   end
 end
+
+namespace :colors do
+  desc "Print the color codes for each severity level"
+  task :print do
+    require_relative "lib/lumberjack"
+
+    logger = Lumberjack::Logger.new($stdout, level: :trace, template: "{{severity(emoji)}} {{severity(padded)}} {{message}}", colorize: true)
+    logger.trace("Test message")
+    logger.debug("Test message")
+    logger.info("Test message")
+    logger.warn("Test message")
+    logger.error("Test message")
+    logger.fatal("Test message")
+    logger.unknown("Test message")
+  end
+end

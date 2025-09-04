@@ -26,7 +26,8 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Added `Lumberjack::Utils.current_line` as a helper method for getting the current line of code.
 - Added `Lumberjack.build_formatter` as a helper method for building entry formatters.
 - Added merge method on formatters to allow merging in formats from other formatters.
-- Templates can now use a left padded severity label with the option `pad_severity: true`. This will left pad the severity strings to five characters so that they can all be aligned in the log output.
+- Templates can now use variations on the severity label with a format option added to the placeholder: `{{severity(padded)}}`, `{{severity(char)}}`, `{{severity(emoji)}}`, and `{{severity(level)}}`.
+- Log entries in templates can now be colorized by severity with the `colorize: true`.
 - Added `Lumberjack::Formatter::Tags` for formatting attributes as "tags" in the logs. Arrays of values will be formatted as "[val1] [val2]" and hashes will be formatted as "[key1=value1] [key2=value2]".
 - Added `Lumberjack::FormatterRegistry` as a means of associating formatters with a symbol. Symbols can be used when adding class and attribute formatters. This extends the behavior previously limited to the built in formatters so that users can define their own formatters and register them for use.
 - Added `Lumberjack::DeviceRegistry` as a means for associating devices with a symbol. Symbols can then be passed to the constructor when creating a logger and the logger will take care of instantiating the device.
@@ -84,6 +85,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
   - `Lumberjack::Tags`
   - `Lumberjack::Formatter::TaggedMessage`
 - The Rails compatibility methods on `Lumberjack::Logger` (`tagged`, `silence`, `log_at`) have been moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem. Installing that gem will restore these methods in a non-deprecated form.
+- Templates now use mustache syntax for placeholders instead of the colon prefix (i.e. `{{message}}` instead of `:message`). The `:tags` placeholder is also now called `{{attributes}}`.
 
 ## 1.4.1
 

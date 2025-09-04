@@ -19,27 +19,33 @@ The philosophy behind the library is to promote use of structured logging with t
 
 ## Table of Contents
 
-1. [Usage](#usage)
-  - [Structured Logging With Attributes](#structured-logging-with-attributes)
-    - [Basic Attribute Logging](#basic-attribute-logging)
-    - [Adding attributes to the logger](#adding-attributes-to-the-logger)
-    - [Global Logger Attributes](#global-logger-attributes)
-    - [Nested Attributes and Complex Data](#nested-attributes-and-complex-data)
-    - [Attribute Inheritance and Merging](#attribute-inheritance-and-merging)
-    - [Using the tagged method](#using-the-tagged-method)
-  - [Context Isolation](#context-isolation)
-    - [Context Blocks](#context-blocks)
-    - [Nested Context Blocks](#nested-context-blocks)
-    - [Forking Loggers](#forking-loggers)
-  - [Formatters](#formatters)
-    - [Object Formatters](#object-formatters)
-    - [Attribute Formatters](#attribute-formatters)
-    - [Entry Formatter](#entry-formatter)
-  - [Devices and Templates](#devices-and-templates)
-  - [Testing Tools](#testing-tools)
-2. [Installation](#installation)
-3. [Contributing](#contributing)
-4. [License](#license)
+- [Usage](#usage)
+   - [Structured Logging With Attributes](#structured-logging-with-attributes)
+     - [Basic Attribute Logging](#basic-attribute-logging)
+     - [Adding attributes to the logger](#adding-attributes-to-the-logger)
+     - [Global Logger Attributes](#global-logger-attributes)
+     - [Nested Attributes and Complex Data](#nested-attributes-and-complex-data)
+     - [Attribute Inheritance and Merging](#attribute-inheritance-and-merging)
+     - [Using the tagged method](#using-the-tagged-method)
+   - [Context Isolation](#context-isolation)
+     - [Context Blocks](#context-blocks)
+     - [Nested Context Blocks](#nested-context-blocks)
+     - [Forking Loggers](#forking-loggers)
+   - [Formatters](#formatters)
+     - [Object Formatters](#object-formatters)
+     - [Attribute Formatters](#attribute-formatters)
+     - [Building An Entry Formatter](#building-an-entry-formatter)
+     - [Merging Formatters](#merging-formatters)
+   - [Devices and Templates](#devices-and-templates)
+     - [Built-in Devices](#built-in-devices)
+     - [Custom Devices](#custom-devices)
+     - [Templates](#templates)
+   - [Testing Utilities](#testing-utilities)
+   - [Using As A Stream](#using-as-a-stream)
+   - [Integrations](#integrations)
+- [Installation](#installation)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Usage
 
@@ -64,6 +70,11 @@ logger.debug("Processing data",
   timestamp: Time.now
 )
 ```
+
+> [!Note]
+> Attributes are passed in log statements in the little used `progname` argument that is defined in the standard Ruby Logger API. This attribute can be used to set a specific program name for the log entry that overrides the default program name on the logger.
+>
+> The only difference in the API is that Lumberjack loggers can take a Hash to set attributes. You can still pass a string to override the program name.
 
 #### Adding attributes to the logger
 
@@ -451,9 +462,9 @@ end
 
 You can also call `prepend` in which case any formats already defined will take precedence over the formats being included.
 
-### Output Devices
+### Devices and Templates
 
-Output devices control where and how log entries are written. Lumberjack provides a variety of built-in devices that can write to files, streams, multiple destinations, or serve special purposes like testing. All devices implement a common interface, making them interchangeable.
+Devices control where and how log entries are written. Lumberjack provides a variety of built-in devices that can write to files, streams, multiple destinations, or serve special purposes like testing. All devices implement a common interface, making them interchangeable.
 
 #### Built-in Devices
 
@@ -481,7 +492,7 @@ instantiate a multi device by passing in an array of values.
 
 ```ruby
 # Log to both file and STDOUT using the same template.
-logger = Lumberjack::Logger.new(["/var/log/app.log", $stdout], template: ":severity :message")
+logger = Lumberjack::Logger.new(["/var/log/app.log", $stdout], template: "{{severity}} {{message}}")
 
 logger.info("Application started")  # Appears in both file AND STDOUT
 ```
@@ -563,6 +574,70 @@ You can register a custom device with Lumberjack using the device registry. This
   # Now logger can be instantiated with the name and all options will be passed to
   # the MyDevice constructor.
   logger = Lumberjack::Logger.new(:my_device, autoflush: true)
+```
+
+#### Templates
+
+The output devices writing to a stream or file can define templates that format how log entries are written. Templates use mustache-style placeholders that are replaced with values from the log entry.
+
+##### Basic Template Usage
+
+```ruby
+# Simple template with common fields
+logger = Lumberjack::Logger.new(STDOUT, template: "{{time}} {{severity}} {{message}}")
+
+logger.info("Application started")
+# Output: 2025-09-03T14:30:15.123456 INFO Application started
+```
+
+##### Available Template Variables
+
+Templates support the following placeholder variables:
+
+| Variable | Description |
+|----------|-------------|
+| `time` | Log entry timestamp |
+| `severity` | Numeric severity level |
+| `progname` | Program name |
+| `pid` | Process ID |
+| `message` | Log message |
+| `attributes` | Formatted attributes |
+
+In addition you can put any attribute name in a placeholder. The attribute will be inserted in the log line where the placeholder is defined and will be removed from the general list of attributes.
+
+```ruby
+# The user_id attribute will appear separately on the log line from the
+# rest of the attributes.
+logger = Lumberjack::Logger.new(STDOUT,
+  template: "[{{time}} {{severity}} {{user_id}}] {{message}} {{attributes}}"
+)
+```
+
+The severity can also have an optional formatting argument added to it.
+
+| Variable | Description |
+|----------|-------------|
+| `severity` | Uppercase case severity label (INFO, WARN, etc.) |
+| `severity(padded)` | Severity label padded to 5 characters |
+| `severity(char)` | First character of severity label |
+| `severity(emoji)` | Emoji representation of severity level |
+| `severity(level)` | Numeric severity level |
+
+##### Template Options
+
+You can customize how template variables are formatted using template options:
+
+```ruby
+logger = Lumberjack::Logger.new(STDOUT,
+  template: "[{{time}} {{severity(padded)}} {{progname}}({{pid}})] [{{http.request_id}}] {{message}} {{attributes}}",
+  time_format: "%Y-%m-%d %H:%M:%S", # Custom time format
+  additional_lines: "\n> [{{http.request_id}}] {{message}}", # Template for additional lines on multiline messages
+  attribute_format: "%s=%s", # Format for attributes using printf syntax
+  colorize: true # Colorize log output according to entry severity
+)
+
+logger.info("Test message", user_id: 123, status: "active")
+# Output: 2025-09-03 14:30:15  INFO Test message user_id=123 | status=active
 ```
 
 ### Testing Utilities

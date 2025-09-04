@@ -17,7 +17,7 @@ module Lumberjack
   #
   # @example Basic multi-device setup
   #   file_device = Lumberjack::Device::Writer.new("/var/log/app.log")
-  #   console_device = Lumberjack::Device::Writer.new(STDOUT, template: ":message")
+  #   console_device = Lumberjack::Device::Writer.new(STDOUT, template: "{{message}}")
   #   multi_device = Lumberjack::Device::Multi.new(file_device, console_device)
   class Device::Multi < Device
     attr_reader :devices
