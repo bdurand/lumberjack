@@ -330,7 +330,7 @@ module Lumberjack
         begin
           klass = Object.const_get(klass.to_s)
         rescue NameError
-          return nil
+          return @class_formatters[klass.to_s]
         end
       end
 

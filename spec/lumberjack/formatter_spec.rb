@@ -52,6 +52,13 @@ RSpec.describe Lumberjack::Formatter do
     it "returns nil for unknown classes" do
       expect(formatter.formatter_for("Foo::Bar")).to be_nil
     end
+
+    it "returns an exact match even if the class doesn't exist" do
+      formatter = Lumberjack::Formatter.build do
+        add("Foo::Bar", :inspect)
+      end
+      expect(formatter.formatter_for("Foo::Bar")).to be_a(Lumberjack::Formatter::InspectFormatter)
+    end
   end
 
   describe "#format" do
