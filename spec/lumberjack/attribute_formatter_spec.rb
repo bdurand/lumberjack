@@ -180,6 +180,34 @@ RSpec.describe Lumberjack::AttributeFormatter do
     end
   end
 
+  describe "#formatter_for_class" do
+    let(:formatter) do
+      Lumberjack::AttributeFormatter.build do
+        add(Array, :inspect)
+      end
+    end
+
+    it "returns the formatter for a specific class" do
+      expect(formatter.formatter_for_class(Array)).to be_a(Lumberjack::Formatter::InspectFormatter)
+      expect(formatter.formatter_for_class("Array")).to be_a(Lumberjack::Formatter::InspectFormatter)
+      expect(formatter.formatter_for_class(String)).to be_nil
+    end
+  end
+
+  describe "#formatter_for_attribute" do
+    let(:formatter) do
+      Lumberjack::AttributeFormatter.build do
+        add(:foo, :inspect)
+      end
+    end
+
+    it "returns the formatter for a specific attribute" do
+      expect(formatter.formatter_for_attribute(:foo)).to be_a(Lumberjack::Formatter::InspectFormatter)
+      expect(formatter.formatter_for_attribute("foo")).to be_a(Lumberjack::Formatter::InspectFormatter)
+      expect(formatter.formatter_for_attribute(:bar)).to be_nil
+    end
+  end
+
   describe "#include" do
     it "merges the formats from the formatter" do
       formatter_1 = Lumberjack::AttributeFormatter.new

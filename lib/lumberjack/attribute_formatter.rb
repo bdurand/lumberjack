@@ -329,10 +329,26 @@ module Lumberjack
     # @return [#call, nil] The formatter for the class or attribute, or nil if not found.
     def formatter_for(class_or_attribute)
       if class_or_attribute.is_a?(Module)
-        @class_formatter.formatter_for(class_or_attribute)
+        formatter_for_class(class_or_attribute)
       else
-        @attribute_formatter[class_or_attribute.to_s]
+        formatter_for_attribute(class_or_attribute)
       end
+    end
+
+    # Get the formatter for a specific class or class name.
+    #
+    # @param klass [String, Module] The class or class name to get the formatter for.
+    # @return [#call, nil] The formatter for the class, or nil if not found.
+    def formatter_for_class(klass)
+      @class_formatter.formatter_for(klass)
+    end
+
+    # Get the formatter for a specific attribute.
+    #
+    # @param name [String, Symbol] The attribute name to get the formatter for.
+    # @return [#call, nil] The formatter for the attribute, or nil if not found.
+    def formatter_for_attribute(name)
+      @attribute_formatter[name.to_s]
     end
 
     private

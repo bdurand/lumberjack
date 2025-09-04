@@ -35,6 +35,25 @@ RSpec.describe Lumberjack::Formatter do
     end
   end
 
+  describe "#formatter_for" do
+    let(:formatter) do
+      Lumberjack::Formatter.build do
+        add(Numeric, :round)
+        add(Lumberjack::LogEntry, :inspect)
+      end
+    end
+
+    it "returns the formatter for a specific class" do
+      expect(formatter.formatter_for(Integer)).to be_a(Lumberjack::Formatter::RoundFormatter)
+      expect(formatter.formatter_for("Float")).to be_a(Lumberjack::Formatter::RoundFormatter)
+      expect(formatter.formatter_for("Lumberjack::LogEntry")).to be_a(Lumberjack::Formatter::InspectFormatter)
+    end
+
+    it "returns nil for unknown classes" do
+      expect(formatter.formatter_for("Foo::Bar")).to be_nil
+    end
+  end
+
   describe "#format" do
     it "should have a default set of formatters" do
       expect(formatter.format("abc")).to eq("abc")

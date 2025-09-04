@@ -326,6 +326,14 @@ module Lumberjack
     def formatter_for(klass)
       return nil if @class_formatters.empty?
 
+      unless klass.is_a?(Module)
+        begin
+          klass = Object.const_get(klass.to_s)
+        rescue NameError
+          return nil
+        end
+      end
+
       formatter = nil
       has_to_log_format = klass.public_method_defined?(:to_log_format) if klass.is_a?(Module)
       klass.ancestors.detect do |ancestor|
