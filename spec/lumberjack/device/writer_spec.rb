@@ -35,7 +35,7 @@ RSpec.describe Lumberjack::Device::Writer do
     # Create an IO like object that require flush to be called
     io = io_class.new
 
-    device = Lumberjack::Device::Writer.new(io, template: ":message")
+    device = Lumberjack::Device::Writer.new(io, template: "{{message}}")
     device.write(entry)
     expect(io.string).to eq("")
     device.flush
@@ -72,11 +72,11 @@ RSpec.describe Lumberjack::Device::Writer do
     device = Lumberjack::Device::Writer.new(stream)
     device.write(entry)
     device.flush
-    expect(stream.string).to eq("[2011-01-15T14:23:45.123 INFO app(12345)] test message [foo:ABCD]#{Lumberjack::LINE_SEPARATOR}")
+    expect(stream.string).to eq("[2011-01-15T14:23:45.123 INFO  app(12345)] test message [foo:ABCD]#{Lumberjack::LINE_SEPARATOR}")
   end
 
   it "should write entries out to the stream with a custom template" do
-    device = Lumberjack::Device::Writer.new(stream, template: ":message")
+    device = Lumberjack::Device::Writer.new(stream, template: "{{message}}")
     device.write(entry)
     device.flush
     expect(stream.string).to eq("test message#{Lumberjack::LINE_SEPARATOR}")
@@ -86,7 +86,7 @@ RSpec.describe Lumberjack::Device::Writer do
     device = Lumberjack::Device::Writer.new(stream, time_format: :microseconds)
     device.write(entry)
     device.flush
-    expect(stream.string).to eq("[2011-01-15T14:23:45.123000 INFO app(12345)] test message [foo:ABCD]#{Lumberjack::LINE_SEPARATOR}")
+    expect(stream.string).to eq("[2011-01-15T14:23:45.123000 INFO  app(12345)] test message [foo:ABCD]#{Lumberjack::LINE_SEPARATOR}")
   end
 
   it "should be able to specify a block template for log entries" do
@@ -100,7 +100,7 @@ RSpec.describe Lumberjack::Device::Writer do
     stderr = $stderr
     $stderr = StringIO.new
     begin
-      device = Lumberjack::Device::Writer.new(stream, template: ":message")
+      device = Lumberjack::Device::Writer.new(stream, template: "{{message}}")
       expect(stream).to receive(:write).and_raise(StandardError.new("Cannot write to stream"))
       device.write(entry)
       device.flush
@@ -119,14 +119,23 @@ RSpec.describe Lumberjack::Device::Writer do
       device = Lumberjack::Device::Writer.new(stream)
       device.write(entry)
       device.flush
-      expect(stream.string.split(Lumberjack::LINE_SEPARATOR)).to eq(["[2011-01-15T14:23:45.123 INFO app(12345)] line 1 [foo:ABCD]", "> line 2", "> line 3"])
+      expect(stream.string.split(Lumberjack::LINE_SEPARATOR)).to eq(["[2011-01-15T14:23:45.123 INFO  app(12345)] line 1 [foo:ABCD]", "> line 2", "> line 3"])
     end
 
     it "should be able to specify a template for multiple line messages" do
-      device = Lumberjack::Device::Writer.new(stream, additional_lines: " // :message")
+      device = Lumberjack::Device::Writer.new(stream, additional_lines: " // {{message}}")
       device.write(entry)
       device.flush
-      expect(stream.string).to eq("[2011-01-15T14:23:45.123 INFO app(12345)] line 1 [foo:ABCD] // line 2 // line 3#{Lumberjack::LINE_SEPARATOR}")
+      expect(stream.string).to eq("[2011-01-15T14:23:45.123 INFO  app(12345)] line 1 [foo:ABCD] // line 2 // line 3#{Lumberjack::LINE_SEPARATOR}")
+    end
+  end
+
+  describe "colorized entries" do
+    it "should write entries out to the stream with colorized severity" do
+      device = Lumberjack::Device::Writer.new(stream, colorize: true)
+      entry = Lumberjack::LogEntry.new(time, Logger::INFO, "line 1#{Lumberjack::LINE_SEPARATOR}line 2#", "app", 12345, "foo" => "ABCD")
+      device.write(entry)
+      expect(stream.string).to eq("\e[38;5;33m[2011-01-15T14:23:45.123 INFO  app(12345)] line 1 [foo:ABCD]\e[0m\n\e[38;5;33m> line 2#\e[0m\n")
     end
   end
 

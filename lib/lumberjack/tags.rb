@@ -10,7 +10,7 @@ module Lumberjack
       # @return [Hash] The hash with string keys.
       # @deprecated No longer supported
       def stringify_keys(hash)
-        Utils.deprecated(:stringify_keys, "No longer supported") do
+        Utils.deprecated("Lumberjack::Tags.stringify_keys", "Lumberjack::Tags.stringify_keys is no longer supported") do
           return nil if hash.nil?
           if hash.keys.all? { |key| key.is_a?(String) }
             hash
@@ -26,7 +26,7 @@ module Lumberjack
       # @return [Hash] The hash with string keys and expanded values.
       # @deprecated Use {Lumberjack::AttributesHelper.expand_runtime_values} instead.
       def expand_runtime_values(hash)
-        Utils.deprecated(:expand_runtime_values, "Use Lumberjack::AttributesHelper.expand_runtime_values instead.") do
+        Utils.deprecated("Lumberjack::Tags.expand_runtime_values", "Lumberjack::Tags.expand_runtime_values is deprecated; use Lumberjack::AttributesHelper.expand_runtime_values instead.") do
           AttributesHelper.expand_runtime_values(hash)
         end
       end

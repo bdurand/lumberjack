@@ -34,7 +34,7 @@ module Lumberjack
   #
   # @example Using different devices
   #   logger = Lumberjack::Logger.new("logs/application.log")  # Log to file
-  #   logger = Lumberjack::Logger.new(STDOUT, template: ":severity - :message")  # Log to a stream with a template
+  #   logger = Lumberjack::Logger.new(STDOUT, template: "{{severity}} - {{message}}")  # Log to a stream with a template
   #   logger = Lumberjack::Logger.new(:test)  # Log to a buffer for testing
   #   logger = Lumberjack::Logger.new(another_logger) # Proxy logs to another logger
   #   logger = Lumberjack::Logger.new(MyDevice.new)  # Log to a custom Lumberjack::Device
@@ -103,19 +103,19 @@ module Lumberjack
       device_options[:standard_logger_formatter] = formatter if standard_logger_formatter?(formatter)
 
       if device_options.include?(:tag_formatter)
-        Utils.deprecated(:tag_formatter, "Use attribute_formatter instead.") do
+        Utils.deprecated("Logger.options(:tag_formatter)", "Lumberjack::Logger :tag_formatter option is deprecated; use :attribute_formatter instead.") do
           attribute_formatter ||= device_options.delete(:tag_formatter)
         end
       end
 
       if device_options.include?(:roll) && shift_age != 0
-        Utils.deprecated(:roll, "Use shift_age instead.") do
+        Utils.deprecated("Logger.options(:roll)", "Lumberjack::Logger :roll option is deprecated; use the shift_age argument instead.") do
           shift_age = device_options.delete(:roll)
         end
       end
 
       if device_options.include?(:max_size)
-        Utils.deprecated(:max_size, "Use shift_size instead.") do
+        Utils.deprecated("Logger.options(:max_size)", "Lumberjack::Logger :max_size option is deprecated; use the shift_size argument instead.") do
           shift_age = 10
           shift_size = device_options.delete(:max_size)
         end
@@ -206,14 +206,14 @@ module Lumberjack
 
     # @deprecated Use {#attribute_formatter} instead.
     def tag_formatter
-      Utils.deprecated(:tag_formatter, "Use attribute_formatter instead.") do
+      Utils.deprecated("Logger#tag_formatter", "Lumberjack::Logger#tag_formatter is deprecated; use attribute_formatter instead.") do
         formatter.attributes.attribute_formatter
       end
     end
 
     # @deprecated Use {#attribute_formatter=} instead.
     def tag_formatter=(value)
-      Utils.deprecated(:tag_formatter=, "Use attribute_formatter= instead.") do
+      Utils.deprecated("Logger#tag_formatter=", "Lumberjack::Logger#tag_formatter= is deprecated; use attribute_formatter= instead.") do
         formatter.attributes.attribute_formatter = value
       end
     end
@@ -257,7 +257,7 @@ module Lumberjack
     # @return [void]
     # @deprecated Use with_progname or progname= instead.
     def set_progname(value, &block)
-      Utils.deprecated(:set_progname, "Use with_progname or progname= instead.") do
+      Utils.deprecated("Logger#set_progname", "Lumberjack::Logger#set_progname is deprecated; use with_progname or progname= instead.") do
         if block
           with_progname(value, &block)
         else
@@ -266,12 +266,34 @@ module Lumberjack
       end
     end
 
+    # Alias method for #attributes to provide backward compatibility with version 1.x API. This
+    # method will eventually be removed.
+    #
+    # @return [Hash]
+    # @deprecated Use {#attributes} instead
+    def tags
+      Utils.deprecated("Logger#tags", "Lumberjack::Logger#tags is deprecated; use attributes instead.") do
+        attributes
+      end
+    end
+
+    # Alias method for #attribute_value to provide backward compatibility with version 1.x API. This
+    # method will eventually be removed.
+    #
+    # @return [Hash]
+    # @deprecated Use {#attribute_value} instead
+    def tag_value(name)
+      Utils.deprecated("Logger#tag_value", "Lumberjack::Logger#tag_value is deprecated; use attribute_value instead.") do
+        attribute_value(name)
+      end
+    end
+
     # Use tag! instead
     #
     # @return [void]
     # @deprecated Use {#tag!} instead.
     def tag_globally(tags)
-      Utils.deprecated(:tag_globally, "Use tag! instead.") do
+      Utils.deprecated("Logger#tag_globally", "Lumberjack::Logger#tag_globally is deprecated; use tag! instead.") do
         tag!(tags)
       end
     end
@@ -281,7 +303,7 @@ module Lumberjack
     # @return [Boolean]
     # @deprecated Use {#in_context?} instead.
     def in_tag_context?
-      Utils.deprecated(:in_tag_context?, "Use context? instead.") do
+      Utils.deprecated("Logger#in_tag_context?", "Lumberjack::Logger#in_tag_context? is deprecated; use in_context? instead.") do
         context?
       end
     end
@@ -294,7 +316,7 @@ module Lumberjack
     # @return [void]
     # @deprecated Use untag or untag! instead.
     def remove_tag(*tag_names)
-      Utils.deprecated(:remove_tag, "Use untag or untag! instead.") do
+      Utils.deprecated("Logger#remove_tag", "Lumberjack::Logger#remove_tag is deprecated; use untag or untag! instead.") do
         attributes = current_context&.attributes
         AttributesHelper.new(attributes).delete(*tag_names) if attributes
       end
@@ -308,7 +330,7 @@ module Lumberjack
     # @deprecated This implementation is deprecated. Install the lumberjack_rails gem for full support.
     def tagged(*tags, &block)
       deprecation_message = "Install the lumberjack_rails gem for full support of the tagged method."
-      Utils.deprecated(:tagged, deprecation_message) do
+      Utils.deprecated("Logger#tagged", deprecation_message) do
         append_to(:tagged, *tags, &block)
       end
     end
@@ -318,7 +340,7 @@ module Lumberjack
     # @see clear_attributes
     # @deprecated Use clear_attributes instead.
     def untagged(&block)
-      Utils.deprecated(:untagged, "Use clear_attributes instead.") do
+      Utils.deprecated("Logger#untagged", "Lumberjack::Logger#untagged is deprecated; use clear_attributes instead.") do
         clear_attributes(&block)
       end
     end
@@ -330,7 +352,7 @@ module Lumberjack
     # @deprecated This implementation is deprecated. Install the lumberjack_rails gem for full support.
     def log_at(level, &block)
       deprecation_message = "Install the lumberjack_rails gem for full support of the log_at method."
-      Utils.deprecated(:log_at, deprecation_message) do
+      Utils.deprecated("Logger#log_at", deprecation_message) do
         with_level(level, &block)
       end
     end
@@ -342,7 +364,7 @@ module Lumberjack
     # @deprecated This implementation is deprecated. Install the lumberjack_rails gem for full support.
     def silence(level = Logger::ERROR, &block)
       deprecation_message = "Install the lumberjack_rails gem for full support of the silence method."
-      Utils.deprecated(:silence, deprecation_message) do
+      Utils.deprecated("Logger#silence", deprecation_message) do
         with_level(level, &block)
       end
     end

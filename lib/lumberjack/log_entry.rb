@@ -48,8 +48,13 @@ module Lumberjack
     # Get the human-readable severity label corresponding to the numeric severity level.
     #
     # @return [String] The severity label (DEBUG, INFO, WARN, ERROR, FATAL, or UNKNOWN)
-    def severity_label(pad = false)
-      Severity.level_to_label(severity, pad)
+    def severity_label
+      severity_data.label
+    end
+
+    # Get the data corresponding to the severity. This include variations on the severity label.
+    def severity_data
+      Severity.data(severity)
     end
 
     # Generate a formatted string representation of the log entry suitable for
@@ -91,7 +96,7 @@ module Lumberjack
     # @return [Hash, nil] The attributes of the log entry.
     # @deprecated Use {#attributes} instead.
     def tags
-      Utils.deprecated(:tags, "Use attributes instead.") do
+      Utils.deprecated("LogEntry#tags", "Lumberjack::LogEntry#tags is deprecated; use attributes instead.") do
         attributes
       end
     end
@@ -111,7 +116,7 @@ module Lumberjack
     # @return [Hash]
     # @deprecated Use {#[]} instead.
     def tag(name)
-      Utils.deprecated(:tag, "Use [] instead.") do
+      Utils.deprecated("LogEntry#tag", "Lumberjack::LogEntry#tag is deprecated; use [] instead.") do
         self[name]
       end
     end
@@ -131,7 +136,7 @@ module Lumberjack
     # @return [Hash]
     # @deprecated Use {#nested_attributes} instead.
     def nested_tags
-      Utils.deprecated(:nested_tags, "Use nested_attributes instead.") do
+      Utils.deprecated("LogEntry#nested_tags", "Lumberjack::LogEntry#nested_tags is deprecated; use nested_attributes instead.") do
         nested_attributes
       end
     end

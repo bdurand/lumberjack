@@ -65,6 +65,11 @@ logger.debug("Processing data",
 )
 ```
 
+> [!Note]
+> Attributes are passed in log statements in the little used `progname` argument that is defined in the standard Ruby Logger API. This attribute can be used to set a specific program name for the log entry that overrides the default program name on the logger.
+>
+> The only difference in the API is that Lumberjack loggers can take a Hash to set attributes. You can still pass a string to override the program name.
+
 #### Adding attributes to the logger
 
 Attributes added to the logger will be included in all log entries.
