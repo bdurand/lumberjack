@@ -45,7 +45,7 @@ namespace :profile do
     logger = logger_class.new(out, level: log_level)
     message = "foobar"
 
-    result = RubyProf.profile do
+    result = RubyProf::Profile.profile do
       1000.times { logger.info(message) }
     end
     printer = RubyProf::FlatPrinter.new(result)
