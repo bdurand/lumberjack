@@ -57,9 +57,7 @@ module Lumberjack
     # @param name [Symbol] The name of the local value.
     # @return [Object, nil] The local value or nil if not set.
     def fiber_local_value(name) # :nodoc:
-      init_fiber_locals! unless defined?(@fiber_locals)
-
-      @fiber_locals.dig(Fiber.current.object_id, name)
+      @fiber_locals&.dig(Fiber.current.object_id, name) if defined?(@fiber_locals)
     end
   end
 end
