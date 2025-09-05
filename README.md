@@ -491,8 +491,8 @@ The `Multi` device broadcasts log entries to multiple devices simultaneously. Yo
 instantiate a multi device by passing in an array of values.
 
 ```ruby
-# Log to both file and STDOUT using the same template.
-logger = Lumberjack::Logger.new(["/var/log/app.log", $stdout], template: "{{severity}} {{message}}")
+# Log to both file and STDOUT; the logs to STDOUT will only contain the log message.
+logger = Lumberjack::Logger.new(["/var/log/app.log", [:stdout, {template: "{{message}}"}]])
 
 logger.info("Application started")  # Appears in both file AND STDOUT
 ```
