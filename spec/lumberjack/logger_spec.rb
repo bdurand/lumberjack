@@ -103,10 +103,20 @@ RSpec.describe Lumberjack::Logger do
     it "should create a multi device if the stream is an array" do
       stream_1 = StringIO.new
       stream_2 = StringIO.new
-      logger = Lumberjack::Logger.new([stream_1, stream_2])
+      logger = Lumberjack::Logger.new(
+        [
+          stream_1,
+          [stream_2, {attribute_format: "(%s:%s)"}]
+        ],
+        template: "{{severity}} - {{message}} {{attributes}}",
+        attribute_format: "[%s=%s]"
+      )
       device = logger.device
       expect(device).to be_a(Lumberjack::Device::Multi)
       expect(device.devices.collect(&:dev)).to eq [stream_1, stream_2]
+      logger.info("test", foo: "bar")
+      expect(stream_1.string).to eq("INFO - test [foo=bar]\n")
+      expect(stream_2.string).to eq("INFO - test (foo:bar)\n")
     end
 
     it "should set the level with a numeric" do

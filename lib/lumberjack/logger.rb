@@ -35,9 +35,12 @@ module Lumberjack
   # @example Using different devices
   #   logger = Lumberjack::Logger.new("logs/application.log")  # Log to file
   #   logger = Lumberjack::Logger.new(STDOUT, template: "{{severity}} - {{message}}")  # Log to a stream with a template
-  #   logger = Lumberjack::Logger.new(:test)  # Log to a buffer for testing
+  #   logger = Lumberjack::Logger.new(:test)  # Log to an in memory buffer for testing
   #   logger = Lumberjack::Logger.new(another_logger) # Proxy logs to another logger
   #   logger = Lumberjack::Logger.new(MyDevice.new)  # Log to a custom Lumberjack::Device
+  #
+  # @example Logging to multiple devices with an array
+  #   logger = Lumberjack::Logger.new(["/var/log/app.log", [:stdout, {template: "{{message}}"}]])
   #
   # Log entries are written to a logging Device if their severity meets or exceeds the log level.
   # Each log entry records the log message and severity along with the time it was logged, the
@@ -54,11 +57,12 @@ module Lumberjack
     # Create a new logger to log to a Device.
     #
     # The +device+ argument can be in any one of several formats:
-    # - A Device object will be used directly
+    # - A symbol for a device name (e.g. :null, :test). You can call `Lumberjack::DeviceRegistry.registered_devices` for a list.
+    # - A stream
+    # - A file path string or `Pathname`
+    # - A `Lumberjack::Device`` object
     # - An object with a +write+ method will be wrapped in a Device::Writer
-    # - The symbol +:null+ creates a Null device that discards all output
-    # - The symbol +:test+ creates a Test device for capturing output in tests
-    # - A file path string creates a Device::LogFile for file-based logging
+    # - An array of any of the above will open a Multi device that will send output to all devices.
     #
     # @param logdev [Lumberjack::Device, IO, Symbol, String, Pathname] The device to log to.
     #   If this is a symbol, the device will be looked up from the DeviceRegistry. If it is
@@ -437,7 +441,11 @@ module Lumberjack
       elsif device.is_a?(ContextLogger)
         Device::LoggerWrapper.new(device)
       elsif device.is_a?(Array)
-        Device::Multi.new(device.collect { |d| open_device(d, options) })
+        devices = device.collect do |dev, dev_options|
+          dev_options = dev_options.is_a?(Hash) ? options.merge(dev_options) : options
+          open_device(dev, dev_options)
+        end
+        Device::Multi.new(devices)
       elsif io_but_not_file_stream?(device)
         Device::Writer.new(device, options)
       else
