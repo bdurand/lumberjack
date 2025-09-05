@@ -49,7 +49,7 @@ module Lumberjack
           end
         end
 
-        yield
+        yield if block_given?
       end
 
       # Get the hostname of the machine. The returned value will be in UTF-8 encoding.

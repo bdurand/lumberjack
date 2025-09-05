@@ -149,9 +149,13 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.progname).to eq("app")
     end
 
-    it "allows using the deprecated :roll option without blowing up" do
+    it "allows the deprecated method of passing an options hash" do
       silence_deprecations do
-        expect { Lumberjack::Logger.new(File::NULL, roll: :daily) }.to_not raise_error
+        output = StringIO.new
+        logger = Lumberjack::Logger.new(output, {level: :warn, template: "{{message}} {{attributes}}"}, attribute_format: "%s=%s")
+        expect(logger.level).to eq(Logger::WARN)
+        logger.warn("test", foo: "bar")
+        expect(output.string).to eq("test foo=bar\n")
       end
     end
 

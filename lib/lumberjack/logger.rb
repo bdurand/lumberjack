@@ -97,7 +97,16 @@ module Lumberjack
       init_fiber_locals!
 
       if shift_age.is_a?(Hash)
-        raise ArgumentError.new("options must be passed as keyword arguments instead of a Hash")
+        Lumberjack::Utils.deprecated("Logger.new(options)", "Passing a Hash as the second argument to Logger.new is deprecated; use keyword arguments instead.")
+        options = shift_age
+        level = options[:level] if options.include?(:level)
+        progname = options[:progname] if options.include?(:progname)
+        formatter = options[:formatter] if options.include?(:formatter)
+        datetime_format = options[:datetime_format] if options.include?(:datetime_format)
+        template = options[:template] if options.include?(:template)
+        message_formatter = options[:message_formatter] if options.include?(:message_formatter)
+        attribute_formatter = options[:attribute_formatter] if options.include?(:attribute_formatter)
+        kwargs = options.merge(kwargs)
       end
 
       # Include standard args that affect devices with the optional kwargs which may
@@ -107,22 +116,19 @@ module Lumberjack
       device_options[:standard_logger_formatter] = formatter if standard_logger_formatter?(formatter)
 
       if device_options.include?(:tag_formatter)
-        Utils.deprecated("Logger.options(:tag_formatter)", "Lumberjack::Logger :tag_formatter option is deprecated; use :attribute_formatter instead.") do
-          attribute_formatter ||= device_options.delete(:tag_formatter)
-        end
+        Utils.deprecated("Logger.options(:tag_formatter)", "Lumberjack::Logger :tag_formatter option is deprecated; use :attribute_formatter instead.")
+        attribute_formatter ||= device_options.delete(:tag_formatter)
       end
 
       if device_options.include?(:roll) && shift_age != 0
-        Utils.deprecated("Logger.options(:roll)", "Lumberjack::Logger :roll option is deprecated; use the shift_age argument instead.") do
-          shift_age = device_options.delete(:roll)
-        end
+        Utils.deprecated("Logger.options(:roll)", "Lumberjack::Logger :roll option is deprecated; use the shift_age argument instead.")
+        device_options[:shift_age] = device_options.delete(:roll)
       end
 
       if device_options.include?(:max_size)
-        Utils.deprecated("Logger.options(:max_size)", "Lumberjack::Logger :max_size option is deprecated; use the shift_size argument instead.") do
-          shift_age = 10
-          shift_size = device_options.delete(:max_size)
-        end
+        Utils.deprecated("Logger.options(:max_size)", "Lumberjack::Logger :max_size option is deprecated; use the shift_size argument instead.")
+        device_options[:shift_age] = 10
+        device_options[:shift_size] = device_options.delete(:max_size)
       end
 
       @logdev = open_device(logdev, device_options)

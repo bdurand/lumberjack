@@ -38,7 +38,6 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 ### Changed
 
 - `Lumberjack::Logger` now inherits from `::Logger` instead of just having API compatibility with the standard library `Logger` class.
-- **Breaking Change** `Lumberjack::Logger` now takes keyword arguments instead of an options hash.
 - **Breaking Change** The default log level is now DEBUG instead of INFO.
 - The severity label for log entries with an unknown level is now ANY instead of UNKNOWN.
 - **Breaking Change** Changing logger level or progname inside a context block will now only be in effect inside the block.
@@ -57,11 +56,12 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - **Breaking Change** Removed deprecated support for setting global tags with `Lumberjack::Logger#tag`. Now calling `tag` outside of a block or context will be ignored. Use `tag!` to set global tags on a logger.
 - **Breaking Change** Removed the devices that handled logging to files (`Lumberjack::Device::LogFile`, `Lumberjack::Device::RollingLogFile`, `Lumberjack::Device::DateRollingLogFile`, and `Lumberjack::Device::SizeRollingLogFile`) since file logging is now handled by the standard library `Logger::LogDevice` class.
 - Removed internal buffer from the `Lumberjack::Device::Writer` class. This functionality was more useful in the days of slower I/O operations when logs were written to spinning hard disks. The functionality is no longer as useful and is not worth the overhead. The `Lumberjack::Logger.last_flushed_at` method has also been removed.
-- **Breaking Change** Formatters can no longer be passed as a class name in `Lumberjack::Formatter.add`.
+- **Breaking Change** When adding a formatter with `Lumberjack::Formatter#add` you can no longer pass the formatter as a class name (i.e. this won't work: `formatter.add(MyClass, "Lumberjack::Formatter::IdFormatter"); the formatter can be a class, symbol, callable object, or a block).
 - Removed support for Ruby versions < 2.7.
 
 ### Deprecated
 
+- `Lumberjack::Logger` now takes keyword arguments instead of an options hash. If you were passing in options as a hash, you now need to doublesplat it: `Lumberjack::Logger.new(stream, **options)`.
 - "Tags" are now called "attributes" to better align with best practices. In logging parlance "tags" are generally an array of strings. The main interface to adding log attributes with `Lumberjack::Logger#tag` has not changed. In this case we are using "tag" as a verb as in "to tag a log entry with attributes". The public interfaces that used "tag" in the method names have all been deprecated and will be removed in a future release.
   - `Lumberjack.context_tags`
   - `Lumberjack::Logger#tags`
