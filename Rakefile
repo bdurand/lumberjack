@@ -37,3 +37,39 @@ namespace :appraisals do
 end
 
 require "standard/rake"
+
+namespace :profile do
+  desc "Profile logger CPU usage. Set LOGGER=Logger to profile the standard libary logger. Set LOG_LEVEL=warn to profile with a higher log level."
+  task :cpu do |t, args|
+    require "ruby-prof"
+    require_relative "lib/lumberjack"
+
+    out = StringIO.new
+    logger_class = (ENV["LOGGER"] == "Logger") ? Logger : Lumberjack::Logger
+    log_level = ENV.fetch("LOG_LEVEL", "debug")
+    logger = logger_class.new(out, level: log_level)
+    message = "foobar"
+
+    result = RubyProf::Profile.profile do
+      1000.times { logger.info(message) }
+    end
+    printer = RubyProf::FlatPrinter.new(result)
+    printer.print($stdout)
+  end
+
+  desc "Profile logger memory usage. Set LOGGER=Logger to profile the standard libary logger. Set LOG_LEVEL=warn to profile with a higher log level."
+  task :memory do |t, args|
+    require "memory_profiler"
+    require_relative "lib/lumberjack"
+
+    out = StringIO.new
+    logger_class = (ENV["LOGGER"] == "Logger") ? Logger : Lumberjack::Logger
+    log_level = ENV.fetch("LOG_LEVEL", "debug")
+    logger = logger_class.new(out, level: log_level)
+    message = "foobar"
+
+    MemoryProfiler.report do
+      1000.times { logger.info(message) }
+    end.pretty_print
+  end
+end
