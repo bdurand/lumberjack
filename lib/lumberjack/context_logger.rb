@@ -535,7 +535,7 @@ module Lumberjack
       end
 
       message = message.call if message.is_a?(Proc)
-      message = message.strip if message.is_a?(String) && message.match?(/LEADING_OR_TRAILING_WHITESPACE/)
+      message = message.strip if message.is_a?(String) && message.match?(LEADING_OR_TRAILING_WHITESPACE)
       return if (message.nil? || message == "") && (attributes.nil? || attributes.empty?)
 
       add_entry(severity, message, progname, attributes)

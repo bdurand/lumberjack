@@ -208,6 +208,17 @@ RSpec.describe Lumberjack::ContextLogger do
       })
     end
 
+    it "strips whitespace from the message" do
+      logger.add(Logger::INFO, "   Test message   ")
+      expect(logger.entries.last[:message]).to eq("Test message")
+
+      logger.add("\nTest message")
+      expect(logger.entries.last[:message]).to eq("Test message")
+
+      logger.add("Test message\n")
+      expect(logger.entries.last[:message]).to eq("Test message")
+    end
+
     it "is aliased as #log" do
       logger.add(Logger::INFO, "Test message")
       logger.log(Logger::INFO, "Test message")
