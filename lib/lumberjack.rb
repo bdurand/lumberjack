@@ -30,7 +30,7 @@ require "pathname"
 # @see Lumberjack::Logger
 # @see Lumberjack::ContextLogger
 module Lumberjack
-  VERSION = File.read(File.join(__dir__, "..", "VERSION")).chomp
+  VERSION = File.read(File.join(__dir__, "..", "VERSION")).strip.freeze
 
   LINE_SEPARATOR = ((RbConfig::CONFIG["host_os"] =~ /mswin/i) ? "\r\n" : "\n")
 
