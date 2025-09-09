@@ -26,7 +26,7 @@ The philosophy behind the library is to promote use of structured logging with t
      - [Global Logger Attributes](#global-logger-attributes)
      - [Nested Attributes and Complex Data](#nested-attributes-and-complex-data)
      - [Attribute Inheritance and Merging](#attribute-inheritance-and-merging)
-     - [Using the tagged method](#using-the-tagged-method)
+     - [Working with Array Attributes](#working-with-array-attributes)
    - [Context Isolation](#context-isolation)
      - [Context Blocks](#context-blocks)
      - [Nested Context Blocks](#nested-context-blocks)
@@ -108,7 +108,7 @@ Calling `tag` outside of a context without a block is a no-op and has no effect 
 
 #### Global Logger Attributes
 
-You can add global tags that apply to all log entries with the `tag!` method.
+You can add global attributes that apply to all log entries with the `tag!` method.
 
 ```ruby
 logger.tag!(
@@ -182,16 +182,21 @@ logger.info("User signed in", user: {id: 123})
 logger.info("User signed in", "user.id" => 123)
 ```
 
-#### Using the tagged method
+#### Working with Array Attributes
 
-A common practice is to add an array of tags to log entries. The `tagged` method can be used to append tags to the current context. Tags are stored in the "tags" attribute. Like the `tag` method, this method can be called with a block to create a new context or without a block to update the current context.
+A common practice is to add an array of values to a specific attribute. You can use the `append_to` method to append values to an array attribute in the current context. Like the `tag` method, this method can be called with a block to create a new context or without a block to update the current context.
 
 ```ruby
-logger.tagged("api", "v1") do
+logger.append_to(:tags, "api", "v1") do
   logger.info("API request started") # Includes tags: ["api", "v1"]
-
-  logger.tagged("users")
+  
+  logger.append_to(:tags, "users")
   logger.info("Processing user data") # Includes tags: ["api", "v1", "users"]
+end
+
+# You can also append to other array attributes
+logger.append_to(:categories, "billing", "premium") do
+  logger.info("Processing premium billing") # Includes categories: ["billing", "premium"]
 end
 ```
 
