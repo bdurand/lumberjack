@@ -51,6 +51,26 @@ module Lumberjack
   #     attributes: {"request.method" => "POST", "request.path" => "/users"}
   #   )
   #
+  # @example Capturing logs to a file only for failed rspec tests
+  #   # Set up test logger (presumably in an initializer)
+  #   Application.logger = Lumberjack::Logger.new(:test)
+  #
+  #   # In your spec_helper or rails_helper.rb
+  #   RSpec.configure do |config|
+  #     failed_test_logs = Lumberjack::Logger.new("log/test.log")
+  #
+  #     config.around do |example|
+  #       Application.logger.flush
+  #
+  #       example.run
+  #
+  #       if example.exception
+  #         failed_test_logs.error("Test failed: #{example.full_description}")
+  #         Application.logger.device.write_to(failed_test_logs)
+  #       end
+  #     end
+  #   end
+  #
   # @see LogEntryMatcher
   class Device::Test < Device
     DeviceRegistry.add(:test, self)
@@ -127,6 +147,22 @@ module Lumberjack
     # @return [void]
     def flush
       @buffer = []
+      nil
+    end
+
+    # Write the captured log entries out to another logger or device. This can be useful
+    # in testing scenarios where you want to preserve log output for failed tests.
+    #
+    # @param logger [Lumberjack::Logger, Lumberjack::Device] The target logger or device
+    #   to which captured entries should be written
+    # @return [void]
+    def write_to(logger)
+      device = (logger.is_a?(Lumberjack::Device) ? logger : logger.device)
+      entries.each do |entry|
+        device.write(entry)
+      end
+
+      nil
     end
 
     # Test whether any captured log entries match the specified criteria.

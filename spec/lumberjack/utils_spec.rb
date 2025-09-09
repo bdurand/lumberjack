@@ -146,11 +146,28 @@ RSpec.describe Lumberjack::Utils do
     it "does not print the warning again for subsequent calls" do
       Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :foo }
       expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
-      $stderr.string = ""
+      $stderr.rewind
+      $stderr.truncate(0)
 
       retval = Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :bar }
       expect($stderr.string).to be_empty
       expect(retval).to eq :bar
+    end
+
+    it "does print the warning again if LUMBERJACK_SHOW_ALL_DEPRECATION_WARNINGS is true" do
+      ENV["LUMBERJACK_SHOW_ALL_DEPRECATION_WARNINGS"] = "true"
+      begin
+        Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :foo }
+        expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
+        $stderr.rewind
+        $stderr.truncate(0)
+
+        retval = Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :bar }
+        expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
+        expect(retval).to eq :bar
+      ensure
+        ENV.delete("LUMBERJACK_SHOW_ALL_DEPRECATION_WARNINGS")
+      end
     end
 
     it "prints the current line if $VERBOSE is false" do

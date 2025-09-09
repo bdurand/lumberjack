@@ -16,13 +16,12 @@ module Lumberjack
     @hostname = UNDEFINED
 
     class << self
-      # Print warning when deprecated methods are called the first time. This system helps
-      # manage API transitions by warning users about deprecated functionality while still
-      # allowing the code to work.
+      # Print warning when deprecated methods are called the first time. Deprecation warnings
+      # will only be printed if either the Ruby `Warning[:deprecated]` flag is set or if Ruby
+      # is running in verbose mode (`$VERBOSE`).
       #
-      # Deprecation warnings can be controlled via environment variables:
-      # - Set `LUMBERJACK_NO_DEPRECATION_WARNINGS=true` to disable warnings entirely
-      # - Set `VERBOSE_LUMBERJACK_DEPRECATION_WARNING=true` to show full stack traces
+      # In order to cut down on noise, each deprecated method will only print a warning once per process
+      # unless the `LUMBERJACK_SHOW_ALL_DEPRECATION_WARNINGS` environment variable is set to "true".
       #
       # @param method [String, Symbol] The name of the deprecated method.
       # @param message [String] The deprecation message explaining what to use instead.
@@ -42,7 +41,9 @@ module Lumberjack
             @deprecations ||= {}
             unless @deprecations.include?(method)
               trace = $VERBOSE ? caller[3..] : caller[3, 1]
-              @deprecations[method] = true
+              unless ENV["LUMBERJACK_SHOW_ALL_DEPRECATION_WARNINGS"] == "true"
+                @deprecations[method] = true
+              end
               message = "DEPRECATION WARNING: #{message} Called from #{trace.join("\n")}"
               warn(message)
             end

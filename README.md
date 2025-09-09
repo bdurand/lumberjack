@@ -673,6 +673,29 @@ You should make sure to call `logger.flush` between tests to clear the captured 
 > [!TIP]
 > The [lumberjack_capture_device](https://github.com/bdurand/lumberjack_capture_device) gem provides some additional testing utilities and rspec integration.
 
+You can also use the `write_to` method on the `Test` device to write the captured log entries to another logger or device. This can be useful in scenarios where you want to preserve log output for failed tests.
+
+```ruby
+# Set up test logger (presumably in an initializer)
+Application.logger = Lumberjack::Logger.new(:test)
+
+# Hook into your test framework; in this example using rspec.
+RSpec.configure do |config|
+  failed_test_logs = Lumberjack::Logger.new("log/test_failures.log")
+  config.around do |example|
+    # Flush will clear the captured logs so we start with a clean slate.
+    Application.logger.flush
+
+    example.run
+
+    if example.exception
+      failed_test_logs.error("Test failed: #{example.full_description} @ #{example.location}")
+      Application.logger.device.write_to(failed_test_logs)
+    end
+  end
+end
+```
+
 ### Using As A Stream
 
 Lumberjack loggers implement methods necessary for treating them like a stream. You can use this to augment output from components that write output to a stream with metadata like a timestamp and attributes.
