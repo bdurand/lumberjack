@@ -46,6 +46,34 @@ RSpec.describe Lumberjack::Device::Test do
     end
   end
 
+  describe "#write_to" do
+    it "can write captured log entries to another logger" do
+      entry_1 = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Entry 1", nil, nil, nil)
+      entry_2 = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Entry 2", nil, nil, nil)
+      device.write(entry_1)
+      device.write(entry_2)
+
+      target_logger = Lumberjack::Logger.new(:test)
+      device.write_to(target_logger)
+
+      expect(target_logger.device.entries).to eq([entry_1, entry_2])
+      expect(device.entries).to_not be_empty
+    end
+
+    it "can write captured log entries to another device" do
+      entry_1 = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Entry 1", nil, nil, nil)
+      entry_2 = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Entry 2", nil, nil, nil)
+      device.write(entry_1)
+      device.write(entry_2)
+
+      target_device = Lumberjack::Device::Test.new
+      device.write_to(target_device)
+
+      expect(target_device.entries).to eq([entry_1, entry_2])
+      expect(device.entries).to_not be_empty
+    end
+  end
+
   describe "#entries" do
     it "returns all captured log entries" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test message", nil, nil, nil)
