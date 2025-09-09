@@ -343,6 +343,12 @@ module Lumberjack
     # Tags the logger with a set of persistent attributes. These attributes will be included on every log
     # entry and are not tied to a context block. If the logger does not have a default context, then
     # these will be ignored.
+    #
+    # @param attributes [Hash] The attributes to set persistently on the logger.
+    # @return [nil]
+    # @example
+    #   logger.tag!(version: "1.2.3", environment: "production")
+    #   logger.info("Server started") # Will include version and environment attributes
     def tag!(attributes)
       default_context&.assign_attributes(attributes)
       nil
@@ -354,6 +360,7 @@ module Lumberjack
     # block is passed, then the values will be appended to the attribute in the current context.
     # If there is no current context, then nothing will happen.
     #
+    # @param attribute_name [String, Symbol] The name of the attribute to append values to.
     # @param tags [Array<String, Symbol, Hash>] The tags to add.
     # @return [Object, Lumberjack::Logger] If a block is passed then returns the result of the block.
     #   Otherwise returns self so that calls can be chained.
