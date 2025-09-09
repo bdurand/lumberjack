@@ -307,7 +307,7 @@ logger.info(Time.now)                            # "14:30"
 | `:string` | Convert to string using to_s |
 | `:strip` | Strip whitespace from strings |
 | `:structured` | Recursively format collections |
-| `:tags` | Format values tags in the format "[val1] [val2]" for arrays or "[key=value]" for hashes |
+| `:tags` | Format values as tags in the format "[val1] [val2]" for arrays or "[key=value]" for hashes |
 | `:truncate` | Truncate long strings |
 
 ##### Custom Object Formatters
