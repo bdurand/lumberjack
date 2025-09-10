@@ -40,6 +40,10 @@ module Lumberjack
             @deprecations ||= {}
             unless @deprecations.include?(method)
               trace = $VERBOSE ? caller[3..] : caller[3, 1]
+              if trace.first.start_with?(__dir__) && !$VERBOSE
+                non_lumberjack_caller = caller[4..].detect { |line| !line.start_with?(__dir__) }
+                trace = [non_lumberjack_caller] if non_lumberjack_caller
+              end
               unless ENV["LUMBERJACK_DEPRECATION_WARNINGS"] == "verbose"
                 @deprecations[method] = true
               end
