@@ -12,6 +12,7 @@ module Lumberjack
       def stringify_keys(hash)
         Utils.deprecated("Lumberjack::Tags.stringify_keys", "Lumberjack::Tags.stringify_keys is no longer supported") do
           return nil if hash.nil?
+
           if hash.keys.all? { |key| key.is_a?(String) }
             hash
           else
