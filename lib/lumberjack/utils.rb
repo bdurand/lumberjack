@@ -16,9 +16,8 @@ module Lumberjack
     @hostname = UNDEFINED
 
     class << self
-      # Print warning when deprecated methods are called the first time. Deprecation warnings
-      # will only be printed if either the Ruby `Warning[:deprecated]` flag is set or if Ruby
-      # is running in verbose mode (`$VERBOSE`).
+      # Print warning when deprecated methods are called the first time. This can be disabled
+      # by setting the environment variable `LUMBERJACK_NO_DEPRECATION_WARNINGS` to "true".
       #
       # In order to cut down on noise, each deprecated method will only print a warning once per process
       # unless the `LUMBERJACK_SHOW_ALL_DEPRECATION_WARNINGS` environment variable is set to "true".
@@ -35,7 +34,7 @@ module Lumberjack
       #     end
       #   end
       def deprecated(method, message)
-        if (Warning[:deprecated] || $VERBOSE) && !@deprecations&.include?(method)
+        if ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] != "true" && !@deprecations&.include?(method)
           @deprecations_lock ||= Mutex.new
           @deprecations_lock.synchronize do
             @deprecations ||= {}

@@ -26,16 +26,6 @@ RSpec.configure do |config|
   config.default_formatter = "doc" if config.files_to_run.one?
   config.order = :random
   Kernel.srand config.seed
-
-  config.around(:each, :suppress_warnings) do |example|
-    save_val = ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"]
-    ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = "true"
-    begin
-      example.run
-    ensure
-      ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = save_val
-    end
-  end
 end
 
 def tmp_dir
@@ -58,15 +48,15 @@ def delete_tmp_files
 end
 
 def silence_deprecations
-  save_warning = Warning[:deprecated]
+  save_warning = ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"]
   save_verbose = $VERBOSE
   begin
-    Warning[:deprecated] = false
+    ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = "true"
     $VERBOSE = false
     begin
       yield
     ensure
-      Warning[:deprecated] = save_warning
+      ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = save_warning
       $VERBOSE = save_verbose
     end
   end

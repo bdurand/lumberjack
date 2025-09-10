@@ -122,18 +122,18 @@ RSpec.describe Lumberjack::Utils do
   describe ".deprecated" do
     around do |example|
       original_verbose = $VERBOSE
-      original_deprecated = Warning[:deprecated]
+      original_deprecated = ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"]
       original_stderr = $stderr
       begin
         $stderr = StringIO.new
         $VERBOSE = false
-        Warning[:deprecated] = true
+        ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = nil
         Lumberjack::Utils.instance_variable_set(:@deprecations, nil)
         example.run
       ensure
         $stderr = original_stderr
         $VERBOSE = original_verbose
-        Warning[:deprecated] = original_deprecated
+        ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = original_deprecated
       end
     end
 
@@ -170,7 +170,18 @@ RSpec.describe Lumberjack::Utils do
       end
     end
 
-    it "prints the current line if $VERBOSE is false" do
+    it "does not print a warning if LUMBERJACK_NO_DEPRECATION_WARNINGS is true" do
+      ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = "true"
+      begin
+        retval = Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
+        expect($stderr.string).to be_empty
+        expect(retval).to eq :foo
+      ensure
+        ENV.delete("LUMBERJACK_NO_DEPRECATION_WARNINGS")
+      end
+    end
+
+    it "prints only the current line if $VERBOSE is false" do
       $VERBOSE = false
       Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
       expect($stderr.string.chomp.split("\n").length).to eq 1
