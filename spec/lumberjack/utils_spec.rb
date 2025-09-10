@@ -154,9 +154,10 @@ RSpec.describe Lumberjack::Utils do
       expect(retval).to eq :bar
     end
 
-    it "does print the warning again if LUMBERJACK_SHOW_ALL_DEPRECATION_WARNINGS is true" do
-      ENV["LUMBERJACK_SHOW_ALL_DEPRECATION_WARNINGS"] = "true"
+    it "does print the warning again if LUMBERJACK_DEPRECATION_WARNINGS is verbnose" do
+      save_val = ENV["LUMBERJACKDEPRECATION_WARNINGS"]
       begin
+        ENV["LUMBERJACK_DEPRECATION_WARNINGS"] = "verbose"
         Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :foo }
         expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
         $stderr.rewind
@@ -166,18 +167,19 @@ RSpec.describe Lumberjack::Utils do
         expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
         expect(retval).to eq :bar
       ensure
-        ENV.delete("LUMBERJACK_SHOW_ALL_DEPRECATION_WARNINGS")
+        ENV["LUMBERJACK_DEPRECATION_WARNINGS"] = save_val
       end
     end
 
-    it "does not print a warning if LUMBERJACK_NO_DEPRECATION_WARNINGS is true" do
-      ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = "true"
+    it "does not print a warning if LUMBERJACK_DEPRECATION_WARNINGS is false" do
+      save_val = ENV["LUMBERJACK_DEPRECATION_WARNINGS"]
       begin
+        ENV["LUMBERJACK_DEPRECATION_WARNINGS"] = "false"
         retval = Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
         expect($stderr.string).to be_empty
         expect(retval).to eq :foo
       ensure
-        ENV.delete("LUMBERJACK_NO_DEPRECATION_WARNINGS")
+        ENV["LUMBERJACK_DEPRECATION_WARNINGS"] = save_val
       end
     end
 

@@ -17,10 +17,10 @@ module Lumberjack
 
     class << self
       # Print warning when deprecated methods are called the first time. This can be disabled
-      # by setting the environment variable `LUMBERJACK_NO_DEPRECATION_WARNINGS` to "true".
+      # by setting the environment variable `LUMBERJACK_DEPRECATION_WARNINGS` to "false".
       #
-      # In order to cut down on noise, each deprecated method will only print a warning once per process
-      # unless the `LUMBERJACK_SHOW_ALL_DEPRECATION_WARNINGS` environment variable is set to "true".
+      # In order to cut down on noise, each deprecated method will only print a warning once per process.
+      # You can change this by setting `LUMBERJACK_DEPRECATION_WARNINGS` to "verbose".
       #
       # @param method [String, Symbol] The name of the deprecated method.
       # @param message [String] The deprecation message explaining what to use instead.
@@ -34,13 +34,13 @@ module Lumberjack
       #     end
       #   end
       def deprecated(method, message)
-        if ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] != "true" && !@deprecations&.include?(method)
+        if ENV["LUMBERJACK_DEPRECATION_WARNINGS"] != "false" && !@deprecations&.include?(method)
           @deprecations_lock ||= Mutex.new
           @deprecations_lock.synchronize do
             @deprecations ||= {}
             unless @deprecations.include?(method)
               trace = $VERBOSE ? caller[3..] : caller[3, 1]
-              unless ENV["LUMBERJACK_SHOW_ALL_DEPRECATION_WARNINGS"] == "true"
+              unless ENV["LUMBERJACK_DEPRECATION_WARNINGS"] == "verbose"
                 @deprecations[method] = true
               end
               message = "DEPRECATION WARNING: #{message} Called from #{trace.join("\n")}"

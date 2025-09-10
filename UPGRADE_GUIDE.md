@@ -68,3 +68,9 @@ Templates used for writing to streams now use mustache syntax (`{{message}}` ins
 Message formatters and attribute formatters have been unified under a single `Lumberjack::EntryFormatter` class. This class supports a builder pattern so it is much easier to define custom formats for classes or attributes in the logs. You should now pass an entry formatter in the `Lumberjack::Logger` constructor `:formatter` option instead of a `Lumberjack::Formatter`.
 
 The default formatter has also been removed. This created problems when creating custom formats. You can use the old default formatter by passing `formatter: :default` to the logger constructor.
+
+## Deprecation Warnings
+
+Lumberjack will print deprecation warnings to standard error when deprecated methods are used. If you want to suppress these warnings, set the environment variable `LUMBERJACK_DEPRECATION_WARNINGS` to "false".
+
+For performance reasons, deprecation warnings will only be shown the first time a deprecated method is called. You can show all instances where a method is called by setting the environment variable `LUMBERJACK_DEPRECATION_WARNINGS` to "verbose".
