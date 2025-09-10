@@ -354,6 +354,31 @@ module Lumberjack
       nil
     end
 
+    # Tags the outermost context with a set of attributes. If there is no outermost context, then
+    # nothing will happen. This method can be used to bubble attributes up to the top level context.
+    # It can be used in situations where you want to ensure a set of attributes are set for the rest
+    # of the request or operation defined by the outmermost context.
+    #
+    # @param attributes [Hash] The attributes to set on the outermost context.
+    # @return [nil]
+    #
+    # @example
+    #   logger.tag(request_id: "12345") do
+    #     logger.tag(action: "login") do
+    #       # Add the user_id attribute to the outermost context along with request_id so that
+    #       # it doesn't fall out of scope after this tag block ends.
+    #       logger.tag_outermost_context(user_id: "67890")
+    #     end
+    #   end
+    def tag_parent_contexts(attributes)
+      parent_context = local_context
+      while parent_context
+        parent_context.assign_attributes(attributes)
+        parent_context = parent_context.parent
+      end
+      nil
+    end
+
     # Append a value to an attribute. This method can be used to add "tags" to a logger by appending
     # values to the same attribute. The tag values will be appended to any value that is already
     # in the attribute. If a block is passed, then a new context will be opened as well. If no
@@ -386,6 +411,7 @@ module Lumberjack
       end
 
       new_context = Context.new(current_context)
+      new_context.parent = local_context
       with_fiber_local(:logger_context, new_context) do
         block.call(new_context)
       end

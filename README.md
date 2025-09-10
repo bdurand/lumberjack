@@ -106,6 +106,28 @@ end
 
 Calling `tag` outside of a context without a block is a no-op and has no effect on the logger.
 
+You can also use the `tag_parent_contexts` to add attributes to all parent context blocks. This can be useful in cases where you need to set an attribute that should be included in all subsequent log entries for the duration of the process defined by the outermost context.
+
+Consider this example where we want to include the `user_id` attribute in all log entries. We need to set it on all parent contexts in order to have it extend beyond the current context block.
+
+```ruby
+logger.context do
+  logger.tag(request_id: "req-123") do
+    logger.info("Processing request") # Includes request_id
+
+    logger.tag(action: "login") do
+      user_id = login_user(params)
+
+      logger.tag(login_method: params[:login_method])
+      logger.tag_parent_contexts(user_id: user_id)
+
+      logger.info("User logged in") # Includes request_id, action, login_method, and user_id
+    end
+
+    logger.info("Request completed") # Includes request_id and user_id
+  end
+```
+
 #### Global Logger Attributes
 
 You can add global attributes that apply to all log entries with the `tag!` method.
@@ -189,7 +211,7 @@ A common practice is to add an array of values to a specific attribute. You can 
 ```ruby
 logger.append_to(:tags, "api", "v1") do
   logger.info("API request started") # Includes tags: ["api", "v1"]
-  
+
   logger.append_to(:tags, "users")
   logger.info("Processing user data") # Includes tags: ["api", "v1", "users"]
 end
