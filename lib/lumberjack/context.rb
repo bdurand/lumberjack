@@ -36,6 +36,11 @@ module Lumberjack
     # @return [Integer, nil] The default severity level, or nil if not set.
     attr_reader :default_severity
 
+    # The parent context from which this context inherited its initial attributes.
+    # @return [Lumberjack::Context, nil] The parent context, or nil if this is a top-level context.
+    # @api private
+    attr_accessor :parent
+
     # Create a new context, optionally inheriting configuration from a parent context.
     #
     # When a parent context is provided, the new context inherits all configuration

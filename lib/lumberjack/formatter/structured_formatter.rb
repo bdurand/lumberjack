@@ -65,6 +65,7 @@ module Lumberjack
       def with_object_reference(obj, references)
         if obj.is_a?(Enumerable)
           return RecusiveReferenceError.new if references.include?(obj.object_id)
+
           references << obj.object_id
           begin
             yield

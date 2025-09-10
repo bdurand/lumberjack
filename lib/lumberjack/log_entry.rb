@@ -185,6 +185,7 @@ module Lumberjack
     # @return [Hash] A new hash with empty values removed
     def compact_attributes(attributes, seen = nil)
       return {} if seen&.include?(attributes.object_id)
+
       delete_keys = nil
       compacted_keys = nil
 

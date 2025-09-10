@@ -61,6 +61,7 @@ module Lumberjack
       end
 
       return nil if matching_attributes.empty?
+
       matching_attributes
     end
 

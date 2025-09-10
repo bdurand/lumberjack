@@ -463,6 +463,7 @@ module Lumberjack
       return false unless object.respond_to?(:write)
       return true if object.respond_to?(:tty?) && object.tty?
       return false if object.respond_to?(:path) && object.path
+
       true
     end
 

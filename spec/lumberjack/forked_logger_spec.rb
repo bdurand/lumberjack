@@ -51,6 +51,31 @@ RSpec.describe Lumberjack::ForkedLogger do
     })
   end
 
+  it "does not bleed attributes to the parent logger contexts" do
+    forked_logger = Lumberjack::ForkedLogger.new(logger)
+    forked_logger.tag_parent_contexts(test: "value")
+    expect(logger.attributes).to be_empty
+
+    forked_logger.tag(foo: "bar") do
+      forked_logger.tag_parent_contexts(test: "value")
+    end
+    expect(logger.attributes).to be_empty
+  end
+
+  it "does not bleed attributes to the default context" do
+    forked_logger = Lumberjack::ForkedLogger.new(logger)
+    forked_logger.tag(test: "value")
+    expect(forked_logger.attributes).to be_empty
+
+    forked_logger.tag_parent_contexts(test: "value")
+    expect(forked_logger.attributes).to be_empty
+
+    forked_logger.tag(foo: "bar") do
+      forked_logger.tag_parent_contexts(test: "value")
+    end
+    expect(forked_logger.attributes).to be_empty
+  end
+
   it "allows setting the progname on the local logger" do
     forked_logger = Lumberjack::ForkedLogger.new(logger)
     forked_logger.progname = "TestProgname"
