@@ -53,11 +53,11 @@ RSpec.describe Lumberjack::ForkedLogger do
 
   it "does not bleed attributes to the parent logger contexts" do
     forked_logger = Lumberjack::ForkedLogger.new(logger)
-    forked_logger.tag_parent_contexts(test: "value")
+    forked_logger.tag_all_contexts(test: "value")
     expect(logger.attributes).to be_empty
 
     forked_logger.tag(foo: "bar") do
-      forked_logger.tag_parent_contexts(test: "value")
+      forked_logger.tag_all_contexts(test: "value")
     end
     expect(logger.attributes).to be_empty
   end
@@ -67,11 +67,11 @@ RSpec.describe Lumberjack::ForkedLogger do
     forked_logger.tag(test: "value")
     expect(forked_logger.attributes).to be_empty
 
-    forked_logger.tag_parent_contexts(test: "value")
+    forked_logger.tag_all_contexts(test: "value")
     expect(forked_logger.attributes).to be_empty
 
     forked_logger.tag(foo: "bar") do
-      forked_logger.tag_parent_contexts(test: "value")
+      forked_logger.tag_all_contexts(test: "value")
     end
     expect(forked_logger.attributes).to be_empty
   end

@@ -14,7 +14,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Added `Lumberjack::Logger#tag!` as the preferred method for adding global tags to a logger.
 - Added `Lumberjack::Logger#untag!` to remove global tags from a logger.
 - Added `Lumberjack::Logger#in_context?` as a replacement for `Lumberjack::Logger#in_tag_context?` and `Lumberjack.in_context?` as a replacement for `Lumberjack.context?`.
-- Added `Lumberjack::Logger#tag_parent_contexts` as a means to add attributes to parent context blocks. This allows setting attributes for the scope of the outermost context block.
+- Added `Lumberjack::Logger#tag_all_contexts` as a means to add attributes to parent context blocks. This allows setting attributes for the scope of the outermost context block.
 - Added IO compatibility methods for logging. Calling `logger.write`, `logger.puts`, `logger.print`, or `logger.printf` will write log entries. The severity of the log entries can be set with `default_severity`.
 - Added `Lumberjack::Device::LoggerWrapper` as a device that forwards entries to another Lumberjack logger.
 - Added `Lumberjack::Device::Test` class for use in testing logging functionality. This device will buffer log entries and has `match?` and `include?` methods that can be used for assertions in tests.
@@ -83,6 +83,8 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
   - `Lumberjack::Utils.expand_tags`
   - `Lumberjack::TagContext`
   - `Lumberjack::TagFormatter`
+  - `Lumberjack::TagFormatter#add`
+  - `Lumberjack::TagFormatter#remove`
   - `Lumberjack::Tags`
   - `Lumberjack::Formatter::TaggedMessage`
 - The Rails compatibility methods on `Lumberjack::Logger` (`tagged`, `silence`, `log_at`) have been moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem. Installing that gem will restore these methods in a non-deprecated form.

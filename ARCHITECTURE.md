@@ -492,8 +492,8 @@ logger = Lumberjack::Logger.new("/var/log/app.log") do |config|
   config.shift_size = 50.megabytes
 
   # Structured attribute formatting
-  config.attribute_formatter.add("password") { |value| "[REDACTED]" }
-  config.attribute_formatter.add(Time, :iso8601)
+  config.attribute_formatter.add_attribute("password") { |value| "[REDACTED]" }
+  config.attribute_formatter.add_class(Time, :iso8601)
 end
 ```
 

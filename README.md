@@ -106,7 +106,7 @@ end
 
 Calling `tag` outside of a context without a block is a no-op and has no effect on the logger.
 
-You can also use the `tag_parent_contexts` to add attributes to all parent context blocks. This can be useful in cases where you need to set an attribute that should be included in all subsequent log entries for the duration of the process defined by the outermost context.
+You can also use the `tag_all_contexts` to add attributes to all parent context blocks. This can be useful in cases where you need to set an attribute that should be included in all subsequent log entries for the duration of the process defined by the outermost context.
 
 Consider this example where we want to include the `user_id` attribute in all log entries. We need to set it on all parent contexts in order to have it extend beyond the current context block.
 
@@ -119,7 +119,7 @@ logger.context do
       user_id = login_user(params)
 
       logger.tag(login_method: params[:login_method])
-      logger.tag_parent_contexts(user_id: user_id)
+      logger.tag_all_contexts(user_id: user_id)
 
       logger.info("User logged in") # Includes request_id, action, login_method, and user_id
     end
@@ -395,9 +395,9 @@ You can specify how to format specific attributes by name:
 
 ```ruby
 # Configure attribute formatting
-logger.attribute_formatter.add("password") { |pwd| "[REDACTED]" }
-logger.attribute_formatter.add("email") { |email| email.downcase }
-logger.attribute_formatter.add("cost", :round, 2)
+logger.attribute_formatter.add_attribute("password") { |pwd| "[REDACTED]" }
+logger.attribute_formatter.add_attribute("email") { |email| email.downcase }
+logger.attribute_formatter.add_attribute("cost", :round, 2)
 
 # Now attributes are formatted according to the rules
 logger.info("User created",
@@ -410,8 +410,8 @@ logger.info("User created",
 You can also format attributes based on their object type:
 
 ```ruby
-logger.attribute_formatter.add(Time, :date_time, "%Y-%m-%d %H:%M:%S")
-logger.attribute_formatter.add([Float, BigDecimal], :round, 2)
+logger.attribute_formatter.add_class(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+logger.attribute_formatter.add_class([Float, BigDecimal], :round, 2)
 
 logger.info("Data processed",
   created_at: Time.now,          # → "2025-08-22 14:30:00"
@@ -423,16 +423,16 @@ You can remap attributes to other attribute names by returning a `Lumberjack::Re
 
 ```ruby
 # Move the email attribute under the user attributes.
-logger.attribute_formatter.add("email") do |value|
+logger.attribute_formatter.add_attribute("email") do |value|
   Lumberjack::RemapAttribute.new("user.email" => value)
 end
 
 # Transform duration_millis and duration_micros to seconds and move to
 # the duration attribute.
-logger.attribute_formatter.add("duration_ms") do |value|
+logger.attribute_formatter.add_attribute("duration_ms") do |value|
   Lumberjack::RemapAttribute.new("duration" => value.to_f / 1000)
 end
-logger.attribute_formatter.add("duration_micros") do |value|
+logger.attribute_formatter.add_attribute("duration_micros") do |value|
   Lumberjack::RemapAttribute.new("duration" => value.to_f / 1_000_000)
 end
 ```
@@ -451,18 +451,15 @@ The Entry Formatter coordinates both message and attribute formatting, providing
 
 ```ruby
 # Build a comprehensive entry formatter
-entry_formatter = Lumberjack.build_formatter do
+entry_formatter = Lumberjack.build_formatter do |config|
   # Message formatting (for the main log message)
-  add(User, :id)                             # Show user IDs only
-  add(Time, :date_time, "%Y-%m-%d %H:%M:%S") # Time format for messages
+  config.add(User, :id)                             # Show user IDs only
+  config.add(Time, :date_time, "%Y-%m-%d %H:%M:%S") # Time format for messages
 
-  # Attribute formatting (for key-value pairs)
-  attributes do
-    # Time format for attributes
-    add_class(Time, :date_time, "%Y-%m-%d %H:%M:%S")
-    add_class([Float, BigDecimal], :round, 6)
-    add_attribute("email", :redact)
-  end
+  # Attribute formatting
+  config.add_attribute_class(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+  config.add_attribute_class([Float, BigDecimal], :round, 6)
+  config.add_attribute("email", :redact)
 end
 
 # Use with logger
@@ -475,15 +472,13 @@ You can merge other formatters into your formatter with the `include` method. Do
 
 ```ruby
 # Translate the duration tag to microseconds.
-duration_formatter = Lumberjack::EntryFormatter.build do
-  attributes do
-    add_attribute(:duration) { |seconds| (seconds.to_f * 1_000_000).round }
-  end
+duration_formatter = Lumberjack::EntryFormatter.build do |config|
+  config.add_attribute(:duration) { |seconds| (seconds.to_f * 1_000_000).round }
 end
 
-formatter = Lumberjack::EntryFormatter.build do
+formatter = Lumberjack::EntryFormatter.build do |config|
   # Adds the duration attribute formatter
-  include(duration_formatter)
+  config.include(duration_formatter)
 end
 ```
 

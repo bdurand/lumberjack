@@ -370,7 +370,7 @@ module Lumberjack
     #       logger.tag_outermost_context(user_id: "67890")
     #     end
     #   end
-    def tag_parent_contexts(attributes)
+    def tag_all_contexts(attributes)
       parent_context = local_context
       while parent_context
         parent_context.assign_attributes(attributes)
@@ -412,9 +412,11 @@ module Lumberjack
 
       new_context = Context.new(current_context)
       new_context.parent = local_context
-      with_fiber_local(:logger_context, new_context) do
+      fiber_locals do |locals|
+        locals.context = new_context
         block.call(new_context)
       end
+
     end
 
     # Forks a new logger with a new context that will send output through this logger.
@@ -485,16 +487,11 @@ module Lumberjack
     #
     # @return [void]
     def clear_attributes(&block)
-      Lumberjack.use_context(nil) do
-        cleared = fiber_local_value(:logger_cleared)
-        begin
-          set_fiber_local_value(:logger_cleared, true)
-          context do |ctx|
-            ctx.clear_attributes
-            block.call
-          end
-        ensure
-          set_fiber_local_value(:logger_cleared, cleared)
+      fiber_locals do |locals|
+        locals.cleared = true
+        context do |ctx|
+          ctx.clear_attributes
+          block.call
         end
       end
     end
@@ -525,7 +522,7 @@ module Lumberjack
     end
 
     def local_context
-      fiber_local_value(:logger_context)
+      fiber_local&.context
     end
 
     def default_context
@@ -588,7 +585,7 @@ module Lumberjack
     def merge_all_attributes
       attributes = nil
 
-      unless fiber_local_value(:logger_cleared)
+      unless fiber_local&.cleared
         global_context_attributes = Lumberjack.context_attributes
         if global_context_attributes && !global_context_attributes.empty?
           attributes ||= {}

@@ -19,19 +19,17 @@ module Lumberjack
   # - Manages special message types like MessageAttributes that carry embedded attributes
   #
   # @example Complete entry formatting setup
-  #   formatter = Lumberjack::EntryFormatter.build do
+  #   formatter = Lumberjack::EntryFormatter.build do |config|
   #     # Message formatting (delegates to Formatter)
-  #     add(ActiveRecord::Base, :id)
-  #     add(Exception, :exception)
-  #     add(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+  #     config.add(ActiveRecord::Base, :id)
+  #     config.add(Exception, :exception)
+  #     config.add(Time, :date_time, "%Y-%m-%d %H:%M:%S")
   #
   #     # Attribute formatting (delegates to AttributeFormatter)
-  #     attributes do
-  #       add("password") { |value| "[REDACTED]" }
-  #       add("user_id", :id)
-  #       add(Time, :date_time, "%Y-%m-%d")
-  #       default { |value| value.to_s.strip }
-  #     end
+  #     config.add_attribute("password") { |value| "[REDACTED]" }
+  #     config.add_attribute("user_id", :id)
+  #     config.add_attribute_class(Time, :date_time, "%Y-%m-%d")
+  #     config.default_attribute_format { |value| value.to_s.strip }
   #   end
   #
   # @example Using with a logger
@@ -45,15 +43,15 @@ module Lumberjack
   class EntryFormatter
     # The message formatter used to format log message content.
     # @return [Lumberjack::Formatter] The message formatter instance.
-    attr_accessor :message_formatter
+    attr_reader :message_formatter
 
     # The attribute formatter used to format log entry attributes.
     # @return [Lumberjack::AttributeFormatter] The attribute formatter instance.
-    attr_accessor :attribute_formatter
+    attr_reader :attribute_formatter
 
     class << self
-      # Build a new entry formatter using a configuration block. The block is evaluated
-      # in the context of the new formatter, allowing direct use of configuration methods.
+      # Build a new entry formatter using a configuration block. The block receives the new formatter
+      # as a parameter, allowing you to configure it with various configuration methods.
       #
       # @param message_formatter [Lumberjack::Formatter, Symbol, nil] The message formatter to use.
       #   Can be a Formatter instance, :default for standard formatter, :none for empty formatter, or nil.
@@ -62,18 +60,16 @@ module Lumberjack
       # @return [Lumberjack::EntryFormatter] A new configured entry formatter.
       #
       # @example
-      #   formatter = Lumberjack::EntryFormatter.build do
-      #     add(User, :id)  # Message formatting
-      #     add(Time, :date_time, "%Y-%m-%d")
+      #   formatter = Lumberjack::EntryFormatter.build do |config|
+      #     config.add(User, :id)  # Message formatting
+      #     config.add(Time, :date_time, "%Y-%m-%d")
       #
-      #     attributes do  # Attribute formatting
-      #       add("password") { "[REDACTED]" }
-      #       add(Exception) { |e| {error: e.class.name, message: e.message} }
-      #     end
+      #     config.add_attribute("password") { "[REDACTED]" }
+      #     config.add_attribute_class(Exception) { |e| {error: e.class.name, message: e.message} }
       #   end
       def build(message_formatter: nil, attribute_formatter: nil, &block)
         formatter = new(message_formatter: message_formatter, attribute_formatter: attribute_formatter)
-        formatter.instance_exec(&block) if block
+        block&.call(formatter)
         formatter
       end
     end
@@ -87,14 +83,33 @@ module Lumberjack
     # @param attribute_formatter [Lumberjack::AttributeFormatter, nil] The attribute formatter to use.
     #   If nil, no attribute formatting will be performed unless configured later.
     def initialize(message_formatter: nil, attribute_formatter: nil)
-      if message_formatter == :default
-        message_formatter = Lumberjack::Formatter.default
-      elsif message_formatter.nil?
-        message_formatter = Lumberjack::Formatter.new
-      end
+      self.message_formatter = message_formatter
+      self.attribute_formatter = attribute_formatter
+    end
 
-      @message_formatter = message_formatter
-      @attribute_formatter = attribute_formatter
+    # Set the message formatter used to format log message content.
+    #
+    # @param value [Lumberjack::Formatter, Symbol, nil] The message formatter to use. If the value
+    #   is :default, a standard formatter with default mappings is created. If nil, a new empty
+    #   formatter is created.
+    # @return [void]
+    def message_formatter=(value)
+      @message_formatter = if value == :default
+        Lumberjack::Formatter.default
+      elsif value.nil?
+        Lumberjack::Formatter.new
+      else
+        value
+      end
+    end
+
+    # Set the attribute formatter used to format log entry attributes.
+    #
+    # @param value [Lumberjack::AttributeFormatter, nil] The attribute formatter to use.
+    #   If nil, a new empty AttributeFormatter is created.
+    # @return [void]
+    def attribute_formatter=(value)
+      @attribute_formatter = value || AttributeFormatter.new
     end
 
     # Add a message formatter for specific classes or modules. This method delegates to the
@@ -130,27 +145,68 @@ module Lumberjack
       self
     end
 
-    # Switch context to attribute formatter configuration. Within the block, all method calls
-    # are delegated to the attribute formatter, allowing you to configure attribute formatting
-    # rules using the AttributeFormatter API.
+    # Add a formatter for the named attribute.
     #
-    # If no attribute formatter exists, one will be created automatically.
-    #
-    # @yield [attribute_formatter] Block executed in the attribute formatter context.
+    # @param names [String, Symbol, Array<String, Symbol>] The attribute names to format.
+    # @param formatter [Symbol, Class, #call, nil] The formatter to use
+    # @param args [Array] Arguments to pass to the formatter constructor (when formatter is a Class).
+    # @yield [value] Block-based formatter that receives the attribute value.
     # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
     #
-    # @example Configuring attribute formatting
-    #   formatter.attributes do
-    #     add("password") { |value| "[REDACTED]" }
-    #     add("email") { |email| email.downcase }
-    #     add(Time, :date_time, "%Y-%m-%d")
-    #     default { |value| value.to_s.strip }
-    #   end
+    # @see Lumberjack::AttributeFormatter#add_attribute
+    def add_attribute(names, formatter = nil, *args, &block)
+      @attribute_formatter.add_attribute(names, formatter, *args, &block)
+      self
+    end
+
+    # Add a formatter for the specified class or module when it appears as an attribute value.
     #
-    # @see Lumberjack::AttributeFormatter
-    def attributes(&block)
-      @attribute_formatter ||= Lumberjack::AttributeFormatter.new
-      attribute_formatter.instance_exec(&block) if block
+    # @param classes_or_names [String, Module, Array<String, Module>] Class names or modules.
+    # @param formatter [Symbol, Class, #call, nil] The formatter to use
+    # @param args [Array] Arguments to pass to the formatter constructor (when formatter is a Class).
+    # @yield [value] Block-based formatter that receives the attribute value.
+    # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
+    #
+    # @see Lumberjack::AttributeFormatter#add_attribute
+    def add_attribute_class(classes_or_names, formatter = nil, &block)
+      @attribute_formatter.add_class(classes_or_names, formatter, &block)
+      self
+    end
+
+    # Set the default attribute formatter to apply to any attributes that do not
+    # have a specific formatter defined.
+    #
+    # @param formatter [Symbol, Class, #call, nil] The default formatter to use.
+    #   If nil, removes any existing default formatter.
+    # @param args [Array] Arguments to pass to the formatter constructor (when formatter is a Class).
+    # @yield [value] Block-based formatter that receives the attribute value.
+    # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
+    #
+    # @see Lumberjack::AttributeFormatter#default
+    def default_attribute_format(formatter = nil, *args, &block)
+      @attribute_formatter.default(formatter, *args, &block)
+      self
+    end
+
+    # Remove an attribute formatter for the specified attribute names.
+    #
+    # @param names [String, Symbol, Array<String, Symbol>] The attribute names to remove formatters for.
+    # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
+    #
+    # @see Lumberjack::AttributeFormatter#remove_attribute
+    def remove_attribute(names)
+      @attribute_formatter.remove_attribute(names)
+      self
+    end
+
+    # Remove an attribute formatter for the specified classes or modules.
+    #
+    # @param classes_or_names [String, Module, Array<String, Module>] Class names or modules.
+    # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
+    #
+    # @see Lumberjack::AttributeFormatter#remove_class
+    def remove_attribute_class(classes_or_names)
+      @attribute_formatter.remove_class(classes_or_names)
       self
     end
 

@@ -3,61 +3,47 @@
 module Lumberjack
   # Provides isolated fiber-local storage for thread-safe data access.
   module FiberLocals
+    # Lightweight structure to hold fiber-local data.
+    #
+    # @api private
+    class Data
+      attr_accessor :context, :logging, :cleared
+    end
+
     private
+
+    def fiber_locals(&block)
+      init_fiber_locals! unless defined?(@fiber_locals)
+
+      fiber_id = Fiber.current.object_id
+      current = @fiber_locals[fiber_id]
+      data = current.nil? ? Data.new : current.dup
+      begin
+        @fiber_locals_mutex.synchronize do
+          @fiber_locals[fiber_id] = data
+        end
+        yield data
+      ensure
+        @fiber_locals_mutex.synchronize do
+          if current.nil?
+            @fiber_locals.delete(fiber_id)
+          else
+            @fiber_locals[fiber_id] = current
+          end
+        end
+      end
+    end
+
+    def fiber_local
+      return nil unless defined?(@fiber_locals)
+
+      @fiber_locals[Fiber.current.object_id]
+    end
 
     # Initialize the fiber locals storage and mutex.
     def init_fiber_locals!
       @fiber_locals ||= {}
       @fiber_locals_mutex ||= Mutex.new
-    end
-
-    def with_fiber_local(name, value)
-      save_val = fiber_local_value(name)
-      begin
-        set_fiber_local_value(name, value)
-        yield
-      ensure
-        set_fiber_local_value(name, save_val)
-      end
-    end
-
-    # Set a local value for a thread tied to this object.
-    #
-    # @param name [Symbol] The name of the local value.
-    # @param value [Object] The value to set.
-    # @return [void]
-    def set_fiber_local_value(name, value) # :nodoc:
-      init_fiber_locals! unless defined?(@fiber_locals)
-
-      fiber_id = Fiber.current.object_id
-      local_values = @fiber_locals[fiber_id]
-      if local_values.nil?
-        return if value.nil?
-
-        local_values = {}
-        @fiber_locals_mutex.synchronize do
-          @fiber_locals[fiber_id] = local_values
-        end
-      end
-
-      if value.nil?
-        local_values.delete(name)
-        if local_values.empty?
-          @fiber_locals_mutex.synchronize do
-            @fiber_locals.delete(fiber_id)
-          end
-        end
-      else
-        local_values[name] = value
-      end
-    end
-
-    # Get a local value for a thread tied to this object.
-    #
-    # @param name [Symbol] The name of the local value.
-    # @return [Object, nil] The local value or nil if not set.
-    def fiber_local_value(name) # :nodoc:
-      @fiber_locals&.dig(Fiber.current.object_id, name) if defined?(@fiber_locals)
     end
   end
 end

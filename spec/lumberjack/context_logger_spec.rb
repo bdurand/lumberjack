@@ -362,11 +362,11 @@ RSpec.describe Lumberjack::ContextLogger do
     end
   end
 
-  describe "#tag_parent_contexts" do
+  describe "#tag_all_contexts" do
     it "adds attributes to the parent contexts in the hierarchy" do
       logger.tag(foo: "bar") do
         logger.tag(baz: "qux") do
-          logger.tag_parent_contexts(bip: "bap")
+          logger.tag_all_contexts(bip: "bap")
           expect(logger.attributes).to eq({"foo" => "bar", "baz" => "qux", "bip" => "bap"})
         end
         expect(logger.attributes).to eq({"foo" => "bar", "bip" => "bap"})
@@ -375,7 +375,7 @@ RSpec.describe Lumberjack::ContextLogger do
     end
 
     it "does not attributes to the default context if there is no current context" do
-      logger.tag_parent_contexts(bip: "bap")
+      logger.tag_all_contexts(bip: "bap")
       expect(logger.attributes).to be_empty
     end
   end

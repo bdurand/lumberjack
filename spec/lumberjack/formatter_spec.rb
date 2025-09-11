@@ -26,9 +26,9 @@ RSpec.describe Lumberjack::Formatter do
 
   describe "#build" do
     it "builds a formatter in a block" do
-      formatter = Lumberjack::Formatter.build do
-        add(String) { |s| s.upcase }
-        add(Integer) { |obj| "number: #{obj}" }
+      formatter = Lumberjack::Formatter.build do |config|
+        config.add(String) { |s| s.upcase }
+        config.add(Integer) { |obj| "number: #{obj}" }
       end
       expect(formatter.format("foo")).to eq("FOO")
       expect(formatter.format(10)).to eq("number: 10")
@@ -37,9 +37,9 @@ RSpec.describe Lumberjack::Formatter do
 
   describe "#formatter_for" do
     let(:formatter) do
-      Lumberjack::Formatter.build do
-        add(Numeric, :round)
-        add(Lumberjack::LogEntry, :inspect)
+      Lumberjack::Formatter.build do |config|
+        config.add(Numeric, :round)
+        config.add(Lumberjack::LogEntry, :inspect)
       end
     end
 
@@ -54,8 +54,8 @@ RSpec.describe Lumberjack::Formatter do
     end
 
     it "returns an exact match even if the class doesn't exist" do
-      formatter = Lumberjack::Formatter.build do
-        add("Foo::Bar", :inspect)
+      formatter = Lumberjack::Formatter.build do |config|
+        config.add("Foo::Bar", :inspect)
       end
       expect(formatter.formatter_for("Foo::Bar")).to be_a(Lumberjack::Formatter::InspectFormatter)
     end

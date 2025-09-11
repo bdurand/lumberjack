@@ -12,11 +12,9 @@ module Lumberjack
   #   Lumberjack::FormatterRegistry.add(:upcase) { |value| value.to_s.upcase }
   #   Lumberjack::FormatterRegistry.add(:currency, Lumberjack::Formatter::RoundFormatter, 2)
   #
-  #   Lumberjack::EntryFormatter.build do
-  #     attributes do
-  #       add_attribute :status, :upcase
-  #       add_attribute :amount, :currency
-  #     end
+  #   Lumberjack::EntryFormatter.build do |config|
+  #     config.add_attribute :status, :upcase
+  #     config.add_attribute :amount, :currency
   #   end
   module FormatterRegistry
     @registry = {}

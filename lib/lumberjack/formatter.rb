@@ -38,10 +38,10 @@ module Lumberjack
   #   result = formatter.format(my_object)
   #
   # @example Building a custom formatter
-  #   formatter = Lumberjack::Formatter.build do
-  #     add(User, :id)  # Only log user IDs
-  #     add(Password) { |pwd| "[HIDDEN]" }  # Hide password values
-  #     add(BigDecimal, :round, 2)  # Round decimals to 2 places
+  #   formatter = Lumberjack::Formatter.build do |config|
+  #     config.add(User, :id)  # Only log user IDs
+  #     config.add(Password) { |pwd| "[HIDDEN]" }  # Hide password values
+  #     config.add(BigDecimal, :round, 2)  # Round decimals to 2 places
   #   end
   class Formatter
     require_relative "formatter/date_time_formatter"
@@ -61,21 +61,21 @@ module Lumberjack
     require_relative "formatter/tagged_message"
 
     class << self
-      # Build a new formatter using a configuration block. The block is evaluated in the context
-      # of the new formatter, allowing you to use `add`, `remove`, and other methods directly.
+      # Build a new formatter using a configuration block. The block receives the new formatter
+      # as a parameter, allowing you to configure it with methods like `add`, `remove`, etc.
       #
       # @yield [formatter] A block that configures the formatter.
       # @return [Lumberjack::Formatter] A new configured formatter.
       #
       # @example
-      #   formatter = Lumberjack::Formatter.build do
-      #     add(User, :id)  # Only show user IDs
-      #     add(SecretToken) { |token| "[REDACTED]" }
-      #     remove(Exception)  # Don't format exceptions specially
+      #   formatter = Lumberjack::Formatter.build do |config|
+      #     config.add(User, :id)  # Only show user IDs
+      #     config.add(SecretToken) { |token| "[REDACTED]" }
+      #     config.remove(Exception)  # Don't format exceptions specially
       #   end
       def build(&block)
         formatter = new
-        formatter.instance_eval(&block)
+        block&.call(formatter)
         formatter
       end
 
@@ -97,10 +97,10 @@ module Lumberjack
       #
       # @return [Lumberjack::Formatter] A new formatter with default mappings.
       def default
-        build do
-          add(Object, :inspect)
-          add(Exception, :exception)
-          add(Enumerable, :structured)
+        build do |config|
+          config.add(Object, :inspect)
+          config.add(Exception, :exception)
+          config.add(Enumerable, :structured)
         end
       end
     end

@@ -25,23 +25,12 @@ module Lumberjack
   # - **Blocks**: Inline formatting logic
   # - **Symbols**: References to predefined formatter classes (e.g., `:strip`, `:truncate`)
   #
-  # @example Basic usage
-  #   formatter = Lumberjack::AttributeFormatter.new
-  #   formatter.default { |value| value.to_s.upcase }
-  #   formatter.add("password") { |value| "[REDACTED]" }
-  #   formatter.add("created_at", :date_time, "%Y-%m-%d")
-  #
-  # @example Security-focused attribute formatting
-  #   formatter = Lumberjack::AttributeFormatter.build do
-  #     add(["password", "secret", "token"]) { |value| "[REDACTED]" }
-  #     add("email") { |email| email.gsub(/@.*/, "@***") }
-  #     add(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+  # @example Basic usage with build
+  #   formatter = Lumberjack::AttributeFormatter.build do |config|
+  #     config.add_attribute(["password", "secret", "token"]) { |value| "[REDACTED]" }
+  #     config.add_attribute("user.email") { |email| email.downcase }
+  #     config.add_class(Time, :date_time, "%Y-%m-%d %H:%M:%S")
   #   end
-  #
-  # @example Nested attribute formatting
-  #   formatter = Lumberjack::AttributeFormatter.new
-  #   formatter.add("user.email") { |email| email.downcase }
-  #   formatter.add("config.database.password") { |pwd| "[HIDDEN]" }
   #
   # ## Remapping attributes
   #
@@ -50,7 +39,7 @@ module Lumberjack
   #
   # @example
   #   formatter = Lumberjack::AttributeFormatter.new
-  #   formatter.add("duration_ms") { |value| Lumberjack::RemapAttributes.new(duration: value.to_f / 1000) }
+  #   formatter.add_attribute("duration_ms") { |value| Lumberjack::RemapAttributes.new(duration: value.to_f / 1000) }
   #   formatter.format({ "duration_ms" => 1234 }) # => { "duration" => 1.234 }
   #
   # ## Remapping attributes
@@ -60,35 +49,36 @@ module Lumberjack
   #
   # @example
   #   formatter = Lumberjack::AttributeFormatter.new
-  #   formatter.add("user.email") { |email| email.downcase }
-  #   formatter.add("config.database.password") { |pwd| "[HIDDEN]" }
+  #   formatter.add_attribute("user.email") { |email| email.downcase }
+  #   formatter.add_attribute("config.database.password") { |pwd| "[HIDDEN]" }
   #
   # @see Lumberjack::Formatter
   # @see Lumberjack::EntryFormatter
   class AttributeFormatter
     class << self
-      # Build a new attribute formatter using a configuration block. The block is evaluated
-      # in the context of the new formatter, allowing direct use of `add`, `default`, and other methods.
+      # Build a new attribute formatter using a configuration block. The block receives the
+      # new formatter as a parameter, allowing you to configure it with methods like `add_attribute`,
+      # `add_class`, `default`, etc.
       #
       # @yield [formatter] A block that configures the attribute formatter.
       # @return [Lumberjack::AttributeFormatter] A new configured attribute formatter.
       #
       # @example
-      #   formatter = Lumberjack::AttributeFormatter.build do
-      #     default { |value| value.to_s.strip }
-      #     add(["password", "secret"]) { |value| "[REDACTED]" }
-      #     add("email") { |email| email.downcase }
-      #     add(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+      #   formatter = Lumberjack::AttributeFormatter.build do |config|
+      #     config.default { |value| value.to_s.strip }
+      #     config.add_attribute(["password", "secret"]) { |value| "[REDACTED]" }
+      #     config.add_attribute("email") { |email| email.downcase }
+      #     config.add_class(Time, :date_time, "%Y-%m-%d %H:%M:%S")
       #   end
       def build(&block)
         formatter = new
-        formatter.instance_eval(&block)
+        block&.call(formatter)
         formatter
       end
     end
 
     # Create a new attribute formatter with no default formatters configured.
-    # You'll need to add specific formatters using {#add}, {#add_class}, {#add_attribute}, or {#default}.
+    # You'll need to add specific formatters using {#add_class}, {#add_attribute}, or {#default}.
     #
     # @return [Lumberjack::AttributeFormatter] A new empty attribute formatter.
     def initialize
@@ -141,12 +131,15 @@ module Lumberjack
     # @yieldparam value [Object] The attribute value to format.
     # @yieldreturn [Object] The formatted attribute value.
     # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
-    def add(names_or_classes, formatter = nil, &block)
-      Array(names_or_classes).each do |obj|
-        if obj.is_a?(Module)
-          add_class(obj, formatter, &block)
-        else
-          add_attribute(obj, formatter, &block)
+    # @deprecated Use {#add_class} or {#add_attribute} instead.
+    def add(names_or_classes, formatter = nil, *args, &block)
+      Utils.deprecated("AttributeFormatter#add", "AttributeFormatter#add is deprecated; use #add_class or #add_attribute instead.") do
+        Array(names_or_classes).each do |obj|
+          if obj.is_a?(Module)
+            add_class(obj, formatter, *args, &block)
+          else
+            add_attribute(obj, formatter, *args, &block)
+          end
         end
       end
 
@@ -235,13 +228,40 @@ module Lumberjack
     # @param names_or_classes [String, Module, Array<String, Module>] Attribute names or classes
     #   to remove formatters for.
     # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
+    # @deprecated Use {#remove_class} or {#remove_attribute} instead.
     def remove(names_or_classes)
-      Array(names_or_classes).each do |key|
-        if key.is_a?(Module)
-          @class_formatter.remove(key)
-        else
-          @attribute_formatter.delete(key.to_s)
+      Utils.deprecated("AttributeFormatter#remove", "AttributeFormatter#remove is deprecated; use #remove_class or #remove_attribute instead.") do
+        Array(names_or_classes).each do |key|
+          if key.is_a?(Module)
+            @class_formatter.remove(key)
+          else
+            @attribute_formatter.delete(key.to_s)
+          end
         end
+      end
+      self
+    end
+
+    # Remove formatters for specific object classes. This reverts the specified classes
+    # to use the default formatter (if configured) or no formatting.
+    #
+    # @param classes_or_names [String, Module, Array<String, Module>] The classes or names to remove.
+    # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
+    def remove_class(classes_or_names)
+      Array(classes_or_names).each do |class_or_name|
+        @class_formatter.remove(class_or_name)
+      end
+      self
+    end
+
+    # Remove formatters for specific attribute names. This reverts the specified attributes
+    # to use the default formatter (if configured) or no formatting.
+    #
+    # @param attribute_names [String, Symbol, Array<String, Symbol>] The attribute names to remove.
+    # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
+    def remove_attribute(attribute_names)
+      Array(attribute_names).collect(&:to_s).each do |attribute_name|
+        @attribute_formatter.delete(attribute_name)
       end
       self
     end
