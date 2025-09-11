@@ -416,7 +416,6 @@ module Lumberjack
         locals.context = new_context
         block.call(new_context)
       end
-
     end
 
     # Forks a new logger with a new context that will send output through this logger.
