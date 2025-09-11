@@ -168,8 +168,8 @@ module Lumberjack
     # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
     #
     # @see Lumberjack::AttributeFormatter#add_attribute
-    def add_attribute_class(classes_or_names, formatter = nil, &block)
-      @attribute_formatter.add_class(classes_or_names, formatter, &block)
+    def add_attribute_class(classes_or_names, formatter = nil, *args, &block)
+      @attribute_formatter.add_class(classes_or_names, formatter, *args, &block)
       self
     end
 
