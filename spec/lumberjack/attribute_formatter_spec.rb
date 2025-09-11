@@ -7,10 +7,54 @@ RSpec.describe Lumberjack::AttributeFormatter do
 
   describe "#build" do
     it "builds an attribute formatter in a block" do
-      attribute_formatter = Lumberjack::AttributeFormatter.build do
-        add(:foo) { |val| val.to_s.upcase }
+      attribute_formatter = Lumberjack::AttributeFormatter.build do |config|
+        config.add_attribute(:foo) { |val| val.to_s.upcase }
       end
       expect(attribute_formatter.format(attributes)).to eq({"foo" => "BAR", "baz" => "boo", "count" => 1})
+    end
+  end
+
+  describe "#add" do
+    around do |example|
+      silence_deprecations do
+        example.run
+      end
+    end
+
+    it "adds an attribute formatter for a specific attribute" do
+      attribute_formatter = Lumberjack::AttributeFormatter.new
+      attribute_formatter.add(:foo) { |val| val.to_s.upcase }
+      expect(attribute_formatter.format(foo: "bar")).to eq({"foo" => "BAR"})
+    end
+
+    it "adds an attribute for a class" do
+      attribute_formatter = Lumberjack::AttributeFormatter.new
+      attribute_formatter.add(String) { |val| val.to_s.upcase }
+      expect(attribute_formatter.format(foo: "bar")).to eq({"foo" => "BAR"})
+    end
+  end
+
+  describe "#remove" do
+    around do |example|
+      silence_deprecations do
+        example.run
+      end
+    end
+
+    it "removes an attribute formatter for a specific attribute" do
+      attribute_formatter = Lumberjack::AttributeFormatter.new
+      attribute_formatter.add(:foo) { |val| val.to_s.upcase }
+      expect(attribute_formatter.format(foo: "bar")).to eq({"foo" => "BAR"})
+      attribute_formatter.remove(:foo)
+      expect(attribute_formatter.format(foo: "bar")).to eq({foo: "bar"})
+    end
+
+    it "removes an attribute formatter for a class" do
+      attribute_formatter = Lumberjack::AttributeFormatter.new
+      attribute_formatter.add(String) { |val| val.to_s.upcase }
+      expect(attribute_formatter.format(foo: "bar")).to eq({"foo" => "BAR"})
+      attribute_formatter.remove(String)
+      expect(attribute_formatter.format(foo: "bar")).to eq({foo: "bar"})
     end
   end
 
@@ -21,20 +65,20 @@ RSpec.describe Lumberjack::AttributeFormatter do
     end
 
     it "should have a default formatter as a Formatter" do
-      formatter = Lumberjack::Formatter.new.clear.add(String, :inspect)
+      formatter = Lumberjack::Formatter.new.add(String, :inspect)
       attribute_formatter = Lumberjack::AttributeFormatter.new.default(formatter)
       expect(attribute_formatter.format(attributes)).to eq({"foo" => '"bar"', "baz" => '"boo"', "count" => 1})
     end
 
     it "should be able to add tag name specific formatters" do
       formatter = Lumberjack::Formatter.new.clear.add(String, :inspect)
-      attribute_formatter = Lumberjack::AttributeFormatter.new.add(:foo, formatter)
+      attribute_formatter = Lumberjack::AttributeFormatter.new.add_attribute(:foo, formatter)
       expect(attribute_formatter.format(attributes)).to eq({"foo" => '"bar"', "baz" => "boo", "count" => 1})
 
-      attribute_formatter.remove(:foo).add(["baz", "count"]) { |val| "#{val}!" }
+      attribute_formatter.remove_attribute(:foo).add_attribute(["baz", "count"]) { |val| "#{val}!" }
       expect(attribute_formatter.format(attributes)).to eq({"foo" => "bar", "baz" => "boo!", "count" => "1!"})
 
-      attribute_formatter.remove(:foo).add("foo", :inspect)
+      attribute_formatter.remove_attribute(:foo).add_attribute("foo", :inspect)
       expect(attribute_formatter.format(attributes)).to eq({"foo" => '"bar"', "baz" => "boo!", "count" => "1!"})
     end
 
@@ -44,12 +88,12 @@ RSpec.describe Lumberjack::AttributeFormatter do
       expect(attribute_formatter.format({"foo" => 12})).to eq({"foo" => 24})
     end
 
-    it "should be able to add class formatters" do
-      attribute_formatter = Lumberjack::AttributeFormatter.new.add(Integer) { |val| val * 2 }
-      attribute_formatter.add(String, :redact)
+    it "should be able to add and remove class formatters" do
+      attribute_formatter = Lumberjack::AttributeFormatter.new.add_class(Integer) { |val| val * 2 }
+      attribute_formatter.add_class(String, :redact)
       expect(attribute_formatter.format(attributes)).to eq({"foo" => "*****", "baz" => "*****", "count" => 2})
 
-      attribute_formatter.remove(String)
+      attribute_formatter.remove_class(String)
       expect(attribute_formatter.format(attributes)).to eq({"foo" => "bar", "baz" => "boo", "count" => 2})
     end
 
@@ -60,26 +104,26 @@ RSpec.describe Lumberjack::AttributeFormatter do
     end
 
     it "should use a class formatter on child classes" do
-      attribute_formatter = Lumberjack::AttributeFormatter.new.add(Numeric) { |val| val * 2 }
+      attribute_formatter = Lumberjack::AttributeFormatter.new.add_class(Numeric) { |val| val * 2 }
       expect(attribute_formatter.format({"foo" => 2.5, "bar" => 3})).to eq({"foo" => 5.0, "bar" => 6})
     end
 
     it "should use class formatters for modules" do
-      attribute_formatter = Lumberjack::AttributeFormatter.new.add(Enumerable) { |val| val.to_a.join(", ") }
+      attribute_formatter = Lumberjack::AttributeFormatter.new.add_class(Enumerable) { |val| val.to_a.join(", ") }
       expect(attribute_formatter.format({"foo" => [1, 2, 3], "bar" => "baz"})).to eq({"foo" => "1, 2, 3", "bar" => "baz"})
     end
 
     it "can mix and match tag and class formatters" do
       attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add(:foo, &:reverse)
-      attribute_formatter.add(Integer, &:even?)
+      attribute_formatter.add_attribute(:foo, &:reverse)
+      attribute_formatter.add_class(Integer, &:even?)
       expect(attribute_formatter.format(attributes)).to eq({"foo" => "rab", "baz" => "boo", "count" => false})
     end
 
     it "applies class formatters inside arrays and hashes" do
       attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add(Integer, &:even?)
-      attribute_formatter.add(String, &:reverse)
+      attribute_formatter.add_class(Integer, &:even?)
+      attribute_formatter.add_class(String, &:reverse)
 
       expect(attribute_formatter.format({"foo" => [1, 2, 3], "bar" => {"baz" => "boo"}})).to eq({
         "foo" => [false, true, false],
@@ -96,32 +140,32 @@ RSpec.describe Lumberjack::AttributeFormatter do
 
     it "applies name formatters inside hashes using dot syntax" do
       attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add("foo.bar", &:reverse)
+      attribute_formatter.add_attribute("foo.bar", &:reverse)
       expect(attribute_formatter.format({"foo" => {"bar" => "baz"}})).to eq({"foo" => {"bar" => "zab"}})
     end
 
     it "recursively applies class formatters to nested hashes" do
       attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add("foo") { |val| {"bar" => val.to_s} }
-      attribute_formatter.add(String, &:reverse)
+      attribute_formatter.add_attribute("foo") { |val| {"bar" => val.to_s} }
+      attribute_formatter.add_class(String, &:reverse)
       expect(attribute_formatter.format({"foo" => 12})).to eq({"foo" => {"bar" => "21"}})
     end
 
     it "recursively applies class formatters to nested arrays" do
       attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add("foo") { |val| [val, val] }
-      attribute_formatter.add(String, &:reverse)
+      attribute_formatter.add_attribute("foo") { |val| [val, val] }
+      attribute_formatter.add_class(String, &:reverse)
       expect(attribute_formatter.format({"foo" => "bar"})).to eq({"foo" => ["rab", "rab"]})
     end
 
     it "short circuits recursive formatting for already formatted classes" do
       attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add(String) { |val| "#{val},#{val}".split(",") }
+      attribute_formatter.add_class(String) { |val| "#{val},#{val}".split(",") }
       expect(attribute_formatter.format({"foo" => "bar"})).to eq({"foo" => ["bar", "bar"]})
     end
 
     it "should be able to clear all formatters" do
-      attribute_formatter = Lumberjack::AttributeFormatter.new.default(&:to_s).add(:foo, &:reverse)
+      attribute_formatter = Lumberjack::AttributeFormatter.new.default(&:to_s).add_attribute(:foo, &:reverse)
       expect(attribute_formatter.format(attributes)).to eq({"foo" => "rab", "baz" => "boo", "count" => "1"})
       attribute_formatter.clear
       expect(attribute_formatter.format(attributes)).to eq attributes
@@ -134,19 +178,19 @@ RSpec.describe Lumberjack::AttributeFormatter do
 
     it "uses the attributes from a MessageAttributes" do
       attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add("foo") { |val| Lumberjack::MessageAttributes.new(val.upcase, "attr" => val) }
+      attribute_formatter.add_attribute("foo") { |val| Lumberjack::MessageAttributes.new(val.upcase, "attr" => val) }
       expect(attribute_formatter.format({"foo" => "bar"})).to eq({"foo" => {"attr" => "bar"}})
     end
 
     it "remaps attributes if the value is a Lumberjack::RemapAttribute instance" do
       attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add("duration_ms") { |value| Lumberjack::RemapAttribute.new(duration: value.to_f / 1000) }
+      attribute_formatter.add_attribute("duration_ms") { |value| Lumberjack::RemapAttribute.new(duration: value.to_f / 1000) }
       expect(attribute_formatter.format({"duration_ms" => 1500})).to eq({"duration" => 1.5})
     end
 
     it "remaps structured attributes correctly" do
       attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add(:email) { |value| Lumberjack::RemapAttribute.new(user: {email: value}) }
+      attribute_formatter.add_attribute(:email) { |value| Lumberjack::RemapAttribute.new(user: {email: value}) }
       attributes = {"user.id" => 42, "email" => "user@example.com"}
       expect(attribute_formatter.format(attributes)).to eq({"user.id" => 42, "user.email" => "user@example.com"})
     end
@@ -156,7 +200,7 @@ RSpec.describe Lumberjack::AttributeFormatter do
       begin
         $stderr = StringIO.new
         attribute_formatter = Lumberjack::AttributeFormatter.new
-        attribute_formatter.add(String, lambda { |obj| raise "error" })
+        attribute_formatter.add_class(String, lambda { |obj| raise "error" })
         expect(attribute_formatter.format(attributes)["foo"]).to eq("<Error formatting String: RuntimeError error>")
       ensure
         $stderr = save_stderr
@@ -166,10 +210,10 @@ RSpec.describe Lumberjack::AttributeFormatter do
 
   describe "#formatter_for" do
     let(:formatter) do
-      Lumberjack::AttributeFormatter.build do
-        add(:upcase) { |val| val.to_s.upcase }
-        add(:downcase) { |val| val.to_s.downcase }
-        add(Array) { |val| val.join(", ") }
+      Lumberjack::AttributeFormatter.build do |config|
+        config.add_attribute(:upcase) { |val| val.to_s.upcase }
+        config.add_attribute(:downcase) { |val| val.to_s.downcase }
+        config.add_class(Array) { |val| val.join(", ") }
       end
     end
 
@@ -182,8 +226,8 @@ RSpec.describe Lumberjack::AttributeFormatter do
 
   describe "#formatter_for_class" do
     let(:formatter) do
-      Lumberjack::AttributeFormatter.build do
-        add(Array, :inspect)
+      Lumberjack::AttributeFormatter.build do |config|
+        config.add_class(Array, :inspect)
       end
     end
 
@@ -196,8 +240,8 @@ RSpec.describe Lumberjack::AttributeFormatter do
 
   describe "#formatter_for_attribute" do
     let(:formatter) do
-      Lumberjack::AttributeFormatter.build do
-        add(:foo, :inspect)
+      Lumberjack::AttributeFormatter.build do |config|
+        config.add_attribute(:foo, :inspect)
       end
     end
 

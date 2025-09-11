@@ -203,7 +203,7 @@ module Lumberjack
     #
     # @return [Lumberjack::AttributeFormatter] The attribute formatter.
     def attribute_formatter
-      formatter.attributes.attribute_formatter
+      formatter.attribute_formatter
     end
 
     # Set the attribute formatter used to format log entry attributes.
@@ -389,12 +389,12 @@ module Lumberjack
     # @api private
     def add_entry(severity, message, progname = nil, attributes = nil)
       return false unless device
-      return false if fiber_local_value(:logging)
+      return false if fiber_local&.logging
 
       severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
 
-      begin
-        set_fiber_local_value(:logging, true) # protection from infinite loops
+      fiber_locals do |locals|
+        locals.logging = true # protection from infinite loops
 
         time = Time.now
         progname ||= self.progname
@@ -405,9 +405,8 @@ module Lumberjack
         entry = Lumberjack::LogEntry.new(time, severity, message, progname, Process.pid, attributes)
 
         write_to_device(entry)
-      ensure
-        set_fiber_local_value(:logging, nil)
       end
+
       true
     end
 
