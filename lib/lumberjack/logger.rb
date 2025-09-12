@@ -718,19 +718,19 @@ module Lumberjack
     # Create a thread that will periodically call flush.
     def create_flusher_thread(flush_seconds) # :nodoc:
       if flush_seconds > 0
-        begin
-          logger = self
-          Thread.new do
-            until closed?
-              begin
-                sleep(flush_seconds)
-                logger.flush if Time.now - logger.last_flushed_at >= flush_seconds
-              rescue => e
-                warn("Error flushing log: #{e.inspect}")
-              end
+
+        logger = self
+        Thread.new do
+          until closed?
+            begin
+              sleep(flush_seconds)
+              logger.flush if Time.now - logger.last_flushed_at >= flush_seconds
+            rescue => e
+              warn("Error flushing log: #{e.inspect}")
             end
           end
         end
+
       end
     end
   end
