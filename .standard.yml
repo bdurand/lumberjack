@@ -6,6 +6,8 @@ ignore:
   - '**/*':
     - Standard/SemanticBlocks
     - Performance/RegexpMatch
+    - Layout/EmptyLineAfterGuardClause
+    - Layout/EmptyLinesAfterModuleInclusion
   - 'spec/**/*':
     - Lint/UselessAssignment
     - Lint/Void

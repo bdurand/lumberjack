@@ -68,6 +68,8 @@ module Lumberjack
     # @param name [String, Symbol] The tag name.
     # @return [Object, nil] The tag value or nil if the tag does not exist.
     def tag(name)
+      return nil if tags.nil?
+
       TagContext.new(tags)[name]
     end
 
