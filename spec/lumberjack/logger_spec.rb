@@ -149,36 +149,24 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.progname).to eq("app")
     end
 
-    it "allows the deprecated method of passing an options hash" do
-      silence_deprecations do
-        output = StringIO.new
-        logger = Lumberjack::Logger.new(output, {level: :warn, template: "{{message}} {{attributes}}"}, attribute_format: "%s=%s")
-        expect(logger.level).to eq(Logger::WARN)
-        logger.warn("test", foo: "bar")
-        expect(output.string).to eq("test foo=bar\n")
-      end
+    it "allows the deprecated method of passing an options hash", deprecation_mode: "silent" do
+      output = StringIO.new
+      logger = Lumberjack::Logger.new(output, {level: :warn, template: "{{message}} {{attributes}}"}, attribute_format: "%s=%s")
+      expect(logger.level).to eq(Logger::WARN)
+      logger.warn("test", foo: "bar")
+      expect(output.string).to eq("test foo=bar\n")
     end
 
-    it "allows using the deprecated :max_size option without blowing up" do
-      silence_deprecations do
-        expect { Lumberjack::Logger.new(File::NULL, max_size: 10) }.to_not raise_error
-      end
+    it "allows using the deprecated :max_size option without blowing up", deprecation_mode: "silent" do
+      expect { Lumberjack::Logger.new(File::NULL, max_size: 10) }.to_not raise_error
     end
 
-    it "allows using the deprecated :tag_formatter option without blowing up" do
-      silence_deprecations do
-        expect { Lumberjack::Logger.new(File::NULL, tag_formatter: Lumberjack::TagFormatter.new) }.to_not raise_error
-      end
+    it "allows using the deprecated :tag_formatter option without blowing up", deprecation_mode: "silent" do
+      expect { Lumberjack::Logger.new(File::NULL, tag_formatter: Lumberjack::TagFormatter.new) }.to_not raise_error
     end
   end
 
-  describe "#set_progname" do
-    around do |example|
-      silence_deprecations do
-        example.run
-      end
-    end
-
+  describe "#set_progname", deprecation_mode: "silent" do
     it "should be able to set the progname in a block" do
       logger = Lumberjack::Logger.new(StringIO.new)
       logger.set_progname("app")
@@ -382,7 +370,9 @@ RSpec.describe Lumberjack::Logger do
       it "should output entries to STDERR if they can't be written the the device" do
         stderr = $stderr
         $stderr = StringIO.new
+        save_raise_logger_errors = Lumberjack.raise_logger_errors?
         begin
+          Lumberjack.raise_logger_errors = false
           time = Time.parse("2011-01-30T12:31:56.123")
           allow(Time).to receive_messages(now: time)
           expect(device).to receive(:write).and_raise(StandardError.new("Cannot write to device"))
@@ -390,6 +380,23 @@ RSpec.describe Lumberjack::Logger do
           expect($stderr.string).to include("[2011-01-30T12:31:56.123 INFO app(#{Process.pid})] test")
           expect($stderr.string).to include("StandardError: Cannot write to device")
         ensure
+          Lumberjack.raise_logger_errors = save_raise_logger_errors
+          $stderr = stderr
+        end
+      end
+
+      it "should raise logging errors if configured to do so" do
+        stderr = $stderr
+        $stderr = StringIO.new
+        save_raise_logger_errors = Lumberjack.raise_logger_errors?
+        begin
+          Lumberjack.raise_logger_errors = true
+          expect(device).to receive(:write).and_raise(StandardError.new("Cannot write to device"))
+          expect {
+            logger.add_entry(Logger::INFO, "test")
+          }.to raise_error(StandardError, /Cannot write to device/)
+        ensure
+          Lumberjack.raise_logger_errors = save_raise_logger_errors
           $stderr = stderr
         end
       end
@@ -494,13 +501,7 @@ RSpec.describe Lumberjack::Logger do
       end
     end
 
-    describe "#tag_globally" do
-      around do |example|
-        silence_deprecations do
-          example.run
-        end
-      end
-
+    describe "#tag_globally", deprecation_mode: "silent" do
       let(:device) { Lumberjack::Device::Writer.new(out, template: "{{message}} - {{count}} - {{attributes}}") }
 
       it "should be able to add global attributes to the logger" do
@@ -513,13 +514,7 @@ RSpec.describe Lumberjack::Logger do
       end
     end
 
-    describe "#remove_tag" do
-      around do |example|
-        silence_deprecations do
-          example.run
-        end
-      end
-
+    describe "#remove_tag", deprecation_mode: "silent" do
       let(:device) { Lumberjack::Device::Writer.new(out, template: "{{message}} - {{count}} - {{attributes}}") }
 
       it "should remove context attributes in a context block and global attributes outside of one" do
@@ -553,14 +548,8 @@ RSpec.describe Lumberjack::Logger do
     end
   end
 
-  describe "#tagged" do
+  describe "#tagged", deprecation_mode: "silent" do
     let(:logger) { Lumberjack::Logger.new(:test) }
-
-    around do |example|
-      silence_deprecations do
-        example.run
-      end
-    end
 
     it "adds tags to the tagged attribute" do
       logger.tagged("foo", "bar") do
@@ -571,14 +560,8 @@ RSpec.describe Lumberjack::Logger do
     end
   end
 
-  describe "#untagged" do
+  describe "#untagged", deprecation_mode: "silent" do
     let(:logger) { Lumberjack::Logger.new(:test) }
-
-    around do |example|
-      silence_deprecations do
-        example.run
-      end
-    end
 
     it "removes tags from the tagged attribute" do
       logger.tag(foo: "bar") do
@@ -589,14 +572,8 @@ RSpec.describe Lumberjack::Logger do
     end
   end
 
-  describe "#log_at" do
+  describe "#log_at", deprecation_mode: "silent" do
     let(:logger) { Lumberjack::Logger.new(:test) }
-
-    around do |example|
-      silence_deprecations do
-        example.run
-      end
-    end
 
     it "changes the log level temporarily" do
       logger.log_at(:info) do
@@ -606,14 +583,8 @@ RSpec.describe Lumberjack::Logger do
     end
   end
 
-  describe "#silence" do
+  describe "#silence", deprecation_mode: "silent" do
     let(:logger) { Lumberjack::Logger.new(:test) }
-
-    around do |example|
-      silence_deprecations do
-        example.run
-      end
-    end
 
     it "temporarily suppresses logging" do
       logger.silence do
