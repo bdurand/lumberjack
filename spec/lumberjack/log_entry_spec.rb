@@ -113,6 +113,11 @@ RSpec.describe Lumberjack::LogEntry do
       expect(entry["foo.bar"]).to eq("baz")
       expect(entry["foo.far"]).to eq("qux")
     end
+
+    it "return nil if there are no tags" do
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, nil)
+      expect(entry["a"]).to be_nil
+    end
   end
 
   describe "#nested_attributes" do

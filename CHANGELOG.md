@@ -90,6 +90,12 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - The Rails compatibility methods on `Lumberjack::Logger` (`tagged`, `silence`, `log_at`) have been moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem. Installing that gem will restore these methods in a non-deprecated form.
 - Templates now use mustache syntax for placeholders instead of the colon prefix (i.e. `{{message}}` instead of `:message`). The `:tags` placeholder is also now called `{{attributes}}`.
 
+## 1.4.2
+
+### Fixed
+
+- Fixed issue where calling `Lumberjack::LogEntry#tag` would raise an error if there were no tags set on the log entry.
+
 ## 1.4.1
 
 ### Changed

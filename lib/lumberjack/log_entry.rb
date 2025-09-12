@@ -107,6 +107,8 @@ module Lumberjack
     # @param name [String, Symbol] The attribute name, supports dot notation for nested access
     # @return [Object, nil] The attribute value or nil if the attribute does not exist
     def [](name)
+      return nil if attributes.nil?
+
       AttributesHelper.new(attributes)[name]
     end
 
