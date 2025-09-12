@@ -431,6 +431,8 @@ module Lumberjack
       err << ": #{e.message}" unless e.message.to_s.empty?
       err << " at #{e.backtrace.first}" if e.backtrace
       $stderr.write("#{err}\n#{entry}\n") # rubocop:disable Style/StderrPuts
+
+      raise e if Lumberjack.raise_logger_errors?
     end
 
     # Open a logging device.

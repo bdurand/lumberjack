@@ -15,10 +15,10 @@ begin
 rescue LoadError
 end
 
-# Enable all warnings to protect against bad practices and deprecations.
-$VERBOSE = true
-
 require_relative "../lib/lumberjack"
+
+Lumberjack.raise_logger_errors = true
+Lumberjack.deprecation_mode = "raise"
 
 RSpec.configure do |config|
   config.warnings = true
@@ -26,6 +26,12 @@ RSpec.configure do |config|
   config.default_formatter = "doc" if config.files_to_run.one?
   config.order = :random
   Kernel.srand config.seed
+
+  config.around(:each, :deprecation_mode) do |example|
+    Lumberjack::Utils.with_deprecation_mode(example.metadata[:deprecation_mode]) do
+      example.run
+    end
+  end
 end
 
 def tmp_dir
@@ -44,21 +50,6 @@ end
 def delete_tmp_files
   Dir.glob(File.join(tmp_dir, "*")) do |file|
     File.delete(file)
-  end
-end
-
-def silence_deprecations
-  save_warning = ENV["LUMBERJACK_DEPRECATION_WARNINGS"]
-  save_verbose = $VERBOSE
-  begin
-    ENV["LUMBERJACK_DEPRECATION_WARNINGS"] = "false"
-    $VERBOSE = false
-    begin
-      yield
-    ensure
-      ENV["LUMBERJACK_DEPRECATION_WARNINGS"] = save_warning
-      $VERBOSE = save_verbose
-    end
   end
 end
 

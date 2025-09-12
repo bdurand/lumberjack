@@ -137,13 +137,13 @@ RSpec.describe Lumberjack::Utils do
       end
     end
 
-    it "prints a deprecation warning the first time a deprecated method is called" do
+    it "prints a deprecation warning the first time a deprecated method is called", deprecation_mode: "normal" do
       retval = Lumberjack::Utils.deprecated("test_method_1", "This is deprecated") { :foo }
       expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
       expect(retval).to eq :foo
     end
 
-    it "does not print the warning again for subsequent calls" do
+    it "does not print the warning again for subsequent calls", deprecation_mode: "normal" do
       Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :foo }
       expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
       $stderr.rewind
@@ -154,10 +154,9 @@ RSpec.describe Lumberjack::Utils do
       expect(retval).to eq :bar
     end
 
-    it "does print the warning again if LUMBERJACK_DEPRECATION_WARNINGS is verbnose" do
-      save_val = ENV["LUMBERJACKDEPRECATION_WARNINGS"]
-      begin
-        ENV["LUMBERJACK_DEPRECATION_WARNINGS"] = "verbose"
+    it "does print the warning again if deprecation mode is verbose" do
+      Lumberjack::Utils.with_deprecation_mode("verbose") do
+        Lumberjack.deprecation_mode = "verbose"
         Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :foo }
         expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
         $stderr.rewind
@@ -166,30 +165,32 @@ RSpec.describe Lumberjack::Utils do
         retval = Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :bar }
         expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
         expect(retval).to eq :bar
-      ensure
-        ENV["LUMBERJACK_DEPRECATION_WARNINGS"] = save_val
       end
     end
 
-    it "does not print a warning if LUMBERJACK_DEPRECATION_WARNINGS is false" do
-      save_val = ENV["LUMBERJACK_DEPRECATION_WARNINGS"]
-      begin
-        ENV["LUMBERJACK_DEPRECATION_WARNINGS"] = "false"
+    it "raises an exception if deprecation mode is raise" do
+      Lumberjack::Utils.with_deprecation_mode("raise") do
+        expect {
+          Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
+        }.to raise_error(Lumberjack::DeprecationError, /This is deprecated/)
+      end
+    end
+
+    it "does not print a warning if deprecation mode is silent" do
+      Lumberjack::Utils.with_deprecation_mode("silent") do
         retval = Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
         expect($stderr.string).to be_empty
         expect(retval).to eq :foo
-      ensure
-        ENV["LUMBERJACK_DEPRECATION_WARNINGS"] = save_val
       end
     end
 
-    it "prints only the current line if $VERBOSE is false" do
+    it "prints only the current line if $VERBOSE is false", deprecation_mode: "normal" do
       $VERBOSE = false
       Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
       expect($stderr.string.chomp.split("\n").length).to eq 1
     end
 
-    it "prints the full stack trace if $VERBOSE is true" do
+    it "prints the full stack trace if $VERBOSE is true", deprecation_mode: "normal" do
       $VERBOSE = true
       Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
       expect($stderr.string.chomp.split("\n").length).to be > 1

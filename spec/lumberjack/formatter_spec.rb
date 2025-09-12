@@ -180,11 +180,9 @@ RSpec.describe Lumberjack::Formatter do
     end
   end
 
-  describe "empty" do
+  describe "empty", deprecation_mode: "silent" do
     it "should be able to get an empty formatter" do
-      silence_deprecations do
-        expect(Lumberjack::Formatter.empty.format(:test)).to eq(:test)
-      end
+      expect(Lumberjack::Formatter.empty.format(:test)).to eq(:test)
     end
   end
 

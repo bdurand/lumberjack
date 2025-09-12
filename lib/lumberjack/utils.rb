@@ -3,6 +3,10 @@
 require "socket"
 
 module Lumberjack
+  # Error raised when a deprecated method is called and the deprecation mode is set to "raise".
+  class DeprecationError < StandardError
+  end
+
   # Utils provides utility methods and helper functions used throughout the Lumberjack logging framework.
   module Utils
     UNDEFINED = Object.new.freeze
@@ -34,26 +38,50 @@ module Lumberjack
       #     end
       #   end
       def deprecated(method, message)
-        if ENV["LUMBERJACK_DEPRECATION_WARNINGS"] != "false" && !@deprecations&.include?(method)
+        if Lumberjack.deprecation_mode != "silent" && !@deprecations&.include?(method)
           @deprecations_lock ||= Mutex.new
           @deprecations_lock.synchronize do
             @deprecations ||= {}
             unless @deprecations.include?(method)
-              trace = $VERBOSE ? caller[3..] : caller[3, 1]
+              trace = ($VERBOSE && Lumberjack.deprecation_mode != "raise") ? caller[3..] : caller[3, 1]
               if trace.first.start_with?(__dir__) && !$VERBOSE
                 non_lumberjack_caller = caller[4..].detect { |line| !line.start_with?(__dir__) }
                 trace = [non_lumberjack_caller] if non_lumberjack_caller
               end
-              unless ENV["LUMBERJACK_DEPRECATION_WARNINGS"] == "verbose"
+              message = "DEPRECATION WARNING: #{message} Called from #{trace.join("\n")}"
+
+              if Lumberjack.deprecation_mode == "raise"
+                raise DeprecationError, message
+              end
+
+              unless Lumberjack.deprecation_mode == "verbose"
                 @deprecations[method] = true
               end
-              message = "DEPRECATION WARNING: #{message} Called from #{trace.join("\n")}"
+
               warn(message)
             end
           end
         end
 
         yield if block_given?
+      end
+
+      # Helper method for tests to silence deprecation warnings within a block. You should
+      # not use this in production code since it will silence all deprecation warnings
+      # globally across all threads.
+      #
+      # @param mode [String, Symbol] The deprecation mode to set within the block. Valid values are
+      #   "normal", "verbose", "silent", and "raise".
+      # @yield The block in which to silence deprecation warnings.
+      # @return [Object] The result of the yielded block.
+      def with_deprecation_mode(mode)
+        save_mode = Lumberjack.deprecation_mode
+        begin
+          Lumberjack.deprecation_mode = mode
+          yield
+        ensure
+          Lumberjack.deprecation_mode = save_mode
+        end
       end
 
       # Get the hostname of the machine. The returned value will be in UTF-8 encoding.

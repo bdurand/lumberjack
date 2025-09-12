@@ -63,6 +63,8 @@ module Lumberjack
 
   @global_contexts = {}
   @global_contexts_mutex = Mutex.new
+  @deprecation_mode = nil
+  @raise_logger_errors = false
 
   class << self
     # Contexts can be used to store attributes that will be attached to all log entries in the block.
@@ -159,6 +161,45 @@ module Lumberjack
     # @see Lumberjack::EntryFormatter.build
     def build_formatter(&block)
       EntryFormatter.build(&block)
+    end
+
+    # Control how use of deprecated methods is handled. The default is to print a warning
+    # the first time a deprecated method is called. Setting this to "verbose" will print
+    # a warning every time a deprecated method is called. Setting this to "silent" will
+    # suppress all deprecation warnings. Setting this to "raise" will raise an exception
+    # when a deprecated method is called.
+    #
+    # The default value can be set with the `LUMBERJACK_DEPRECATION_WARNINGS` environment variable.
+    #
+    # @param value [String, Symbol, nil] The deprecation mode to set. Valid values are "normal",
+    #   "verbose", "silent", and "raise".
+    def deprecation_mode=(value)
+      @deprecation_mode = value&.to_s
+    end
+
+    # @return [String] The current deprecation mode.
+    # @api private
+    def deprecation_mode
+      @deprecation_mode ||= ENV.fetch("LUMBERJACK_DEPRECATION_WARNINGS", "normal").to_s
+    end
+
+    # Set whether errors encountered while logging entries should be raised. The default behavior
+    # is to rescue these errors and print them to standard error. Otherwise there can be no way
+    # to record the error since it cannot be logged.
+    #
+    # You can set this to true in you test and development environments to catch logging errors
+    # before they make it to production.
+    #
+    # @param value [Boolean] Whether to raise logger errors.
+    # @return [void]
+    def raise_logger_errors=(value)
+      @raise_logger_errors = !!value
+    end
+
+    # @return [Boolean] Whether logger errors should be raised.
+    # @api private
+    def raise_logger_errors?
+      @raise_logger_errors
     end
 
     private

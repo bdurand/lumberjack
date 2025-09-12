@@ -8,6 +8,12 @@ module Lumberjack
     # @api private
     class Data
       attr_accessor :context, :logging, :cleared
+
+      def initialize(copy = nil)
+        @context = copy&.context
+        @logging = copy&.logging
+        @cleared = copy&.cleared
+      end
     end
 
     private
@@ -17,7 +23,7 @@ module Lumberjack
 
       fiber_id = Fiber.current.object_id
       current = @fiber_locals[fiber_id]
-      data = current.nil? ? Data.new : current.dup
+      data = Data.new(current)
       begin
         @fiber_locals_mutex.synchronize do
           @fiber_locals[fiber_id] = data
