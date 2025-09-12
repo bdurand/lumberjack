@@ -718,7 +718,6 @@ module Lumberjack
     # Create a thread that will periodically call flush.
     def create_flusher_thread(flush_seconds) # :nodoc:
       if flush_seconds > 0
-
         logger = self
         Thread.new do
           until closed?
@@ -730,7 +729,6 @@ module Lumberjack
             end
           end
         end
-
       end
     end
   end
