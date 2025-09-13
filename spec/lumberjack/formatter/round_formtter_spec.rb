@@ -3,6 +3,10 @@
 require "spec_helper"
 
 RSpec.describe Lumberjack::Formatter::RoundFormatter do
+  it "is registered as :round" do
+    expect(Lumberjack::FormatterRegistry.formatter(:round, 1)).to be_a(Lumberjack::Formatter::RoundFormatter)
+  end
+
   it "should round a numeric value" do
     formatter = Lumberjack::Formatter::RoundFormatter.new
     expect(formatter.call(1.23456789)).to eq(1.235)

@@ -1,4 +1,4 @@
-ruby_version: 2.5
+ruby_version: 2.7
 
 format: progress
 
@@ -6,8 +6,6 @@ ignore:
   - '**/*':
     - Standard/SemanticBlocks
     - Performance/RegexpMatch
-    - Layout/EmptyLineAfterGuardClause
-    - Layout/EmptyLinesAfterModuleInclusion
   - 'spec/**/*':
     - Lint/UselessAssignment
     - Lint/Void
