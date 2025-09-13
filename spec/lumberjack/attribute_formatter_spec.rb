@@ -14,7 +14,7 @@ RSpec.describe Lumberjack::AttributeFormatter do
     end
   end
 
-  describe "#add", deprecation_mode: "silent" do
+  describe "#add", deprecation_mode: :silent do
     it "adds an attribute formatter for a specific attribute" do
       attribute_formatter = Lumberjack::AttributeFormatter.new
       attribute_formatter.add(:foo) { |val| val.to_s.upcase }
@@ -28,7 +28,7 @@ RSpec.describe Lumberjack::AttributeFormatter do
     end
   end
 
-  describe "#remove", deprecation_mode: "silent" do
+  describe "#remove", deprecation_mode: :silent do
     it "removes an attribute formatter for a specific attribute" do
       attribute_formatter = Lumberjack::AttributeFormatter.new
       attribute_formatter.add(:foo) { |val| val.to_s.upcase }

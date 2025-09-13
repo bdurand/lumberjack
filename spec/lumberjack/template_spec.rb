@@ -98,7 +98,7 @@ RSpec.describe Lumberjack::Template do
     end
   end
 
-  describe "v1 template format", deprecation_mode: "silent" do
+  describe "v1 template format", deprecation_mode: :silent do
     it "uses :name as placeholders in place of {{name}} and tags instead of attributes" do
       template = Lumberjack::Template.new(":time :severity :progname, :message: - :foo - :tags")
       entry = Lumberjack::LogEntry.new(time, Logger::INFO, "here", "app", 12345, "foo" => "bar", "tag" => "a")

@@ -137,13 +137,13 @@ RSpec.describe Lumberjack::Utils do
       end
     end
 
-    it "prints a deprecation warning the first time a deprecated method is called", deprecation_mode: "normal" do
+    it "prints a deprecation warning the first time a deprecated method is called", deprecation_mode: :normal do
       retval = Lumberjack::Utils.deprecated("test_method_1", "This is deprecated") { :foo }
       expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
       expect(retval).to eq :foo
     end
 
-    it "does not print the warning again for subsequent calls", deprecation_mode: "normal" do
+    it "does not print the warning again for subsequent calls", deprecation_mode: :normal do
       Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :foo }
       expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
       $stderr.rewind
@@ -155,8 +155,7 @@ RSpec.describe Lumberjack::Utils do
     end
 
     it "does print the warning again if deprecation mode is verbose" do
-      Lumberjack::Utils.with_deprecation_mode("verbose") do
-        Lumberjack.deprecation_mode = "verbose"
+      Lumberjack::Utils.with_deprecation_mode(:verbose) do
         Lumberjack::Utils.deprecated("test_method_2", "This is deprecated") { :foo }
         expect($stderr.string).to match(/DEPRECATION WARNING: This is deprecated/)
         $stderr.rewind
@@ -169,7 +168,7 @@ RSpec.describe Lumberjack::Utils do
     end
 
     it "raises an exception if deprecation mode is raise" do
-      Lumberjack::Utils.with_deprecation_mode("raise") do
+      Lumberjack::Utils.with_deprecation_mode(:raise) do
         expect {
           Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
         }.to raise_error(Lumberjack::DeprecationError, /This is deprecated/)
@@ -184,13 +183,13 @@ RSpec.describe Lumberjack::Utils do
       end
     end
 
-    it "prints only the current line if $VERBOSE is false", deprecation_mode: "normal" do
+    it "prints only the current line if $VERBOSE is false", deprecation_mode: :normal do
       $VERBOSE = false
       Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
       expect($stderr.string.chomp.split("\n").length).to eq 1
     end
 
-    it "prints the full stack trace if $VERBOSE is true", deprecation_mode: "normal" do
+    it "prints the full stack trace if $VERBOSE is true", deprecation_mode: :normal do
       $VERBOSE = true
       Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
       expect($stderr.string.chomp.split("\n").length).to be > 1

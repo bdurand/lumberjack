@@ -3,7 +3,7 @@
 require "socket"
 
 module Lumberjack
-  # Error raised when a deprecated method is called and the deprecation mode is set to "raise".
+  # Error raised when a deprecated method is called and the deprecation mode is set to :raise.
   class DeprecationError < StandardError
   end
 
@@ -21,10 +21,10 @@ module Lumberjack
 
     class << self
       # Print warning when deprecated methods are called the first time. This can be disabled
-      # by setting the environment variable `LUMBERJACK_DEPRECATION_WARNINGS` to "false".
+      # by setting `Lumberjack.deprecation_mode` to `:silent`.
       #
       # In order to cut down on noise, each deprecated method will only print a warning once per process.
-      # You can change this by setting `LUMBERJACK_DEPRECATION_WARNINGS` to "verbose".
+      # You can change this by setting `Lumberjack.deprecation_mode` to `:verbose`.
       #
       # @param method [String, Symbol] The name of the deprecated method.
       # @param message [String] The deprecation message explaining what to use instead.
@@ -38,23 +38,23 @@ module Lumberjack
       #     end
       #   end
       def deprecated(method, message)
-        if Lumberjack.deprecation_mode != "silent" && !@deprecations&.include?(method)
+        if Lumberjack.deprecation_mode != :silent && !@deprecations&.include?(method)
           @deprecations_lock ||= Mutex.new
           @deprecations_lock.synchronize do
             @deprecations ||= {}
             unless @deprecations.include?(method)
-              trace = ($VERBOSE && Lumberjack.deprecation_mode != "raise") ? caller[3..] : caller[3, 1]
+              trace = ($VERBOSE && Lumberjack.deprecation_mode != :raise) ? caller[3..] : caller[3, 1]
               if trace.first.start_with?(__dir__) && !$VERBOSE
                 non_lumberjack_caller = caller[4..].detect { |line| !line.start_with?(__dir__) }
                 trace = [non_lumberjack_caller] if non_lumberjack_caller
               end
               message = "DEPRECATION WARNING: #{message} Called from #{trace.join("\n")}"
 
-              if Lumberjack.deprecation_mode == "raise"
+              if Lumberjack.deprecation_mode == :raise
                 raise DeprecationError, message
               end
 
-              unless Lumberjack.deprecation_mode == "verbose"
+              unless Lumberjack.deprecation_mode == :verbose
                 @deprecations[method] = true
               end
 
@@ -70,8 +70,8 @@ module Lumberjack
       # not use this in production code since it will silence all deprecation warnings
       # globally across all threads.
       #
-      # @param mode [String, Symbol] The deprecation mode to set within the block. Valid values are
-      #   "normal", "verbose", "silent", and "raise".
+      # @param mode [Symbol, String] The deprecation mode to set within the block. Valid values are
+      #   :normal, :verbose, :silent, and :raise.
       # @yield The block in which to silence deprecation warnings.
       # @return [Object] The result of the yielded block.
       def with_deprecation_mode(mode)

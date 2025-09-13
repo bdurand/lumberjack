@@ -71,6 +71,10 @@ The default formatter has also been removed. This created problems when creating
 
 ## Deprecation Warnings
 
-Lumberjack will print deprecation warnings to standard error when deprecated methods are used. If you want to suppress these warnings, set the environment variable `LUMBERJACK_DEPRECATION_WARNINGS` to "false".
+Lumberjack will print deprecation warnings to standard error when deprecated methods are used. If you want to suppress these warnings, set `Lumberjack.deprecation_mode` to `:silent`.
 
-For performance reasons, deprecation warnings will only be shown the first time a deprecated method is called. You can show all instances where a method is called by setting the environment variable `LUMBERJACK_DEPRECATION_WARNINGS` to "verbose".
+For performance reasons, deprecation warnings will only be shown the first time a deprecated method is called. You can show all instances where a method is called by setting `Lumberjack.deprecation_mode` to `:verbose`.
+
+You can also raise an exception when a deprecated method is called by setting `Lumberjack.deprecation_mode` to `:raise` in your test suite.
+
+You can also set the deprecation mode with the `LUMBERJACK_DEPRECATION_WARNINGS` environment variable.

@@ -18,7 +18,7 @@ end
 require_relative "../lib/lumberjack"
 
 Lumberjack.raise_logger_errors = true
-Lumberjack.deprecation_mode = "raise"
+Lumberjack.deprecation_mode = :raise
 
 RSpec.configure do |config|
   config.warnings = true

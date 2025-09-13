@@ -164,23 +164,23 @@ module Lumberjack
     end
 
     # Control how use of deprecated methods is handled. The default is to print a warning
-    # the first time a deprecated method is called. Setting this to "verbose" will print
-    # a warning every time a deprecated method is called. Setting this to "silent" will
-    # suppress all deprecation warnings. Setting this to "raise" will raise an exception
+    # the first time a deprecated method is called. Setting this to :verbose will print
+    # a warning every time a deprecated method is called. Setting this to :silent will
+    # suppress all deprecation warnings. Setting this to :raise will raise an exception
     # when a deprecated method is called.
     #
     # The default value can be set with the `LUMBERJACK_DEPRECATION_WARNINGS` environment variable.
     #
-    # @param value [String, Symbol, nil] The deprecation mode to set. Valid values are "normal",
-    #   "verbose", "silent", and "raise".
+    # @param value [Symbol, String, nil] The deprecation mode to set. Valid values are :normal,
+    #   :verbose, :silent, and :raise.
     def deprecation_mode=(value)
-      @deprecation_mode = value&.to_s
+      @deprecation_mode = value&.to_sym
     end
 
-    # @return [String] The current deprecation mode.
+    # @return [Symbol] The current deprecation mode.
     # @api private
     def deprecation_mode
-      @deprecation_mode ||= ENV.fetch("LUMBERJACK_DEPRECATION_WARNINGS", "normal").to_s
+      @deprecation_mode ||= ENV.fetch("LUMBERJACK_DEPRECATION_WARNINGS", "normal").to_sym
     end
 
     # Set whether errors encountered while logging entries should be raised. The default behavior

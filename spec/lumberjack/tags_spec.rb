@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe Lumberjack::Tags, deprecation_mode: "silent" do
+RSpec.describe Lumberjack::Tags, deprecation_mode: :silent do
   describe "stringify_keys" do
     it "transforms hash keys to strings" do
       hash = {foo: 1, bar: 2}
