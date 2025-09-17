@@ -131,7 +131,7 @@ module Lumberjack
         device_options[:shift_size] = device_options.delete(:max_size)
       end
 
-      @logdev = open_device(logdev, device_options)
+      @logdev = Device.open_device(logdev, device_options)
 
       @context = Context.new
       self.level = level || DEBUG
@@ -155,7 +155,7 @@ module Lumberjack
     # @param device [Lumberjack::Device] The new logging device.
     # @return [void]
     def device=(device)
-      @logdev = device.nil? ? nil : open_device(device, {})
+      @logdev = Device.open_device(device, {})
     end
 
     # Set the formatter used for log entries. This can be an EntryFormatter, a standard Logger::Formatter,
@@ -433,39 +433,6 @@ module Lumberjack
       $stderr.write("#{err}\n#{entry}\n") # rubocop:disable Style/StderrPuts
 
       raise e if Lumberjack.raise_logger_errors?
-    end
-
-    # Open a logging device.
-    def open_device(device, options) # :nodoc:
-      device = device.to_s if device.is_a?(Pathname)
-
-      if device.nil?
-        Device::Null.new
-      elsif device.is_a?(Device)
-        device
-      elsif device.is_a?(Symbol)
-        DeviceRegistry.new_device(device, options)
-      elsif device.is_a?(ContextLogger)
-        Device::LoggerWrapper.new(device)
-      elsif device.is_a?(Array)
-        devices = device.collect do |dev, dev_options|
-          dev_options = dev_options.is_a?(Hash) ? options.merge(dev_options) : options
-          open_device(dev, dev_options)
-        end
-        Device::Multi.new(devices)
-      elsif io_but_not_file_stream?(device)
-        Device::Writer.new(device, options)
-      else
-        Device::LoggerFile.new(device, options)
-      end
-    end
-
-    def io_but_not_file_stream?(object)
-      return false unless object.respond_to?(:write)
-      return true if object.respond_to?(:tty?) && object.tty?
-      return false if object.respond_to?(:path) && object.path
-
-      true
     end
 
     def build_entry_formatter(formatter, message_formatter, attribute_formatter) # :nodoc:

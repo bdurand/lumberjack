@@ -32,6 +32,71 @@ module Lumberjack
     require_relative "device/null"
     require_relative "device/test"
 
+    class << self
+      # Open a logging device with the given options.
+      #
+      # @param device [nil, Symbol, String, File, IO, Array, Lumberjack::Device, ContextLogger] The device to open.
+      #   The device can be:
+      #   - `nil`: returns a `Device::Null` instance that discards all log entries.
+      #   - `Symbol`: looks up the device in the `DeviceRegistry` and creates a new instance with the provided options.
+      #   - `String` or `Pathname`: treated as a file path and opens a `Device::LoggerFile`.
+      #   - `File`: opens a `Device::LoggerFile` for the given file stream.
+      #   - `IO`: opens a `Device::Writer`
+      #   - `Lumberjack::Device`: returns the device instance as-is.
+      #   - `ContextLogger`: wraps the logger in a `Device::LoggerWrapper`.
+      #   - `Array`: each element is treated as a device specification and opened recursively,
+      #     returning a `Device::Multi` that routes log entries to all specified devices. Each
+      #     device can have its own options hash if passed as a two-element array `[device, options]`.
+      # @param options [Hash] Options to pass to the device constructor.
+      # @return [Lumberjack::Device] The opened device instance.
+      #
+      # @example Open a file-based device
+      #   device = Lumberjack::Device.open_device("/var/log/myapp.log", shift_age: "daily")
+      #
+      # @example Open a device from the registry
+      #   device = Lumberjack::Device.open_device(:syslog)
+      #
+      # @example Open multiple devices
+      #   device = Lumberjack::Device.open_device([["/var/log/app.log", {shift_age: "daily"}], $stdout])
+      #
+      # @example Wrap another logger
+      #   device = Lumberjack::Device.open_device(Lumberjack::Logger.new($stdout))
+      def open_device(device, options = {})
+        device = device.to_s if device.is_a?(Pathname)
+
+        if device.nil?
+          Device::Null.new
+        elsif device.is_a?(Device)
+          device
+        elsif device.is_a?(Symbol)
+          DeviceRegistry.new_device(device, options)
+        elsif device.is_a?(ContextLogger)
+          Device::LoggerWrapper.new(device)
+        elsif device.is_a?(Array)
+          devices = device.collect do |dev, dev_options|
+            dev_options = dev_options.is_a?(Hash) ? options.merge(dev_options) : options
+            open_device(dev, dev_options)
+          end
+          Device::Multi.new(devices)
+        elsif io_but_not_file_stream?(device)
+          Device::Writer.new(device, options)
+        else
+          Device::LoggerFile.new(device, options)
+        end
+      end
+
+      private
+
+      def io_but_not_file_stream?(object)
+        return false if object.is_a?(File)
+        return false unless object.respond_to?(:write)
+        return true if object.respond_to?(:tty?) && object.tty?
+        return false if object.respond_to?(:path) && object.path
+
+        true
+      end
+    end
+
     # Write a log entry to the device. This is the core method that all device
     # implementations must provide. The method receives a fully formatted
     # LogEntry object and is responsible for outputting it to the target
