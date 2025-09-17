@@ -121,6 +121,11 @@ RSpec.describe Lumberjack::ContextLogger do
   end
 
   describe "#add" do
+    it "returns true" do
+      result = logger.add(Logger::INFO, "Test message")
+      expect(result).to be true
+    end
+
     it "adds a message to the log" do
       logger.add(Logger::INFO, "Test message")
       expect(logger.entries.last).to eq({
@@ -605,6 +610,11 @@ RSpec.describe Lumberjack::ContextLogger do
 
   [:fatal, :error, :warn, :info, :debug, :unknown, :trace].each do |severity|
     describe "##{severity}" do
+      it "returns true" do
+        result = logger.public_send(severity, "Message")
+        expect(result).to be true
+      end
+
       it "logs an entry as #{severity}" do
         logger.public_send(severity, "Message")
         expect(logger.entries.first).to eq({

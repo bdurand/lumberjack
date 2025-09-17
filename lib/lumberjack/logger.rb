@@ -255,9 +255,11 @@ module Lumberjack
     # Reopen the logging device.
     #
     # @param logdev [Object] passed through to the logging device.
+    # @return [Lumberjack::Logger] self
     def reopen(logdev = nil)
       @closed = false
       device.reopen(logdev) if device.respond_to?(:reopen)
+      self
     end
 
     # Set the program name that is associated with log messages. If a block

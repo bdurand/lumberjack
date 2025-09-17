@@ -118,7 +118,7 @@ module Lumberjack
     # @param severity [Integer, Symbol, String] The severity of the message.
     # @param message_or_progname_or_attributes [Object] The message to log, progname, or attributes.
     # @param progname_or_attributes [String, Hash] The name of the program or attributes.
-    # @return [void]
+    # @return [true]
     def add(severity, message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
       # This convoluted logic is to have API compatibility with ::Logger#add.
       severity ||= Logger::UNKNOWN
@@ -137,7 +137,7 @@ module Lumberjack
     #   if the message is passed in a block.
     # @param progname_or_attributes [String, Hash] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
-    # @return [void]
+    # @return [true]
     def fatal(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
       call_add_entry(Logger::FATAL, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
@@ -162,7 +162,7 @@ module Lumberjack
     #   if the message is passed in a block.
     # @param progname_or_attributes [String, Hash] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
-    # @return [void]
+    # @return [true]
     def error(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
       call_add_entry(Logger::ERROR, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
@@ -187,7 +187,7 @@ module Lumberjack
     #   if the message is passed in a block.
     # @param progname_or_attributes [String, Hash] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
-    # @return [void]
+    # @return [true]
     def warn(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
       call_add_entry(Logger::WARN, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
@@ -212,7 +212,7 @@ module Lumberjack
     #   if the message is passed in a block.
     # @param progname_or_attributes [String, Hash] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
-    # @return [void]
+    # @return [true]
     def info(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
       call_add_entry(Logger::INFO, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
@@ -237,7 +237,7 @@ module Lumberjack
     #   if the message is passed in a block.
     # @param progname_or_attributes [String, Hash] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
-    # @return [void]
+    # @return [true]
     def debug(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
       call_add_entry(Logger::DEBUG, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
@@ -264,7 +264,7 @@ module Lumberjack
     #   if the message is passed in a block.
     # @param progname_or_attributes [String, Hash] The name of the program that is logging the message or attributes
     #   if the message is passed in a block.
-    # @return [void]
+    # @return [true]
     def trace(message_or_progname_or_attributes = nil, progname_or_attributes = nil, &block)
       call_add_entry(TRACE, message_or_progname_or_attributes, progname_or_attributes, &block)
     end
@@ -568,6 +568,8 @@ module Lumberjack
       return if (message.nil? || message == "") && (attributes.nil? || attributes.empty?)
 
       add_entry(severity, message, progname, attributes)
+
+      true
     end
 
     # Merge a attributes hash into an existing attributes hash.
