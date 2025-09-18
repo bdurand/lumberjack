@@ -4,22 +4,24 @@
 [![Ruby Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://github.com/testdouble/standard)
 [![Gem Version](https://badge.fury.io/rb/lumberjack.svg)](https://badge.fury.io/rb/lumberjack)
 
-
 Lumberjack is an extension to the Ruby standard library `Logger` class, designed to provide advanced, flexible, and structured logging for Ruby applications. It builds on the familiar `Logger` API, adding powerful features for modern logging needs:
 
-- **Attributes for Structured Logging:** Use attributes (formerly called tags) to attach structured, machine-readable metadata to log entries, enabling better filtering, searching, and analytics.
-- **Context Isolation:** Isolate specific logging behavior to specific blocks of code. The attributes, level, and progname for the logger can all be changed in a context block and only impact the log messages created within that block.
+- **Attributes for Structured Logging:** Use attributes to attach structured, machine-readable metadata to log entries, enabling better filtering, searching, and analytics.
+- **Context Isolation:** Isolate logging behavior to specific blocks of code. The attributes, level, and progname for the logger can all be changed in a context block and only impact the log messages created within that block.
 - **Formatters:** Control how objects are logged with customizable formatters for messages and attributes.
-- **Devices and Templates:** Choose from a variety of output devices and templates to define the format and destination of your logs, including compatibility with standard library log devices and support for custom output formats.
+- **Devices and Templates:** Choose from a variety of output devices and templates to define the format and destination of your logs.
+- **Forked Loggers:** Create independent logger instances that inherit context from a parent logger, allowing for isolated logging configurations in different parts of your application.
 - **Testing Tools:** Built-in testing devices and helpers make it easy to assert logging behavior in your test suite.
 
-Lumberjack is ideal for applications that require structured, context-aware logging, and integrates seamlessly with Ruby’s standard logging ecosystem.
-
-The philosophy behind the library is to promote use of structured logging with the standard Ruby Logger API as a foundation. The developer of a piece of functionality should only need to worry about the data that needs to be logged for that functionality and not how it is logged or formatted. Loggers can be initialized with global attributes and formatters that handle these concerns.
+The philosophy behind the library is to promote use of structured logging with the standard Ruby Logger API as a foundation. The developer of a piece of functionality should only need to worry about the data that needs to be logged for that functionality and not how it is logged or formatted. Loggers can be setup with global attributes and formatters that handle these concerns.
 
 ## Table of Contents
 
 - [Usage](#usage)
+   - [Context Isolation](#context-isolation)
+     - [Context Blocks](#context-blocks)
+     - [Nested Context Blocks](#nested-context-blocks)
+     - [Forking Loggers](#forking-loggers)
    - [Structured Logging With Attributes](#structured-logging-with-attributes)
      - [Basic Attribute Logging](#basic-attribute-logging)
      - [Adding attributes to the logger](#adding-attributes-to-the-logger)
@@ -27,13 +29,11 @@ The philosophy behind the library is to promote use of structured logging with t
      - [Nested Attributes and Complex Data](#nested-attributes-and-complex-data)
      - [Attribute Inheritance and Merging](#attribute-inheritance-and-merging)
      - [Working with Array Attributes](#working-with-array-attributes)
-   - [Context Isolation](#context-isolation)
-     - [Context Blocks](#context-blocks)
-     - [Nested Context Blocks](#nested-context-blocks)
-     - [Forking Loggers](#forking-loggers)
    - [Formatters](#formatters)
-     - [Object Formatters](#object-formatters)
+     - [Message Formatters](#message-formatters)
      - [Attribute Formatters](#attribute-formatters)
+     - [Built-in Formatters](#built-in-formatters)
+     - [Custom Formatters](#custom-formatters)
      - [Building An Entry Formatter](#building-an-entry-formatter)
      - [Merging Formatters](#merging-formatters)
    - [Devices and Templates](#devices-and-templates)
@@ -48,6 +48,70 @@ The philosophy behind the library is to promote use of structured logging with t
 - [License](#license)
 
 ## Usage
+
+### Context Isolation
+
+Lumberjack provides context isolation that allow you to temporarily modify logging behavior for specific blocks of code or create independent logger instances. This is particularly useful for isolating logging configuration in different parts of your application without affecting the global logger state.
+
+#### Context Blocks
+
+Context blocks allow you to temporarily change the logger's configuration (level, progname, and attributes) for a specific block of code. When the block exits, the logger returns to its previous state.
+
+Context blocks and forked loggers are thread and fiber-safe, maintaining isolation across concurrent operations:
+
+```ruby
+logger.level = :info
+
+# Temporarily change log level for debugging a specific section
+logger.context do
+  logger.level = :debug
+  logger.debug("This debug message will be logged")
+end
+
+# Back to info level - debug messages are filtered out again
+logger.debug("This won't be logged")
+```
+
+You can use `with_level`, `with_progname`, and `tag` to setup a context block with a specific level, progname, or attributes.
+
+As a best practice, every main unit of work in your application (i.e. HTTP request, background job, etc.) should have a context block. This ensures that any attributes or changes to the logger are scoped to that unit of work and do not leak into other parts of the application.
+
+##### Nested Context Blocks
+
+Context blocks can be nested, with inner contexts inheriting and potentially overriding outer context settings:
+
+```ruby
+logger.context do
+  logger.tag(user_id: 123, service: "api")
+  logger.info("API request started") # Includes user_id: 123, service: "api"
+
+  logger.context(endpoint: "/users", service: "user_service") do
+    logger.tag(service: "user_service", endpoint: "/users")
+    logger.info("Processing user data") # Includes: user_id: 123, service: "user_service", endpoint: "/users"
+  end
+
+  logger.info("API request completed") # Back to: user_id: 123, service: "api"
+end
+```
+
+#### Forking Loggers
+
+Logger forking creates independent logger instances that inherit the parent logger's current context. Changes made to the forked logger will not affect the parent logger.
+
+Forked loggers are useful when there is a section of your application that requires different logging behavior. Forked loggers are cheap to create, so you can use them liberally.
+
+```ruby
+main_logger = Lumberjack::Logger.new
+main_logger.tag!(version: "1.0.0")
+
+# Create a forked logger for a specific component
+user_service_logger = main_logger.fork(progname: "UserService", level: :debug)
+user_service_logger.tag!(component: "user_management")
+
+user_service_logger.debug("Debug info")    # Includes version and component attributes
+main_logger.info("Main logger info")       # Includes only version attribute
+main_logger.debug("Main logger debug info") # Not logged since level is :info
+```
 
 ### Structured Logging With Attributes
 
@@ -72,13 +136,11 @@ logger.debug("Processing data",
 ```
 
 > [!Note]
-> Attributes are passed in log statements in the little used `progname` argument that is defined in the standard Ruby Logger API. This attribute can be used to set a specific program name for the log entry that overrides the default program name on the logger.
+> Attributes are passed in log statements in the little used `progname` argument that is defined in the standard Ruby Logger API. This attribute is normally used to set a specific program name for the log entry that overrides the default program name on the logger.
 >
-> The only difference in the API is that Lumberjack loggers can take a Hash to set attributes. You can still pass a string to override the program name.
+> The only difference in the API is that Lumberjack loggers can take a Hash to set attributes instead of just a string. You can still pass a string to override the program name.
 
 #### Adding attributes to the logger
-
-Attributes added to the logger will be included in all log entries.
 
 Use the  `tag` method to tag the the current context with attributes. The attributes will be included in all log entries within that context.
 
@@ -106,7 +168,7 @@ end
 
 Calling `tag` outside of a context without a block is a no-op and has no effect on the logger.
 
-You can also use the `tag_all_contexts` to add attributes to all parent context blocks. This can be useful in cases where you need to set an attribute that should be included in all subsequent log entries for the duration of the process defined by the outermost context.
+You can also use the `tag_all_contexts` method to add attributes to all parent context blocks. This can be useful in cases where you need to set an attribute that should be included in all subsequent log entries for the duration of the process defined by the outermost context.
 
 Consider this example where we want to include the `user_id` attribute in all log entries. We need to set it on all parent contexts in order to have it extend beyond the current context block.
 
@@ -222,133 +284,18 @@ logger.append_to(:categories, "billing", "premium") do
 end
 ```
 
-### Context Isolation
-
-Lumberjack provides context isolation features that allow you to temporarily modify logging behavior for specific blocks of code or create independent logger instances. This is particularly useful for isolating logging configuration in different parts of your application without affecting the global logger state.
-
-#### Context Blocks
-
-Context blocks allow you to temporarily change the logger's configuration (level, progname, and attributes) for a specific block of code. When the block exits, the logger returns to its previous state.
-
-Context blocks and forked loggers are thread and fiber-safe, maintaining isolation across concurrent operations:
-
-```ruby
-logger.level = :info
-
-# Temporarily change log level for debugging a specific section
-logger.context do
-  logger.level = :debug
-  logger.debug("This debug message will be logged")
-end
-
-# Back to info level - debug messages are filtered out again
-logger.debug("This won't be logged")
-```
-
-You can use `with_level`, `with_progname`, and `tag` to setup a context block with a specific level, progname, or attributes.
-
-##### Nested Context Blocks
-
-Context blocks can be nested, with inner contexts inheriting and potentially overriding outer context settings:
-
-```ruby
-logger.context do
-  logger.tag(user_id: 123, service: "api")
-  logger.info("API request started") # Includes user_id: 123, service: "api"
-
-  logger.context(endpoint: "/users", service: "user_service") do
-    logger.tag(service: "user_service", endpoint: "/users")
-    logger.info("Processing user data") # Includes: user_id: 123, service: "user_service", endpoint: "/users"
-  end
-
-  logger.info("API request completed") # Back to: user_id: 123, service: "api"
-end
-```
-
-#### Forking Loggers
-
-Logger forking creates independent logger instances that inherit the parent logger's current context. Changes made to the forked logger will not affect the parent logger.
-
-Forked loggers are useful when there is a section of your application that requires different logging behavior. Forked loggers are cheap to create, so you can use them liberally.
-
-```ruby
-main_logger = Lumberjack::Logger.new
-main_logger.tag!(version: "1.0.0")
-
-# Create a forked logger for a specific component
-user_service_logger = main_logger.fork(progname: "UserService", level: :debug)
-user_service_logger.tag!(component: "user_management")
-
-user_service_logger.debug("Debug info")    # Includes version and component attributes
-main_logger.info("Main logger info")       # Includes only version attribute
-main_logger.debug("Main logger debug info") # Not logged since level is :info
-```
-
 ### Formatters
 
-Lumberjack provides a sophisticated formatting system that controls how objects are converted to strings in log entries. The system consists of two main components:
+Lumberjack provides a sophisticated formatting system that controls how objects are converted to strings in log entries. There are two types of formatters.
 
-- **Object Formatters**: Format message content and object representations
-- **Attribute Formatters**: Format attribute values
+#### Message Formatters
 
-Both systems work together through the **Entry Formatter**, which coordinates the formatting of complete log entries.
-
-#### Object Formatters
-
-Object formatters control how different types of objects are converted to strings when logged as messages. Lumberjack includes many built-in formatters and supports custom formatting logic.
-
-##### Built-in Formatters
-
-Lumberjack provides several predefined formatters that can be referenced by symbol:
+Message formatters control how different types of objects are converted to strings when logged as messages. Message formatters are registered for specific classes or modules. When you log an object, the formatter will be looked up based on the object's class.
 
 ```ruby
-logger = Lumberjack::Logger.new
+logger.formatter.add(Array) { |arr| arr.join(", ") }
 
-# Configure the formatter
-logger.formatter.add(Float, :round, 2)           # Round floats to 2 decimals
-logger.formatter.add(Time, :date_time, "%H:%M")  # Custom time format
-
-# Now these objects will be formatted according to the rules
-logger.info(3.14159)                             # "3.14"
-logger.info(Time.now)                            # "14:30"
-```
-
-**Available Built-in Formatters:**
-
-| Formatter | Purpose |
-|-----------|---------|
-| `:date_time` | Format time/date objects |
-| `:exception` | Format exceptions with stack traces |
-| `:id` | Extract object ID or specified field |
-| `:inspect` | Use Ruby's inspect method |
-| `:multiply` | Multiply numeric values |
-| `:object` | Generic object formatter |
-| `:pretty_print` | Pretty print using PP library |
-| `:redact` | Redact sensitive information |
-| `:round` | Round numeric values |
-| `:string` | Convert to string using to_s |
-| `:strip` | Strip whitespace from strings |
-| `:structured` | Recursively format collections |
-| `:tags` | Format values as tags in the format "[val1] [val2]" for arrays or "[key=value]" for hashes |
-| `:truncate` | Truncate long strings |
-
-##### Custom Object Formatters
-
-You can create custom formatters using blocks, callable objects, or custom classes:
-
-```ruby
-# Block-based formatters
-logger.formatter.add(User) { |user| "User[#{user.id}:#{user.name}]" }
-logger.formatter.add(BigDecimal) { |decimal| "$#{decimal.round(2)}" }
-
-# Callable object formatters
-class PasswordFormatter
-  def call(password)
-    "[PASSWORD:#{password.length} chars]"
-  end
-end
-
-logger.formatter.add(SecureString, PasswordFormatter.new)
+logger.info([1, 2, 3]) # Logs "1, 2, 3"
 ```
 
 For log messages you can use the `Lumberjack::MessageAttributes` class to extract structured data from a log message. This can be used to allow logging objects directly and extracting metadata from the objects in the log attributes.
@@ -356,8 +303,8 @@ For log messages you can use the `Lumberjack::MessageAttributes` class to extrac
 ```ruby
 logger.formatter.add(Exception) do |error|
   Lumberjack::MessageAttributes.new(
-    error.inspect,
-    error: {
+    error.inspect, # This will be used as the log message
+    error: { # This will be added to the log attributes
       type: error.class.name,
       message: error.message,
       backtrace: error.backtrace
@@ -371,21 +318,6 @@ end
 # just log the object itself and let the formatter deal with it.
 logger.error(exception)
 ```
-
-Classes can also implement `to_log_format` to define how instances should be serialized for logging. This will apply to both message and attribute formatting.
-
-```ruby
-class User
-  attr_accessor :id, :name
-
-  def to_log_format
-    "User[id: #{ id }, name: #{ name }]"
-
-  end
-end
-```
-
-Primitive classes (`String`, `Integer`, `Float`, `TrueClass`, `FalseClass`, `NilClass`, `BigDecimal`) will not use `to_log_format`.
 
 #### Attribute Formatters
 
@@ -443,6 +375,74 @@ Finally, you can add a default formatter for all other attributes:
 logger.attribute_formatter.default { |value| value.to_s.strip[0..100] }
 ```
 
+#### Built-in Formatters
+
+Lumberjack provides several predefined formatters that can be referenced by symbol:
+
+```ruby
+logger = Lumberjack::Logger.new
+
+# Configure the formatter
+logger.formatter.add(Float, :round, 2)           # Round floats to 2 decimals
+logger.formatter.add(Time, :date_time, "%H:%M")  # Custom time format
+
+# Now these objects will be formatted according to the rules
+logger.info(3.14159)                             # "3.14"
+logger.info(Time.now)                            # "14:30"
+```
+
+**Available Built-in Formatters:**
+
+| Formatter | Purpose |
+|-----------|---------|
+| `:date_time` | Format time/date objects |
+| `:exception` | Format exceptions with stack traces |
+| `:id` | Extract object ID or specified field |
+| `:inspect` | Use Ruby's inspect method |
+| `:multiply` | Multiply numeric values |
+| `:object` | Generic object formatter |
+| `:pretty_print` | Pretty print using PP library |
+| `:redact` | Redact sensitive information |
+| `:round` | Round numeric values |
+| `:string` | Convert to string using to_s |
+| `:strip` | Strip whitespace from strings |
+| `:structured` | Recursively format collections |
+| `:tags` | Format values as tags in the format "[val1] [val2]" for arrays or "[key=value]" for hashes |
+| `:truncate` | Truncate long strings |
+
+#### Custom Formatters
+
+You can create custom formatters using blocks, callable objects, or custom classes:
+
+```ruby
+# Block-based formatters
+logger.formatter.add(User) { |user| "User[#{user.id}:#{user.name}]" }
+logger.formatter.add(BigDecimal) { |decimal| "$#{decimal.round(2)}" }
+
+# Callable object formatters
+class PasswordFormatter
+  def call(password)
+    "[PASSWORD:#{password.length} chars]"
+  end
+end
+
+logger.formatter.add(SecureString, PasswordFormatter.new)
+```
+
+Classes can also implement `to_log_format` to define how instances should be serialized for logging. This will apply to both message and attribute formatting.
+
+```ruby
+class User
+  attr_accessor :id, :name
+
+  def to_log_format
+    "User[id: #{ id }, name: #{ name }]"
+  end
+end
+```
+
+Primitive classes (`String`, `Integer`, `Float`, `TrueClass`, `FalseClass`, `NilClass`, `BigDecimal`) will not use `to_log_format`.
+
 #### Building An Entry Formatter
 
 The Entry Formatter coordinates both message and attribute formatting, providing a unified configuration interface:
@@ -451,15 +451,15 @@ The Entry Formatter coordinates both message and attribute formatting, providing
 
 ```ruby
 # Build a comprehensive entry formatter
-entry_formatter = Lumberjack.build_formatter do |config|
+entry_formatter = Lumberjack.build_formatter do |formatter|
   # Message formatting (for the main log message)
-  config.add(User, :id)                             # Show user IDs only
-  config.add(Time, :date_time, "%Y-%m-%d %H:%M:%S") # Time format for messages
+  formatter.add(User, :id)                             # Show user IDs only
+  formatter.add(Time, :date_time, "%Y-%m-%d %H:%M:%S") # Time format for messages
 
   # Attribute formatting
-  config.add_attribute_class(Time, :date_time, "%Y-%m-%d %H:%M:%S")
-  config.add_attribute_class([Float, BigDecimal], :round, 6)
-  config.add_attribute("email", :redact)
+  formatter.add_attribute_class(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+  formatter.add_attribute_class([Float, BigDecimal], :round, 6)
+  formatter.add_attribute("email", :redact)
 end
 
 # Use with logger
@@ -472,13 +472,13 @@ You can merge other formatters into your formatter with the `include` method. Do
 
 ```ruby
 # Translate the duration tag to microseconds.
-duration_formatter = Lumberjack::EntryFormatter.build do |config|
-  config.add_attribute(:duration) { |seconds| (seconds.to_f * 1_000_000).round }
+duration_formatter = Lumberjack::EntryFormatter.build do |formatter|
+  formatter.add_attribute(:duration) { |seconds| (seconds.to_f * 1_000_000).round }
 end
 
-formatter = Lumberjack::EntryFormatter.build do |config|
+entry_formatter = Lumberjack::EntryFormatter.build do |formatter|
   # Adds the duration attribute formatter
-  config.include(duration_formatter)
+  formatter.include(duration_formatter)
 end
 ```
 
@@ -509,8 +509,7 @@ logger = Lumberjack::Logger.new("/var/log/app.log", 'daily')
 
 ##### Multi Device
 
-The `Multi` device broadcasts log entries to multiple devices simultaneously. You can
-instantiate a multi device by passing in an array of values.
+The `Multi` device broadcasts log entries to multiple devices simultaneously. You can instantiate a multi device by passing in an array of values.
 
 ```ruby
 # Log to both file and STDOUT; the logs to STDOUT will only contain the log message.
@@ -584,11 +583,12 @@ logger = Lumberjack::Logger.new(db_device)
 There are separate gems implementing custom devices for different use cases:
 
 - [lumberjack_json_device](https://github.com/bdurand/lumberjack_json_device) - Output logs to JSON
+- [lumberjack_datadog_device](https://github.com/bdurand/lumberjack_datadog) - Output logs in JSON using the Datadog standard attributes.
 - [lumberjack_capture_device](https://github.com/bdurand/lumberjack_capture_device) - Device designed for capturing logs in tests to make assertions easier
 - [lumberjack_syslog_device](https://github.com/bdurand/lumberjack_syslog_device) - Device for logging to a syslog server
 - [lumberjack_redis_device](https://github.com/bdurand/lumberjack_redis_device) - Device for logging to a Redis database
 
-You can register a custom device with Lumberjack using the device registry. This associates the device with the device class and can make using the device easier to setup since the user can just pass the symbol and options when instantiating the Logger rather than having to instantiate the device separately.
+You can register a custom device with Lumberjack using the device registry. This associates the device with the device class and can make using the device easier to setup since the user can pass the symbol and options when instantiating the Logger rather than having to instantiate the device separately.
 
 ```ruby
   Lumberjack::Device.register(:my_device, MyDevice)
@@ -600,7 +600,7 @@ You can register a custom device with Lumberjack using the device registry. This
 
 #### Templates
 
-The output devices writing to a stream or file can define templates that format how log entries are written. Templates use mustache-style placeholders that are replaced with values from the log entry.
+The output devices writing to a stream or file can define templates that formats how log entries are written. Templates use mustache-style placeholders that are replaced with values from the log entry.
 
 ##### Basic Template Usage
 
@@ -618,8 +618,8 @@ Templates support the following placeholder variables:
 
 | Variable | Description |
 |----------|-------------|
-| `time` | Log entry timestamp |
-| `severity` | Numeric severity level |
+| `time` | Timestamp |
+| `severity` | Severity level |
 | `progname` | Program name |
 | `pid` | Process ID |
 | `message` | Log message |
@@ -654,12 +654,12 @@ logger = Lumberjack::Logger.new(STDOUT,
   template: "[{{time}} {{severity(padded)}} {{progname}}({{pid}})] [{{http.request_id}}] {{message}} {{attributes}}",
   time_format: "%Y-%m-%d %H:%M:%S", # Custom time format
   additional_lines: "\n> [{{http.request_id}}] {{message}}", # Template for additional lines on multiline messages
-  attribute_format: "%s=%s", # Format for attributes using printf syntax
+  attribute_format: "[%s=%s]", # Format for attributes using printf syntax
   colorize: true # Colorize log output according to entry severity
 )
 
 logger.info("Test message", user_id: 123, status: "active")
-# Output: 2025-09-03 14:30:15  INFO Test message user_id=123 | status=active
+# Output: 2025-09-03 14:30:15  INFO Test message [user_id=123] [status=active]
 ```
 
 ### Testing Utilities
@@ -732,7 +732,7 @@ $stderr.puts "Something went wrong"
 
 # You can set the default level to set the level when using the I/O methods
 logger.default_level = :warn
-logger.puts "This is a warning message" # logged as a warning
+$stderr.puts "This is a warning message" # logged as a warning
 ```
 
 ### Integrations
