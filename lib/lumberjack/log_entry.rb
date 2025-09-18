@@ -96,7 +96,7 @@ module Lumberjack
     # @return [Hash, nil] The attributes of the log entry.
     # @deprecated Use {#attributes} instead.
     def tags
-      Utils.deprecated("LogEntry#tags", "Lumberjack::LogEntry#tags is deprecated; use attributes instead.") do
+      Utils.deprecated("LogEntry#tags", "Lumberjack::LogEntry#tags is deprecated and will be removed in version 2.1; use attributes instead.") do
         attributes
       end
     end
@@ -118,7 +118,7 @@ module Lumberjack
     # @return [Hash]
     # @deprecated Use {#[]} instead.
     def tag(name)
-      Utils.deprecated("LogEntry#tag", "Lumberjack::LogEntry#tag is deprecated; use [] instead.") do
+      Utils.deprecated("LogEntry#tag", "Lumberjack::LogEntry#tag is deprecated and will be removed in version 2.1; use [] instead.") do
         self[name]
       end
     end
@@ -138,7 +138,7 @@ module Lumberjack
     # @return [Hash]
     # @deprecated Use {#nested_attributes} instead.
     def nested_tags
-      Utils.deprecated("LogEntry#nested_tags", "Lumberjack::LogEntry#nested_tags is deprecated; use nested_attributes instead.") do
+      Utils.deprecated("LogEntry#nested_tags", "Lumberjack::LogEntry#nested_tags is deprecated and will be removed in version 2.1; use nested_attributes instead.") do
         nested_attributes
       end
     end

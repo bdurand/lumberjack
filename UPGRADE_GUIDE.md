@@ -41,11 +41,11 @@ The method name `tag` is still used as the main interface as verb (i.e. "to tag 
 
 ```ruby
 logger.tag(attributes) do
-  logger.info("Somthing happened")
+  logger.info("Something happened")
 end
 ```
 
-Internal uses of the word "tag" have all been updated to use "attribute" instead. The "tag" versions of the methods will still work, but they have been marked as deprecated and will be removed in a future version.
+Internal uses of the word "tag" have all been updated to use "attribute" instead. The "tag" versions of the methods will still work, but they have been [marked as deprecated](CHANGELOG.md#deprecated) and will be removed in a future version.
 
 Global attributes are now set with the `tag!` method instead of `tag_globally` or calling `tag` outside of a context.
 
@@ -61,7 +61,7 @@ Using the `tagged` method in Rails will now add the tags to the `"tags"` attribu
 
 ## Templates
 
-Templates used for writing to streams now use mustache syntax (`{{message}}` instead of `:message`). The field names are all the same except `:tags` should be replace with `{{attributes}}`.
+Templates used for writing to streams now use mustache syntax (i.e. `{{message}}` instead of `:message`). The field names are all the same except `:tags` should be replace with `{{attributes}}`. There are also options for how to format the severity on a log entry (see `Lumberjack::Template` for details).
 
 ## Formatters
 

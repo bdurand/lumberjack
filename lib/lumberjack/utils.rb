@@ -216,7 +216,7 @@ module Lumberjack
       # @return [Hash<String, Object>] The flattened hash.
       # @deprecated Use {.flatten_attributes} instead.
       def flatten_tags(tag_hash)
-        Utils.deprecated("Lumberjack::Utils.flatten_tags", "Lumberjack::Utils.flatten_tags is deprecated; use flatten_attributes instead.") do
+        Utils.deprecated("Lumberjack::Utils.flatten_tags", "Lumberjack::Utils.flatten_tags is deprecated and will be removed in version 2.1; use flatten_attributes instead.") do
           flatten_attributes(tag_hash)
         end
       end
@@ -255,7 +255,7 @@ module Lumberjack
       # @return [Hash] The expanded hash.
       # @deprecated Use {.expand_attributes} instead.
       def expand_tags(tags)
-        Utils.deprecated("Lumberjack::Utils.expand_tags", "Lumberjack::Utils.expand_tags is deprecated; use expand_attributes instead.") do
+        Utils.deprecated("Lumberjack::Utils.expand_tags", "Lumberjack::Utils.expand_tags is deprecated and will be removed in version 2.1; use expand_attributes instead.") do
           expand_attributes(tags)
         end
       end

@@ -133,7 +133,7 @@ module Lumberjack
     # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
     # @deprecated Use {#add_class} or {#add_attribute} instead.
     def add(names_or_classes, formatter = nil, *args, &block)
-      Utils.deprecated("AttributeFormatter#add", "AttributeFormatter#add is deprecated; use #add_class or #add_attribute instead.") do
+      Utils.deprecated("AttributeFormatter#add", "AttributeFormatter#add is deprecated and will be removed in version 2.1; use #add_class or #add_attribute instead.") do
         Array(names_or_classes).each do |obj|
           if obj.is_a?(Module)
             add_class(obj, formatter, *args, &block)
@@ -230,7 +230,7 @@ module Lumberjack
     # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
     # @deprecated Use {#remove_class} or {#remove_attribute} instead.
     def remove(names_or_classes)
-      Utils.deprecated("AttributeFormatter#remove", "AttributeFormatter#remove is deprecated; use #remove_class or #remove_attribute instead.") do
+      Utils.deprecated("AttributeFormatter#remove", "AttributeFormatter#remove is deprecated and will be removed in version 2.1; use #remove_class or #remove_attribute instead.") do
         Array(names_or_classes).each do |key|
           if key.is_a?(Module)
             @class_formatter.remove(key)

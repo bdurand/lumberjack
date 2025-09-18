@@ -84,7 +84,7 @@ module Lumberjack
       # @return [Lumberjack::Formatter] A new formatter with no default mappings.
       # @deprecated Use #new instead.
       def empty
-        Utils.deprecated("Formatter.empty", "Lumberjack::Formatter.empty is deprecated; use new instead.") do
+        Utils.deprecated("Formatter.empty", "Lumberjack::Formatter.empty is deprecated and will be removed in version 2.1; use new instead.") do
           new
         end
       end
