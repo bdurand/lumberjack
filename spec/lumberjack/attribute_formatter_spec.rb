@@ -196,22 +196,6 @@ RSpec.describe Lumberjack::AttributeFormatter do
     end
   end
 
-  describe "#formatter_for" do
-    let(:formatter) do
-      Lumberjack::AttributeFormatter.build do |config|
-        config.add_attribute(:upcase) { |val| val.to_s.upcase }
-        config.add_attribute(:downcase) { |val| val.to_s.downcase }
-        config.add_class(Array) { |val| val.join(", ") }
-      end
-    end
-
-    it "gets a formatter for an attribute name" do
-      expect(formatter.formatter_for(:upcase).call("Foo")).to eq("FOO")
-      expect(formatter.formatter_for(:downcase).call("Foo")).to eq("foo")
-      expect(formatter.formatter_for(:other)).to be_nil
-    end
-  end
-
   describe "#formatter_for_class" do
     let(:formatter) do
       Lumberjack::AttributeFormatter.build do |config|

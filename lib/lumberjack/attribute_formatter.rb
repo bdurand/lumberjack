@@ -6,24 +6,16 @@ module Lumberjack
   # provide a default formatter for all attributes.
   #
   # The formatter system works in a hierarchical manner:
-  # 1. **Attribute-specific formatters** - Applied to specific attribute names (highest priority)
-  # 2. **Class-specific formatters** - Applied based on the attribute value's class
-  # 3. **Default formatter** - Applied to all other attributes (lowest priority)
-  #
-  # ## Key Features
-  #
-  # - **Nested attribute support**: Use dot notation (e.g., "user.email") to format nested hash values
-  # - **Class-based formatting**: Apply formatters to all values of specific object types
-  # - **Recursive processing**: Automatically handles nested hashes and arrays
-  # - **Flexible formatter types**: Supports Formatter objects, callable objects, blocks, or symbols
-  #
-  # ## Formatter Types
+  # 1. Attribute-specific formatters - Applied to specific attribute names (highest priority)
+  # 2. Class-specific formatters - Applied based on the attribute value's class
+  # 3. Default formatter - Applied to all other attributes (lowest priority)
   #
   # Formatters can be specified as:
-  # - **Lumberjack::Formatter objects**: Full formatter instances with complex logic
-  # - **Callable objects**: Any object responding to `#call(value)`
-  # - **Blocks**: Inline formatting logic
-  # - **Symbols**: References to predefined formatter classes (e.g., `:strip`, `:truncate`)
+  #
+  # - Lumberjack::Formatter objects: Full formatter instances with complex logic
+  # - Callable objects: Any object responding to `#call(value)`
+  # - Blocks: Inline formatting logic
+  # - Symbols: References to predefined formatter classes (e.g., `:strip`, `:truncate`)
   #
   # @example Basic usage with build
   #   formatter = Lumberjack::AttributeFormatter.build do |config|
@@ -32,8 +24,6 @@ module Lumberjack
   #     config.add_class(Time, :date_time, "%Y-%m-%d %H:%M:%S")
   #   end
   #
-  # ## Remapping attributes
-  #
   # If the value returned by a formatter is a `Lumberjack::RemapAttributes` instance, then
   # the attributes will be remapped to the new attributes.
   #
@@ -41,16 +31,6 @@ module Lumberjack
   #   formatter = Lumberjack::AttributeFormatter.new
   #   formatter.add_attribute("duration_ms") { |value| Lumberjack::RemapAttributes.new(duration: value.to_f / 1000) }
   #   formatter.format({ "duration_ms" => 1234 }) # => { "duration" => 1.234 }
-  #
-  # ## Remapping attributes
-  #
-  # If the value returned by a formatter is a `Lumberjack::RemapAttributes` instance, then
-  # the attributes will be remapped to the new attributes.
-  #
-  # @example
-  #   formatter = Lumberjack::AttributeFormatter.new
-  #   formatter.add_attribute("user.email") { |email| email.downcase }
-  #   formatter.add_attribute("config.database.password") { |pwd| "[HIDDEN]" }
   #
   # @see Lumberjack::Formatter
   # @see Lumberjack::EntryFormatter
@@ -165,9 +145,6 @@ module Lumberjack
     # @example Time formatting
     #   formatter.add_class(Time, :date_time, "%Y-%m-%d %H:%M:%S")
     #   formatter.add_class([Date, DateTime]) { |dt| dt.strftime("%Y-%m-%d") }
-    #
-    # @example Security formatting
-    #   formatter.add_class(SecretToken) { |token| "[TOKEN:#{token.id}]" }
     def add_class(classes_or_names, formatter = nil, *args, &block)
       formatter ||= block
       formatter = dereference_formatter(formatter, args)
@@ -341,18 +318,6 @@ module Lumberjack
       return attributes if empty?
 
       formated_attributes(attributes)
-    end
-
-    # Get the formatter for a specific class or attribute.
-    #
-    # @param class_or_attribute [String, Module] The class or attribute to get the formatter for.
-    # @return [#call, nil] The formatter for the class or attribute, or nil if not found.
-    def formatter_for(class_or_attribute)
-      if class_or_attribute.is_a?(Module)
-        formatter_for_class(class_or_attribute)
-      else
-        formatter_for_attribute(class_or_attribute)
-      end
     end
 
     # Get the formatter for a specific class or class name.
