@@ -12,31 +12,31 @@ module Lumberjack
   # environments where log management is crucial.
   #
   # @example Basic file logging
-  #   device = Lumberjack::Device::LoggerFile.new("/var/log/app.log")
+  #   device = Lumberjack::Device::LogFile.new("/var/log/app.log")
   #
   # @example With size-based rotation (10MB files, keep 5 old files)
-  #   device = Lumberjack::Device::LoggerFile.new(
+  #   device = Lumberjack::Device::LogFile.new(
   #     "/var/log/app.log",
   #     shift_size: 10 * 1024 * 1024,  # 10MB
   #     shift_age: 5                    # Keep 5 old files
   #   )
   #
   # @example With daily rotation
-  #   device = Lumberjack::Device::LoggerFile.new(
+  #   device = Lumberjack::Device::LogFile.new(
   #     "/var/log/app.log",
   #     shift_age: "daily"
   #   )
   #
   # @example With weekly rotation
-  #   device = Lumberjack::Device::LoggerFile.new(
+  #   device = Lumberjack::Device::LogFile.new(
   #     "/var/log/app.log",
   #     shift_age: "weekly"
   #   )
   #
   # @see Device::Writer
   # @see Logger::LogDevice
-  class Device::LoggerFile < Device::Writer
-    # Initialize a new LoggerFile device with automatic log rotation capabilities.
+  class Device::LogFile < Device::Writer
+    # Initialize a new LogFile device with automatic log rotation capabilities.
     # This constructor wraps Ruby's Logger::LogDevice while filtering options to
     # only pass supported parameters, ensuring compatibility across Ruby versions.
     #
@@ -78,6 +78,10 @@ module Lumberjack
     # @api private
     def dev
       stream.dev
+    end
+
+    def reopen(logdev = nil)
+      stream.reopen(logdev)
     end
   end
 end
