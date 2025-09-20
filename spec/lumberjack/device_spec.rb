@@ -25,35 +25,35 @@ RSpec.describe Lumberjack::Device do
       expect(device).to be_a(Lumberjack::Device::Test)
     end
 
-    it "opens a LoggerFile when given a String path" do
+    it "opens a LogFile when given a String path" do
       tmp_file = Tempfile.new("lumberjack_test")
       begin
         device = Lumberjack::Device.open_device(tmp_file.path)
-        expect(device).to be_a(Lumberjack::Device::LoggerFile)
+        expect(device).to be_a(Lumberjack::Device::LogFile)
         expect(device.dev.path).to eq(tmp_file.path)
       ensure
         tmp_file.unlink
       end
     end
 
-    it "opens a LoggerFile when given a Pathname" do
+    it "opens a LogFile when given a Pathname" do
       tmp_file = Tempfile.new("lumberjack_test")
       begin
         path = Pathname.new(tmp_file.path)
         device = Lumberjack::Device.open_device(path)
-        expect(device).to be_a(Lumberjack::Device::LoggerFile)
+        expect(device).to be_a(Lumberjack::Device::LogFile)
         expect(device.dev.path).to eq(tmp_file.path)
       ensure
         tmp_file.unlink
       end
     end
 
-    it "opens a LoggerFile when given a File" do
+    it "opens a LogFile when given a File" do
       tmp_file = Tempfile.new("lumberjack_test")
       file = File.open(tmp_file.path, "a")
       begin
         device = Lumberjack::Device.open_device(file)
-        expect(device).to be_a(Lumberjack::Device::LoggerFile)
+        expect(device).to be_a(Lumberjack::Device::LogFile)
         expect(device.dev.path).to eq(tmp_file.path)
       ensure
         file.close

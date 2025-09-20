@@ -55,8 +55,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 
 - **Breaking Change** Removed deprecated unit of work id code. These have been replaced with tags.
 - **Breaking Change** Removed deprecated support for setting global tags with `Lumberjack::Logger#tag`. Now calling `tag` outside of a block or context will be ignored. Use `tag!` to set global tags on a logger.
-- **Breaking Change** Removed the devices that handled logging to files (`Lumberjack::Device::LogFile`, `Lumberjack::Device::RollingLogFile`, `Lumberjack::Device::DateRollingLogFile`, and `Lumberjack::Device::SizeRollingLogFile`) since file logging is now handled by the standard library `Logger::LogDevice` class.
-- Removed internal buffer from the `Lumberjack::Device::Writer` class. This functionality was more useful in the days of slower I/O operations when logs were written to spinning hard disks. The functionality is no longer as useful and is not worth the overhead. The `Lumberjack::Logger.last_flushed_at` method has also been removed.
+- Removed internal buffer from the `Lumberjack::Device::Writer` class. This functionality was more useful in the days of slower I/O operations when logs were written to spinning hard disks. The functionality is no longer as useful and is not worth the overhead. The `Lumberjack::Logger.last_flushed_at` method has also been removed. If you need buffered logging, use the new `Lumberjack::Device::Buffer` class to wrap another device.
 - **Breaking Change** When adding a formatter with `Lumberjack::Formatter#add` you can no longer pass the formatter as a class name (i.e. this won't work: `formatter.add(MyClass, "Lumberjack::Formatter::IdFormatter"); the formatter can be a class, symbol, callable object, or a block).
 - Removed support for Ruby versions < 2.7.
 
@@ -87,6 +86,8 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
   - `Lumberjack::TagFormatter#remove`
   - `Lumberjack::Tags`
   - `Lumberjack::Formatter::TaggedMessage`
+  - `Lumberjack::Device::RollingLogFile`
+  - `Lumberjack::Device::SizeRollingLogFile`
 - The Rails compatibility methods on `Lumberjack::Logger` (`tagged`, `silence`, `log_at`) have been moved to the [lumberjack_rails](https://github.com/bdurand/lumberjack_rails) gem. Installing that gem will restore these methods in a non-deprecated form.
 - Templates now use mustache syntax for placeholders instead of the colon prefix (i.e. `{{message}}` instead of `:message`). The `:tags` placeholder is also now called `{{attributes}}`.
 

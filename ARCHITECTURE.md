@@ -128,7 +128,7 @@ classDiagram
         +close() void
     }
 
-    class Device::LoggerFile {
+    class Device::LogFile {
         +String path
         +initialize(path, options)
         +path() String
@@ -201,12 +201,12 @@ classDiagram
     AttributeFormatter --* Formatter : uses
 
     Device <|-- WriterDevice : implements
-    Device <|-- LoggerFileDevice : implements
+    Device <|-- LogFileDevice : implements
     Device <|-- MultiDevice : implements
     Device <|-- TestDevice : implements
     Device <|-- NullDevice : implements
     Device <|-- LoggerDevice : implements
-    WriterDevice <|-- LoggerFileDevice : inherits
+    WriterDevice <|-- LogFileDevice : inherits
 
     WriterDevice --* Template : uses
     Logger --> LogEntry : creates
@@ -286,7 +286,7 @@ classDiagram
 - Maintains consistent state across all targets
 
 **Specialized Devices**
-- **LoggerFileDevice**: File-based logging with rotation
+- **LogFileDevice**: File-based logging with rotation
 - **TestDevice**: In-memory capture for testing
 - **NullDevice**: Silent operation for performance testing
 - **LoggerDevice**: Forwards to other Logger instances
@@ -511,7 +511,7 @@ end
 
 ### **Multi-Environment Setup**
 ```ruby
-file_device = Lumberjack::Device::LoggerFile.new("/var/log/app.log")
+file_device = Lumberjack::Device::LogFile.new("/var/log/app.log")
 console_device = Lumberjack::Device::Writer.new(STDOUT)
 error_device = Lumberjack::Device::Writer.new(STDERR)
 

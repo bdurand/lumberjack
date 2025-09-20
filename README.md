@@ -498,9 +498,9 @@ The `Writer` device is the foundation for most logging output, writing formatted
 logger = Lumberjack::Logger.new(STDOUT)
 ```
 
-##### LoggerFile Device
+##### LogFile Device
 
-The `LoggerFile` device handles logging to a file. It has the same log rotation capabilities as the `Logger::LogDevice` class in the standard library logger.
+The `LogFile` device handles logging to a file. It has the same log rotation capabilities as the `Logger::LogDevice` class in the standard library logger.
 
 ```ruby
 # Daily log rotation

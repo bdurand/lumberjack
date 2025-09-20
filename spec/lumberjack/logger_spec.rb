@@ -62,20 +62,20 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.attribute_formatter).to be
     end
 
-    it "should open a file path in a LoggerFile device" do
+    it "should open a file path in a LogFile device" do
       logger = Lumberjack::Logger.new(File.join(tmp_dir, "log_file_1.log"))
-      expect(logger.device.class).to eq(Lumberjack::Device::LoggerFile)
+      expect(logger.device.class).to eq(Lumberjack::Device::LogFile)
     end
 
-    it "should open a pathname in a LoggerFile device" do
+    it "should open a pathname in a LogFile device" do
       logger = Lumberjack::Logger.new(Pathname.new(File.join(tmp_dir, "log_file_1.log")))
-      expect(logger.device).to be_a(Lumberjack::Device::LoggerFile)
+      expect(logger.device).to be_a(Lumberjack::Device::LogFile)
     end
 
-    it "should open a File in a LoggerFile device" do
+    it "should open a File in a LogFile device" do
       file = File.new(File.join(tmp_dir, "log_file_1.log"), "w")
       logger = Lumberjack::Logger.new(file)
-      expect(logger.device.class).to eq(Lumberjack::Device::LoggerFile)
+      expect(logger.device.class).to eq(Lumberjack::Device::LogFile)
     end
 
     it "should open a Lumberjack Logger in a LoggerWrapper device" do
@@ -159,6 +159,11 @@ RSpec.describe Lumberjack::Logger do
 
     it "allows using the deprecated :max_size option without blowing up", deprecation_mode: :silent do
       expect { Lumberjack::Logger.new(File::NULL, max_size: 10) }.to_not raise_error
+    end
+
+    it "converts the shift_size option to a numeric if given as a string with units" do
+      logger = Lumberjack::Logger.new(File::NULL, 0, "10M")
+      expect(logger.device.send(:stream).instance_variable_get(:@shift_size)).to eq(10 * 1024 * 1024)
     end
 
     it "allows using the deprecated :tag_formatter option without blowing up", deprecation_mode: :silent do

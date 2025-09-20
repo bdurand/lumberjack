@@ -26,11 +26,14 @@ module Lumberjack
   # @see Lumberjack::Device::Test In-memory device for testing
   class Device
     require_relative "device/writer"
-    require_relative "device/logger_file"
+    require_relative "device/log_file"
     require_relative "device/logger_wrapper"
     require_relative "device/multi"
     require_relative "device/null"
     require_relative "device/test"
+    require_relative "device/buffer"
+    require_relative "device/size_rolling_log_file"
+    require_relative "device/date_rolling_log_file"
 
     class << self
       # Open a logging device with the given options.
@@ -39,8 +42,8 @@ module Lumberjack
       #   The device can be:
       #   - `nil`: returns a `Device::Null` instance that discards all log entries.
       #   - `Symbol`: looks up the device in the `DeviceRegistry` and creates a new instance with the provided options.
-      #   - `String` or `Pathname`: treated as a file path and opens a `Device::LoggerFile`.
-      #   - `File`: opens a `Device::LoggerFile` for the given file stream.
+      #   - `String` or `Pathname`: treated as a file path and opens a `Device::LogFile`.
+      #   - `File`: opens a `Device::LogFile` for the given file stream.
       #   - `IO`: opens a `Device::Writer`
       #   - `Lumberjack::Device`: returns the device instance as-is.
       #   - `ContextLogger`: wraps the logger in a `Device::LoggerWrapper`.
@@ -81,7 +84,7 @@ module Lumberjack
         elsif io_but_not_file_stream?(device)
           Device::Writer.new(device, options)
         else
-          Device::LoggerFile.new(device, options)
+          Device::LogFile.new(device, options)
         end
       end
 

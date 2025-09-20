@@ -72,7 +72,8 @@ module Lumberjack
     #   files to keep will be determined by this value. Otherwise it will be interpreted as a date
     #   rolling value and must be one of "daily", "weekly", or "monthly". This parameter has no
     #   effect unless the device parameter is a file path or file stream.
-    # @param shift_size [Integer] The size in bytes of the log files before rolling them.
+    # @param shift_size [Integer] The size in bytes of the log files before rolling them. This can
+    #   be passed as a string with a unit suffix of K, M, or G (e.g. "10M" for 10 megabytes).
     # @param level [Integer, Symbol, String] The logging level below which messages will be ignored.
     # @param progname [String] The name of the program that will be recorded with each log entry.
     # @param formatter [Lumberjack::EntryFormatter, Lumberjack::Formatter, ::Logger::Formatter, #call]
@@ -111,7 +112,7 @@ module Lumberjack
 
       # Include standard args that affect devices with the optional kwargs which may
       # contain device specific options.
-      device_options = kwargs.merge(shift_age: shift_age, shift_size: shift_size, binmode: binmode, shift_period_suffix: shift_period_suffix)
+      device_options = kwargs.merge(shift_age: shift_age, shift_size: size_with_units(shift_size), binmode: binmode, shift_period_suffix: shift_period_suffix)
       device_options[:template] = template unless template.nil?
       device_options[:standard_logger_formatter] = formatter if standard_logger_formatter?(formatter)
 
@@ -459,6 +460,24 @@ module Lumberjack
       return true if formatter.is_a?(::Logger::Formatter)
 
       takes_exactly_n_call_args?(formatter, 4)
+    end
+
+    # Convert a size string with optional unit suffix to an integer size in bytes.
+    # Allowed suffixes are K, M, and G (case insensitive) for kilobytes, megabytes, and gigabytes.
+    #
+    # @param size [String, Integer] The size string to convert.
+    # @return [Integer] The size in bytes.
+    def size_with_units(size)
+      return size unless size.is_a?(String) && size.match?(/\A\d+(\.\d+)?[KMG]?\z/i)
+
+      multiplier = case size[-1].upcase
+      when "K" then 1024
+      when "M" then 1024 * 1024
+      when "G" then 1024 * 1024 * 1024
+      else 1
+      end
+
+      (size.to_f * multiplier).round
     end
 
     def takes_exactly_n_call_args?(callable, count)
