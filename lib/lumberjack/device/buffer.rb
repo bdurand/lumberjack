@@ -14,6 +14,93 @@ module Lumberjack
   #   before_flush = -> { puts "Flushing log buffer" }
   #   device = Lumberjack::Device::Buffer.new(device, buffer_size: 10, before_flush: before_flush)
   class Device::Buffer < Device
+    # Internal class that manages the entry buffer and flushing logic.
+    class EntryBuffer
+      attr_accessor :size
+
+      attr_reader :device, :last_flushed_at
+
+      def initialize(device, size, before_flush)
+        @device = device
+        @size = size
+        @before_flush = before_flush if before_flush.respond_to?(:call)
+        @lock = Mutex.new
+        @entries = []
+        @last_flushed_at = Time.now
+        @closed = false
+      end
+
+      def <<(entry)
+        return if closed?
+
+        @lock.synchronize do
+          @entries << entry
+        end
+
+        flush if @entries.size >= @size
+      end
+
+      def flush
+        entries = nil
+
+        if closed?
+          @before_flush&.call
+          entries = @entries
+          @entries = []
+        else
+          @lock.synchronize do
+            @before_flush&.call
+            entries = @entries
+            @entries = []
+          end
+        end
+
+        @last_flushed_at = Time.now
+
+        return if entries.nil?
+
+        entries.each do |entry|
+          @device.write(entry)
+        rescue => e
+          warn("Error writing log entry from buffer: #{e.inspect}")
+        end
+      end
+
+      def close
+        @closed = true
+        flush
+      end
+
+      def closed?
+        @closed
+      end
+
+      def reopen
+        @closed = false
+      end
+
+      def empty?
+        @entries.empty?
+      end
+    end
+
+    class << self
+      private
+
+      def create_finalizer(buffer) # :nodoc:
+        lambda { |object_id| buffer.close }
+      end
+
+      def create_flusher_thread(flush_seconds, buffer) # :nodoc:
+        Thread.new do
+          until buffer.closed?
+            sleep(flush_seconds)
+            buffer.flush if Time.now - buffer.last_flushed_at >= flush_seconds
+          end
+        end
+      end
+    end
+
     # Initialize a new buffered logging device that wraps another device.
     #
     # @param wrapped_device [Lumberjack::Device, String, Symbol, IO] The underlying device to wrap.
@@ -25,23 +112,22 @@ module Lumberjack
     # @option options [Proc] :before_flush A callback that will be called before each flush. The callback should
     #  respond to `call` and take no arguments.
     def initialize(wrapped_device, options = {})
-      @lock = Mutex.new
-      @closed = false
-      @buffer = []
-      @buffer_size = options[:buffer_size] || 0
-      @last_flushed_at = Time.now
-      @before_flush = options[:before_flush] if options[:before_flush].respond_to?(:call)
-
       buffer_options = [:buffer_size, :flush_seconds, :before_flush]
       device_options = options.reject { |k, _| buffer_options.include?(k) }
-      @wrapped_device = Device.open_device(wrapped_device, device_options)
+      device = Device.open_device(wrapped_device, device_options)
+
+      @buffer = EntryBuffer.new(device, options[:buffer_size] || 0, options[:before_flush])
 
       flush_seconds = options[:flush_seconds]
-      create_flusher_thread(flush_seconds) if flush_seconds.is_a?(Numeric) && flush_seconds > 0
+      self.class.send(:create_flusher_thread, flush_seconds, @buffer) if flush_seconds.is_a?(Numeric) && flush_seconds > 0
+
+      # Add a finalizer to ensure flush is called before the object is destroyed
+      ObjectSpace.define_finalizer(self, self.class.send(:create_finalizer, @buffer))
     end
 
-    # The size of the buffer.
-    attr_reader :buffer_size
+    def buffer_size
+      @buffer.size
+    end
 
     # Set the buffer size. The underlying device will only be written to when the buffer size
     # is exceeded.
@@ -49,8 +135,8 @@ module Lumberjack
     # @param [Integer] value The size of the buffer in bytes.
     # @return [void]
     def buffer_size=(value)
-      @buffer_size = value
-      flush
+      @buffer.size = value
+      @buffer.flush
     end
 
     # Write an entry to the underlying device.
@@ -58,76 +144,59 @@ module Lumberjack
     # @param [LogEntry, String] entry The entry to write.
     # @return [void]
     def write(entry)
-      return if @closed
-
-      @lock.synchronize do
-        @buffer << entry
-      end
-
-      flush if @buffer.size >= buffer_size
+      @buffer << entry
     end
 
     # Close the device.
     #
     # @return [void]
     def close
-      flush
-      @closed = true
-      @wrapped_device.close
+      @buffer.close
+      @buffer.device.close
+
+      # Remove the finalizer since we've already flushed
+      ObjectSpace.undefine_finalizer(self)
     end
 
     # Flush the buffer to the underlying device.
     #
     # @return [void]
     def flush
-      return if @closed
-
-      entries = nil
-      @lock.synchronize do
-        @before_flush&.call
-        entries = @buffer
-        @buffer = []
-      end
-
-      @last_flushed_at = Time.now
-
-      return if entries.nil?
-
-      entries.each do |entry|
-        @wrapped_device.write(entry)
-      end
+      @buffer.flush
     end
-
-    # The timestamp of the last flush.
-    #
-    # @return [Time] The time of the last flush.
-    attr_reader :last_flushed_at
 
     # Reopen the underlying device, optionally with a new log destination.
     def reopen(logdev = nil)
       flush
-      @closed = false
-      @wrapped_device.reopen(logdev)
+      @buffer.device.reopen(logdev)
+      @buffer.reopen
+      ObjectSpace.define_finalizer(self, self.class.send(:create_finalizer, @buffer))
     end
 
     # Return the underlying stream. Provided for API compatibility with Logger devices.
     #
     # @return [IO] The underlying stream.
     def dev
-      @wrapped_device.dev
+      @buffer.device.dev
+    end
+
+    # @api private
+    def last_flushed_at
+      @buffer.last_flushed_at
+    end
+
+    # @api private
+    def empty?
+      @buffer.empty?
     end
 
     private
 
-    def create_flusher_thread(flush_seconds) # :nodoc:
+    def create_flusher_thread(flush_seconds, buffer) # :nodoc:
       Thread.new do
-        until @closed
-          begin
-            sleep(flush_seconds)
-            flush if Time.now - @last_flushed_at >= flush_seconds
-          rescue => e
-            warn("Error flushing log: #{e.inspect}")
-          end
+        until buffer.closed?
+          sleep(flush_seconds)
+          buffer.flush if Time.now - buffer.last_flushed_at >= flush_seconds
         end
       end
     end

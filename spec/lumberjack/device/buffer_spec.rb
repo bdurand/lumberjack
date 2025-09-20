@@ -64,7 +64,7 @@ RSpec.describe Lumberjack::Device::Buffer do
       buffer.close
       expect(device.entries).to eq([entry_1])
       expect { buffer.write(entry_2) }.not_to raise_error
-      expect(buffer.instance_variable_get(:@buffer)).to be_empty
+      expect(buffer).to be_empty
     end
   end
 
