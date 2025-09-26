@@ -8,9 +8,9 @@ module Lumberjack
   # destinations such as files, streams, databases, or external services.
   #
   # This class establishes the contract that all concrete device implementations
-  # must follow, with the `write` method being the only required implementation.
-  # Additional lifecycle methods (`close`, `flush`, `reopen`) and configuration
-  # methods (`datetime_format`) are optional but provide standardized interfaces
+  # must follow, with the +write+ method being the only required implementation.
+  # Additional lifecycle methods (+close+, +flush+, +reopen+) and configuration
+  # methods (+datetime_format+) are optional but provide standardized interfaces
   # for device management.
   #
   # The device architecture allows for flexible log output handling while
@@ -40,21 +40,24 @@ module Lumberjack
       #
       # @param device [nil, Symbol, String, File, IO, Array, Lumberjack::Device, ContextLogger] The device to open.
       #   The device can be:
-      #   - `nil`: returns a `Device::Null` instance that discards all log entries.
-      #   - `Symbol`: looks up the device in the `DeviceRegistry` and creates a new instance with the provided options.
-      #   - `String` or `Pathname`: treated as a file path and opens a `Device::LogFile`.
-      #   - `File`: opens a `Device::LogFile` for the given file stream.
-      #   - `IO`: opens a `Device::Writer`
-      #   - `Lumberjack::Device`: returns the device instance as-is.
-      #   - `ContextLogger`: wraps the logger in a `Device::LoggerWrapper`.
-      #   - `Array`: each element is treated as a device specification and opened recursively,
-      #     returning a `Device::Multi` that routes log entries to all specified devices. Each
-      #     device can have its own options hash if passed as a two-element array `[device, options]`.
+      #   - +nil+: returns a +Device::Null+ instance that discards all log entries.
+      #   - +Symbol+: looks up the device in the +DeviceRegistry+ and creates a new instance with the provided options.
+      #   - +String+ or +Pathname+: treated as a file path and opens a +Device::LogFile+.
+      #   - +File+: opens a +Device::LogFile+ for the given file stream.
+      #   - +IO+: opens a +Device::Writer+ wrapping the given IO stream.
+      #   - +Lumberjack::Device+: returns the device instance as-is.
+      #   - +ContextLogger+: wraps the logger in a +Device::LoggerWrapper+.
+      #   - +Array+: each element is treated as a device specification and opened recursively,
+      #     returning a +Device::Multi+ that routes log entries to all specified devices. Each
+      #     device can have its own options hash if passed as a two-element array +[device, options]+.
       # @param options [Hash] Options to pass to the device constructor.
       # @return [Lumberjack::Device] The opened device instance.
       #
       # @example Open a file-based device
       #   device = Lumberjack::Device.open_device("/var/log/myapp.log", shift_age: "daily")
+      #
+      # @example Open a stream-based device
+      #   device = Lumberjack::Device.open_device($stdout)
       #
       # @example Open a device from the registry
       #   device = Lumberjack::Device.open_device(:syslog)

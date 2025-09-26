@@ -10,23 +10,12 @@ module Lumberjack
   # When an object is logged, the formatter finds the most specific formatter for that object's class
   # hierarchy and applies it to convert the object into a string representation.
   #
-  # ## Default Behavior
-  #
-  # By default, the formatter includes these mappings:
-  # - **Object**: Uses `inspect` method for a readable representation
-  # - **Exception**: Uses {ExceptionFormatter} to format stack traces and error details
-  # - **Enumerable** (Hash, Array, etc.): Uses {StructuredFormatter} to recursively format elements
-  # - **String**: No formatting (passed through unchanged)
-  #
-  # ## Formatter Types
-  #
   # Formatters can be:
-  # - **Predefined formatters**: Accessed by symbol (e.g., `:pretty_print`, `:truncate`)
-  # - **Custom objects**: Any object responding to `#call(object)`
-  # - **Blocks**: Inline formatting logic
-  # - **Classes**: Instantiated automatically with optional arguments
   #
-  # ## Performance Optimization
+  # - Predefined formatters: Accessed by symbol (e.g., +:pretty_print+, +:truncate+)
+  # - Custom objects: Any object responding to +#call(object)+
+  # - Blocks: Inline formatting logic
+  # - Classes: Instantiated automatically with optional arguments
   #
   # The formatter includes optimizations for common primitive types (String, Integer, Float, Boolean)
   # to avoid unnecessary formatting overhead when custom formatters aren't defined for these types.
@@ -34,13 +23,12 @@ module Lumberjack
   # @example Basic formatter usage
   #   formatter = Lumberjack::Formatter.new
   #   formatter.add(MyClass, :pretty_print)
-  #   formatter.add(SecretClass) { |obj| "[REDACTED]" }
+  #   formatter.add(Array) { |vals| vals.join(", ") }
   #   result = formatter.format(my_object)
   #
   # @example Building a custom formatter
   #   formatter = Lumberjack::Formatter.build do |config|
   #     config.add(User, :id)  # Only log user IDs
-  #     config.add(Password) { |pwd| "[HIDDEN]" }  # Hide password values
   #     config.add(BigDecimal, :round, 2)  # Round decimals to 2 places
   #   end
   class Formatter
@@ -62,7 +50,7 @@ module Lumberjack
 
     class << self
       # Build a new formatter using a configuration block. The block receives the new formatter
-      # as a parameter, allowing you to configure it with methods like `add`, `remove`, etc.
+      # as a parameter, allowing you to configure it with methods like +add+, +remove+, etc.
       #
       # @yield [formatter] A block that configures the formatter.
       # @return [Lumberjack::Formatter] A new configured formatter.
@@ -122,40 +110,35 @@ module Lumberjack
     # Add a formatter for a specific class or classes. The formatter determines how objects
     # of that class will be converted to strings when logged.
     #
-    # ## Formatter Types
-    #
     # The formatter can be specified in several ways:
-    # - **Symbol**: References a predefined formatter (see list below)
-    # - **Class**: Will be instantiated with optional arguments
-    # - **Object**: Must respond to `#call(object)` method
-    # - **Block**: Inline formatting logic
-    #
-    # ## Formatter Registry
+    # - Symbol: References a predefined formatter (see list below)
+    # - Class: Will be instantiated with optional arguments
+    # - Object: Must respond to +#call(object)+ method
+    # - Block: Inline formatting logic
     #
     # Formatters can be referenced by name from the formatter registry. These formatters
     # are available out of the box. Some of them require an argument to be provided as well.
     #
-    # - `:date_time` - Formats time objects with a customizable format (takes the format string as an argument)
-    # - `:exception` - Formats exceptions with stack trace details
-    # - `:id` - Extracts object ID or specified ID field
-    # - `:inspect` - Uses Ruby's inspect method for debugging output
-    # - `:multiply` - Multiplies numeric values by a factor (requires the factor as an argument)
-    # - `:object` - Generic object formatter with custom methods
-    # - `:pretty_print` - Pretty-prints objects using PP library
-    # - `:redact` - Redacts sensitive information from objects
-    # - `:round` - Rounds numeric values to specified precision (takes the precision as an argument; defaults to 3 decimal places)
-    # - `:string` - Converts objects to strings using to_s
-    # - `:strip` - Strips whitespace from string representations
-    # - `:structured` - Recursively formats structured data (Arrays, Hashes)
-    # - `:tags` - Formats an array or hash of values in the format "[a] [b] [c=d]"
-    # - `:truncate` - Truncates long strings to specified length (takes the length as an argument)
-    #
-    # ## Class Specification
+    # - +:date_time+ - Formats time objects with a customizable format (takes the format string as an argument)
+    # - +:exception+ - Formats exceptions with stack trace details
+    # - +:id+ - Extracts object ID or specified ID field
+    # - +:inspect+ - Uses Ruby's inspect method for debugging output
+    # - +:multiply+ - Multiplies numeric values by a factor (requires the factor as an argument)
+    # - +:object+ - Generic object formatter with custom methods
+    # - +:pretty_print+ - Pretty-prints objects using PP library
+    # - +:redact+ - Redacts sensitive information from objects
+    # - +:round+ - Rounds numeric values to specified precision (takes the precision as an argument; defaults to 3 decimal places)
+    # - +:string+ - Converts objects to strings using to_s
+    # - +:strip+ - Strips whitespace from string representations
+    # - +:structured+ - Recursively formats structured data (Arrays, Hashes)
+    # - +:tags+ - Formats an array or hash of values in the format "[a] [b] [c=d]"
+    # - +:truncate+ - Truncates long strings to specified length (takes the length as an argument)
     #
     # Classes can be specified as:
-    # - **Class objects**: Direct class references
-    # - **Arrays**: Multiple classes at once
-    # - **Strings**: Class names to avoid loading dependencies
+    #
+    # - Class objects: Direct class references
+    # - Arrays: Multiple classes at once
+    # - Strings: Class names to avoid loading dependencies
     #
     # @param klass [Class, Module, String, Array<Class, Module, String>] The class(es) to format.
     # @param formatter [Symbol, Class, #call, nil] The formatter to use.
@@ -172,12 +155,10 @@ module Lumberjack
     #
     # @example Using custom formatters
     #   formatter.add(MyClass, MyFormatter.new)  # Custom formatter object
-    #   formatter.add(SecretData) { |obj| "[REDACTED]" }  # Block formatter
     #   formatter.add("BigDecimal", RoundFormatter, 4)  # Class with arguments
     #
     # @example Method chaining
     #   formatter.add(User, :id)
-    #            .add(Password) { |pwd| "[HIDDEN]" }
     #            .add(BigDecimal, :round, 2)
     def add(klass, formatter = nil, *args, &block)
       formatter ||= block

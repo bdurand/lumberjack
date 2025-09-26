@@ -45,11 +45,11 @@ module Lumberjack
     #   if it doesn't exist, and parent directories will be created as needed.
     # @param options [Hash] Configuration options for the log device. All options
     #   supported by Logger::LogDevice are accepted, including:
-    #   - `:shift_age` - Number of old files to keep, or rotation frequency
+    #   - +:shift_age+ - Number of old files to keep, or rotation frequency
     #     ("daily", "weekly", "monthly")
-    #   - `:shift_size` - Maximum file size in bytes before rotation
-    #   - `:shift_period_suffix` - Suffix to add to rotated log files
-    #   - `:binmode` - Whether to open the log file in binary mode
+    #   - +:shift_size+ - Maximum file size in bytes before rotation
+    #   - +:shift_period_suffix+ - Suffix to add to rotated log files
+    #   - +:binmode+ - Whether to open the log file in binary mode
     def initialize(stream, options = {})
       # Filter options to only include keyword arguments supported by Logger::LogDevice#initialize
       supported_kwargs = ::Logger::LogDevice.instance_method(:initialize).parameters

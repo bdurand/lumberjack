@@ -83,7 +83,7 @@ module Lumberjack
     end
 
     # Closes the target logger to release any resources or finalize log output.
-    # This method delegates to the target logger's `close` method.
+    # This method delegates to the target logger's +close+ method.
     #
     # @return [void]
     def close
@@ -93,7 +93,7 @@ module Lumberjack
     # Reopen the underlying logger device. This is typically used to reopen log files
     # after log rotation or to refresh the logger's output stream.
     #
-    # Delegates to the target logger's `reopen` method.
+    # Delegates to the target logger's +reopen+ method.
     #
     # @return [void]
     def reopen

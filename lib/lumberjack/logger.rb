@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  # Logger is a thread-safe, feature-rich logging implementation that extends Ruby's standard
+  # Lumberjack::Logger is a thread-safe, feature-rich logging implementation that extends Ruby's standard
   # library Logger class with advanced capabilities for structured logging.
   #
   # Key features include:
@@ -9,8 +9,6 @@ module Lumberjack
   # - Context isolation for scoping logging behavior to specific code blocks
   # - Flexible output devices supporting files, streams, and custom destinations
   # - Customizable formatters for messages and attributes
-  # - Built-in log rotation and file management
-  # - Thread and fiber safety for concurrent applications
   #
   # The Logger maintains full API compatibility with Ruby's standard Logger while adding
   # powerful extensions for modern logging needs.
@@ -23,8 +21,8 @@ module Lumberjack
   #
   # @example Structured logging with attributes
   #   logger = Lumberjack::Logger.new("/var/log/app.log")
-  #   logger.info("User logged in", user_id: 123, ip: "192.168.1.1")
   #   logger.tag(request_id: "abc123") do
+  #     logger.info("User logged in", user_id: 123, ip: "192.168.1.1")
   #     logger.info("Processing request")  # Will include request_id: "abc123"
   #   end
   #
@@ -57,10 +55,10 @@ module Lumberjack
     # Create a new logger to log to a Device.
     #
     # The +device+ argument can be in any one of several formats:
-    # - A symbol for a device name (e.g. :null, :test). You can call `Lumberjack::DeviceRegistry.registered_devices` for a list.
+    # - A symbol for a device name (e.g. :null, :test). You can call +Lumberjack::DeviceRegistry.registered_devices+ for a list.
     # - A stream
-    # - A file path string or `Pathname`
-    # - A `Lumberjack::Device`` object
+    # - A file path string or +Pathname+
+    # - A +Lumberjack::Device+ object
     # - An object with a +write+ method will be wrapped in a Device::Writer
     # - An array of any of the above will open a Multi device that will send output to all devices.
     #
@@ -71,30 +69,31 @@ module Lumberjack
     #   log files will be rolled when they get to the size specified in shift_size and the number of
     #   files to keep will be determined by this value. Otherwise it will be interpreted as a date
     #   rolling value and must be one of "daily", "weekly", or "monthly". This parameter has no
-    #   effect unless the device parameter is a file path or file stream.
+    #   effect unless the device parameter is a file path or file stream. This can also be
+    #   specified with the :roll keyword argument.
     # @param shift_size [Integer] The size in bytes of the log files before rolling them. This can
     #   be passed as a string with a unit suffix of K, M, or G (e.g. "10M" for 10 megabytes).
+    #   This can also be specified with the :max_size keyword argument.
     # @param level [Integer, Symbol, String] The logging level below which messages will be ignored.
     # @param progname [String] The name of the program that will be recorded with each log entry.
-    # @param formatter [Lumberjack::EntryFormatter, Lumberjack::Formatter, ::Logger::Formatter, #call]
+    # @param formatter [Lumberjack::EntryFormatter, Lumberjack::Formatter, ::Logger::Formatter, :default, #call]
     #   The formatter to use for outputting messages to the log. If this is a Lumberjack::EntryFormatter
-    #   or a Lumberjack::Formatter, it will be used to format structured log entries. If it is
-    #   a ::Logger::Formatter or a callable object that takes 4 arguments (severity, time, progname, msg),
-    #   it will be used to format log entries in lieu of the `template` argument when writing to a
-    #   stream. You can also pass the value `:default` to use the default message formatter which formats
-    #   non-primitive objects with `inspect` and includes the backtrace for exceptions.
+    #   or a Lumberjack::Formatter, it will be used to format structured log entries.
+    #   You can also pass the value +:default+ to use the default message formatter which formats
+    #   non-primitive objects with +inspect+ and includes the backtrace in exceptions.
+    #
+    #   For compatibility with the standard library Logger when writing to a stream, you can also
+    #   pass in a +::Logger::Formatter+ object or a callable object that takes exactly 4 arguments
+    #   (severity, time, progname, msg).
     # @param datetime_format [String] The format to use for log timestamps.
     # @param binmode [Boolean] Whether to open the log file in binary mode.
     # @param shift_period_suffix [String] The suffix to use for the shifted log file names.
-    # @param template [String] The template to use for serializing log entries to a string.
-    # @param message_formatter [Lumberjack::Formatter] The formatter to use for formatting log messages.
-    # @param attribute_formatter [Lumberjack::AttributeFormatter] The formatter to use for formatting attributes.
-    # @param kwargs [Hash] Additional device-specific options.
+    # @param kwargs [Hash] Additional device-specific options. These will be passed through when creating
+    #   a device from the logdev argument.
     # @return [Lumberjack::Logger] A new logger instance.
     def initialize(logdev, shift_age = 0, shift_size = 1048576,
       level: DEBUG, progname: nil, formatter: nil, datetime_format: nil,
-      binmode: false, shift_period_suffix: "%Y%m%d",
-      template: nil, message_formatter: nil, attribute_formatter: nil, **kwargs)
+      binmode: false, shift_period_suffix: "%Y%m%d", **kwargs)
       init_fiber_locals!
 
       if shift_age.is_a?(Hash)
@@ -104,32 +103,35 @@ module Lumberjack
         progname = options[:progname] if options.include?(:progname)
         formatter = options[:formatter] if options.include?(:formatter)
         datetime_format = options[:datetime_format] if options.include?(:datetime_format)
-        template = options[:template] if options.include?(:template)
-        message_formatter = options[:message_formatter] if options.include?(:message_formatter)
-        attribute_formatter = options[:attribute_formatter] if options.include?(:attribute_formatter)
         kwargs = options.merge(kwargs)
       end
 
       # Include standard args that affect devices with the optional kwargs which may
       # contain device specific options.
       device_options = kwargs.merge(shift_age: shift_age, shift_size: size_with_units(shift_size), binmode: binmode, shift_period_suffix: shift_period_suffix)
-      device_options[:template] = template unless template.nil?
       device_options[:standard_logger_formatter] = formatter if standard_logger_formatter?(formatter)
 
-      if device_options.include?(:tag_formatter)
-        Utils.deprecated("Logger.options(:tag_formatter)", "Lumberjack::Logger :tag_formatter option is deprecated and will be removed in version 2.1; use :attribute_formatter instead.")
-        attribute_formatter ||= device_options.delete(:tag_formatter)
-      end
-
-      if device_options.include?(:roll) && shift_age != 0
+      if device_options.include?(:roll)
         Utils.deprecated("Logger.options(:roll)", "Lumberjack::Logger :roll option is deprecated and will be removed in version 2.1; use the shift_age argument instead.")
-        device_options[:shift_age] = device_options.delete(:roll)
+        device_options[:shift_age] = device_options.delete(:roll) unless shift_age != 0
       end
 
       if device_options.include?(:max_size)
         Utils.deprecated("Logger.options(:max_size)", "Lumberjack::Logger :max_size option is deprecated and will be removed in version 2.1; use the shift_size argument instead.")
-        device_options[:shift_age] = 10
+        device_options[:shift_age] = 10 if shift_age == 0
         device_options[:shift_size] = device_options.delete(:max_size)
+      end
+
+      message_formatter = nil
+      if device_options.include?(:message_formatter)
+        Utils.deprecated("Logger.options(:message_formatter)", "Lumberjack::Logger :message_formatter option is deprecated and will be removed in version 2.1; use the formatter argument instead to specify an EntryFormatter.")
+        message_formatter = device_options.delete(:message_formatter)
+      end
+
+      attribute_formatter = nil
+      if device_options.include?(:tag_formatter)
+        Utils.deprecated("Logger.options(:tag_formatter)", "Lumberjack::Logger :tag_formatter option is deprecated and will be removed in version 2.1; use the formatter argument instead to specify an EntryFormatter.")
+        attribute_formatter = device_options.delete(:tag_formatter)
       end
 
       @logdev = Device.open_device(logdev, device_options)
@@ -141,7 +143,7 @@ module Lumberjack
       self.formatter = build_entry_formatter(formatter, message_formatter, attribute_formatter)
       self.datetime_format = datetime_format if datetime_format
 
-      @closed = false # TODO
+      @closed = false
     end
 
     # Get the logging device that is used to write log entries.
@@ -250,7 +252,9 @@ module Lumberjack
     #
     # @return [Boolean] +true+ if the logging device is closed.
     def closed?
-      @closed
+      return true if @closed
+
+      device.respond_to?(:closed?) && device.closed?
     end
 
     # Reopen the logging device.

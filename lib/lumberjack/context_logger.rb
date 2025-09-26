@@ -310,7 +310,7 @@ module Lumberjack
     #
     # @param attributes [Hash] The attributes to set.
     # @return [Object, Lumberjack::ContextLogger] If a block is given then the result of the block is returned.
-    #   Otherwise it returns a Lumberjack::ContextLogger with the attributes set.
+    #   Otherwise it returns the logger itself so you can chain methods.
     #
     # @example
     #   # Only applies the attributes inside the block
@@ -324,10 +324,6 @@ module Lumberjack
     #     logger.tag(foo: "bar")
     #     logger.info("message")
     #   end
-    #
-    # @example
-    #   # Returns a new logger with the attributes set on it
-    #   logger.tag(foo: "bar").info("message")
     def tag(attributes, &block)
       if block
         context do |ctx|

@@ -6,7 +6,7 @@ module Lumberjack
   # test code to make assertions about logged content, verify logging behavior,
   # and inspect log entry details without writing to external outputs.
   #
-  # The device provides sophisticated matching capabilities through integration
+  # The device provides matching capabilities through integration
   # with LogEntryMatcher, supporting pattern matching on messages, severity levels,
   # attributes, and program names. This makes it ideal for comprehensive logging
   # verification in test suites.
@@ -173,7 +173,7 @@ module Lumberjack
     # (:warn), or string ("warn"). Messages support exact string matching or
     # regular expression patterns. Attributes support nested matching using
     # dot notation and can use any matcher values supported by your test
-    # framework (e.g., RSpec's `anything`, `instance_of`, etc.).
+    # framework (e.g., RSpec's +anything+, +instance_of+, etc.).
     #
     # @param options [Hash] The matching criteria to test against captured entries
     # @option options [String, Regexp, Object] :message Pattern to match against
@@ -261,7 +261,7 @@ module Lumberjack
     #     message: /API request/,
     #     attributes: {"request.endpoint" => "/users", "response.status" => 200}
     #   )
-    #   expect(api_entry.attributes["request.method"]).to eq("GET")
+    #   expect(api_entry.attributes["request.endpoint"]).to eq("/users")
     def match(message: nil, severity: nil, attributes: nil, progname: nil)
       matcher = LogEntryMatcher.new(message: message, severity: severity, attributes: attributes, progname: progname)
       entries.detect { |entry| matcher.match?(entry) }

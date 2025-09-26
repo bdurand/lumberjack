@@ -13,9 +13,9 @@ module Lumberjack
   # Formatters can be specified as:
   #
   # - Lumberjack::Formatter objects: Full formatter instances with complex logic
-  # - Callable objects: Any object responding to `#call(value)`
+  # - Callable objects: Any object responding to +#call(value)+
   # - Blocks: Inline formatting logic
-  # - Symbols: References to predefined formatter classes (e.g., `:strip`, `:truncate`)
+  # - Symbols: References to predefined formatter classes (e.g., +:strip+, +:truncate+)
   #
   # @example Basic usage with build
   #   formatter = Lumberjack::AttributeFormatter.build do |config|
@@ -24,7 +24,7 @@ module Lumberjack
   #     config.add_class(Time, :date_time, "%Y-%m-%d %H:%M:%S")
   #   end
   #
-  # If the value returned by a formatter is a `Lumberjack::RemapAttributes` instance, then
+  # If the value returned by a formatter is a +Lumberjack::RemapAttributes+ instance, then
   # the attributes will be remapped to the new attributes.
   #
   # @example
@@ -37,8 +37,8 @@ module Lumberjack
   class AttributeFormatter
     class << self
       # Build a new attribute formatter using a configuration block. The block receives the
-      # new formatter as a parameter, allowing you to configure it with methods like `add_attribute`,
-      # `add_class`, `default`, etc.
+      # new formatter as a parameter, allowing you to configure it with methods like +add_attribute+,
+      # +add_class+, +default+, etc.
       #
       # @yield [formatter] A block that configures the attribute formatter.
       # @return [Lumberjack::AttributeFormatter] A new configured attribute formatter.

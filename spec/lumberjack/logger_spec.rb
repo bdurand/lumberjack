@@ -166,8 +166,18 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.device.send(:stream).instance_variable_get(:@shift_size)).to eq(10 * 1024 * 1024)
     end
 
+    it "allows using the deprecated :message_formatter option without blowing up", deprecation_mode: :silent do
+      message_formatter = Lumberjack::Formatter.new.add(String) { |s| s.upcase }
+      logger = Lumberjack::Logger.new(File::NULL, message_formatter: message_formatter)
+      msg, _ = logger.formatter.format("foobar", {})
+      expect(msg).to eq("FOOBAR")
+    end
+
     it "allows using the deprecated :tag_formatter option without blowing up", deprecation_mode: :silent do
-      expect { Lumberjack::Logger.new(File::NULL, tag_formatter: Lumberjack::TagFormatter.new) }.to_not raise_error
+      attribute_formatter = Lumberjack::TagFormatter.new.add_class(String) { |s| s.upcase }
+      logger = Lumberjack::Logger.new(File::NULL, tag_formatter: attribute_formatter)
+      _, attributes = logger.formatter.format(nil, {"test" => "foobar"})
+      expect(attributes).to eq("test" => "FOOBAR")
     end
   end
 

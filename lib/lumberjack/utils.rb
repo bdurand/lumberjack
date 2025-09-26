@@ -21,10 +21,10 @@ module Lumberjack
 
     class << self
       # Print warning when deprecated methods are called the first time. This can be disabled
-      # by setting `Lumberjack.deprecation_mode` to `:silent`.
+      # by setting +Lumberjack.deprecation_mode+ to +:silent+.
       #
       # In order to cut down on noise, each deprecated method will only print a warning once per process.
-      # You can change this by setting `Lumberjack.deprecation_mode` to `:verbose`.
+      # You can change this by setting +Lumberjack.deprecation_mode+ to +:verbose+.
       #
       # @param method [String, Symbol] The name of the deprecated method.
       # @param message [String] The deprecation message explaining what to use instead.

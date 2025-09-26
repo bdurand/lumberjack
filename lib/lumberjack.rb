@@ -169,7 +169,7 @@ module Lumberjack
     # suppress all deprecation warnings. Setting this to :raise will raise an exception
     # when a deprecated method is called.
     #
-    # The default value can be set with the `LUMBERJACK_DEPRECATION_WARNINGS` environment variable.
+    # The default value can be set with the +LUMBERJACK_DEPRECATION_WARNINGS+ environment variable.
     #
     # @param value [Symbol, String, nil] The deprecation mode to set. Valid values are :normal,
     #   :verbose, :silent, and :raise.

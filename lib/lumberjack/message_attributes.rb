@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  # This class can be used as the return value from a formatter `call` method to
+  # This class can be used as the return value from a formatter +call+ method to
   # extract additional attributes from an object being logged. This can be useful when there
   # using structured logging to include important metadata in the log entry in addition
   # to the message.

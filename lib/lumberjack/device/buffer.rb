@@ -104,13 +104,13 @@ module Lumberjack
     # Initialize a new buffered logging device that wraps another device.
     #
     # @param wrapped_device [Lumberjack::Device, String, Symbol, IO] The underlying device to wrap.
-    #   This can be any valid device specification that `Lumberjack::Device.open_device` accepts.
+    #   This can be any valid device specification that +Lumberjack::Device.open_device+ accepts.
     #   Options not related to buffering will be passed to the underlying device constructor.
     # @param options [Hash] Options for the buffer and the underlying device.
     # @option options [Integer] :buffer_size The number of entries to buffer before flushing. Default is 0 (no buffering).
     # @option options [Integer] :flush_seconds If specified, a background thread will flush the buffer every N seconds.
     # @option options [Proc] :before_flush A callback that will be called before each flush. The callback should
-    #  respond to `call` and take no arguments.
+    #  respond to +call+ and take no arguments.
     def initialize(wrapped_device, options = {})
       buffer_options = [:buffer_size, :flush_seconds, :before_flush]
       device_options = options.reject { |k, _| buffer_options.include?(k) }
@@ -156,6 +156,11 @@ module Lumberjack
 
       # Remove the finalizer since we've already flushed
       ObjectSpace.undefine_finalizer(self)
+    end
+
+    # Return true if the buffer has been closed.
+    def closed?
+      @buffer.closed?
     end
 
     # Flush the buffer to the underlying device.

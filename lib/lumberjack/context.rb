@@ -1,18 +1,9 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  # Context stores logging configuration and attributes that can be scoped to specific code blocks
+  # Context stores logging settings and attributes that can be scoped to specific code blocks
   # or inherited between loggers. It provides a hierarchical system for managing logging state
   # including level, progname, default severity, and custom attributes.
-  #
-  # ## Purpose and Architecture
-  #
-  # The Context system enables:
-  # - **Block-scoped logging**: Configuration that applies only within specific code blocks
-  # - **Hierarchical inheritance**: Child contexts inherit from parent contexts
-  # - **Attribute management**: Key-value pairs that are attached to log entries
-  # - **Level isolation**: Different log levels for different execution contexts
-  # - **Program name scoping**: Different prognames for different components or operations
   #
   # Child contexts inherit all configuration from their parent but can override any values.
   # Changes to child contexts don't affect parent contexts, providing true isolation.

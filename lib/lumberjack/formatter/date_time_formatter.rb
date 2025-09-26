@@ -2,12 +2,9 @@
 
 module Lumberjack
   class Formatter
-    # Format a Date, Time, or DateTime object. If you don't specify a format in the constructor,
-    # it will use the ISO-8601 format. This formatter provides consistent date/time representation
+    # Format a Date, Time, or DateTime object. If you don't specify a format in the constructor, it will use
+    # the ISO-8601 format with microsecond precision. This formatter provides consistent date/time representation
     # across your application logs.
-    #
-    # The formatter supports custom strftime patterns for complete control over output format,
-    # while defaulting to ISO-8601 for standards compliance and readability.
     class DateTimeFormatter
       FormatterRegistry.add(:date_time, self)
 

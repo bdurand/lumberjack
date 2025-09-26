@@ -29,7 +29,7 @@ module Lumberjack
     end
 
     # Merge new attributes into the context attributes. Attribute values will be flattened using dot notation
-    # on the keys. So `{ a: { b: 'c' } }` will become `{ 'a.b' => 'c' }`.
+    # on the keys. So +{ a: { b: 'c' } }+ will become +{ 'a.b' => 'c' }+.
     #
     # If a block is given, then the attributes will only be added for the duration of the block.
     #

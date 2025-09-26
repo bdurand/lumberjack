@@ -2,7 +2,7 @@
 
 module Lumberjack
   class Formatter
-    # Format an object by calling `to_s` on it. This is the simplest formatter
+    # Format an object by calling +to_s+ on it. This is the simplest formatter
     # implementation and is commonly used as a fallback for objects that don't
     # have specialized formatters.
     class StringFormatter

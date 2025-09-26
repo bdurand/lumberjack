@@ -2,40 +2,30 @@
 
 module Lumberjack
   # A flexible template system for converting log entries into formatted strings.
-  # Templates use placeholder substitution to create customizable log output formats
-  # with support for all log entry components and custom attributes.
+  # Templates use mustache style placeholders to create customizable log output formats.
   #
   # The template system supports the following built-in placeholders:
   #
-  # @example
-  #   * `{{time}}` - The log entry timestamp
-  #   * `{{severity}}` - The severity level (DEBUG, INFO, WARN, ERROR, FATAL). The severity
-  #     can also be formatted in a variety of ways with an optional format specifier.
-  #     Supported formats include:
-  #     * `{{severity(padded)}}` - Left-padded to five characters
-  #     * `{{severity(char)}}` - Single character representation
-  #     * `{{severity(emoji)}}` - Emoji representation
-  #     * `{{severity(level)}}` - Numeric level representation
-  #   * `{{progname}}` - The program name that generated the entry
-  #   * `{{pid}}` - The process ID
-  #   * `{{message}}` - The main log message content
-  #   * `{{attributes}}` - All custom attributes formatted as key:value pairs
+  # - <code>{{time}}</code> - The log entry timestamp
+  # - <code>{{severity}}</code> - The severity level (DEBUG, INFO, WARN, ERROR, FATAL). The severity
+  #   can also be formatted in a variety of ways with an optional format specifier.
+  #   Supported formats include:
+  #   - <code>{{severity(padded)}}</code> - Right padded so that all values are five characters
+  #   - <code>{{severity(char)}}</code> - Single character representation (D, I, W, E, F)
+  #   - <code>{{severity(emoji)}}</code> - Emoji representation
+  #   - <code>{{severity(level)}}</code> - Numeric level representation
+  # - <code>{{progname}}</code> - The program name that generated the entry
+  # - <code>{{pid}}</code> - The process ID
+  # - <code>{{message}}</code> - The main log message content
+  # - <code>{{attributes}}</code> - All custom attributes formatted as key:value pairs
   #
   # Custom attribute placeholders can also be put in the double bracket placeholders.
   # Any attributes explicitly added to the template in their own placeholder will be removed
   # from the general list of attributes.
   #
-  # @example
-  #   # The user_id attribute will be put before the message.
-  #   template = Lumberjack::Template.new("[{{time}} {{severity}}] (usr:{{user_id}} {{message}} -- {{attributes}})")
-  #
   # @example Basic template usage
   #   template = Lumberjack::Template.new("[{{time}} {{severity}}] {{message}}")
   #   # Output: [2023-08-21T10:30:15.123 INFO] User logged in
-  #
-  # @example Template with custom attributes
-  #   template = Lumberjack::Template.new("[{{time}} {{severity}} {{user_id}}] {{message}}")
-  #   # Output: [2023-08-21T10:30:15.123 INFO 12345] User action completed
   #
   # @example Multi-line message formatting
   #   template = Lumberjack::Template.new(
@@ -47,12 +37,9 @@ module Lumberjack
   #   #     | Second line
   #   #     | Third line
   #
-  # @example Custom time formatting
-  #   template = Lumberjack::Template.new(
-  #     "[{{time}} {{severity}}] {{message}}",
-  #     time_format: "%Y-%m-%d %H:%M:%S"
-  #   )
-  #   # Output: [2023-08-21 10:30:15 INFO] Message content
+  # @example Custom attribute placeholders
+  #   # The user_id attribute will be put before the message instead of with the rest of the attributes.
+  #   template = Lumberjack::Template.new("[{{time}} {{severity}}] (usr:{{user_id}} {{message}} -- {{attributes}})")
   class Template
     DEFAULT_FIRST_LINE_TEMPLATE = "[{{time}} {{severity(padded)}} {{progname}}({{pid}})] {{message}} {{attributes}}"
     DEFAULT_ADDITIONAL_LINES_TEMPLATE = "#{Lumberjack::LINE_SEPARATOR}> {{message}}"
@@ -118,13 +105,13 @@ module Lumberjack
     # custom time formatting, and configurable attribute display.
     #
     # @param first_line [String, nil] Template for formatting the first line of messages.
-    #   Defaults to `[time severity(padded) progname(pid)] message attributes`
+    #   Defaults to <code>[{{ time }} {{ severity(padded) }} {{ progname }}({{ pid }})] {{ message }} {{ attributes }}</code>
     # @param additional_lines [String, nil] Template for formatting additional lines
-    #   in multi-line messages. Defaults to `\n> message`
+    #   in multi-line messages. Defaults to <code>\\n> {{ message }}</code>
     # @param time_format [String, Symbol, nil] Time formatting specification. Can be:
     #   - A strftime format string (e.g., "%Y-%m-%d %H:%M:%S")
-    #   - `:milliseconds` for ISO format with millisecond precision (default)
-    #   - `:microseconds` for ISO format with microsecond precision
+    #   - +:milliseconds+ for ISO format with millisecond precision (default)
+    #   - +:microseconds+ for ISO format with microsecond precision
     # @param attribute_format [String, nil] Printf-style format for individual attributes.
     #   Must contain exactly two %s placeholders for name and value. Defaults to "[%s:%s]"
     # @param colorize [Boolean] Whether to colorize the log entry based on severity (default: false)
@@ -166,8 +153,8 @@ module Lumberjack
     #
     # @param format [String, Symbol] The datetime format specification:
     #   - String: A strftime format pattern (e.g., "%Y-%m-%d %H:%M:%S")
-    #   - `:milliseconds`: ISO format with millisecond precision (YYYY-MM-DDTHH:MM:SS.sss)
-    #   - `:microseconds`: ISO format with microsecond precision (YYYY-MM-DDTHH:MM:SS.ssssss)
+    #   - +:milliseconds+: ISO format with millisecond precision (YYYY-MM-DDTHH:MM:SS.sss)
+    #   - +:microseconds+: ISO format with microsecond precision (YYYY-MM-DDTHH:MM:SS.ssssss)
     # @return [void]
     def datetime_format=(format)
       if format == :milliseconds

@@ -11,21 +11,19 @@ module Lumberjack
   # - Combine their own attributes with the parent logger's attributes
   # - Provide scoped logging behavior without duplicating output infrastructure
   #
-  # ## Use Cases
-  #
   # ForkedLogger is particularly useful for:
-  # - **Component isolation**: Give each component its own logger with specific attributes
-  # - **Request tracing**: Create request-specific loggers with request IDs
-  # - **Temporary debugging**: Create debug-level loggers for specific code paths
-  # - **Library integration**: Allow libraries to have their own logging configuration
-  # - **Multi-tenant logging**: Isolate tenant-specific logging configuration
   #
-  # ## Inheritance vs Isolation
+  # - Component isolation: Give each component its own logger with specific attributes
+  # - Request tracing: Create request-specific loggers with request IDs
+  # - Temporary debugging: Create debug-level loggers for specific code paths
+  # - Library integration: Allow libraries to have their own logging configuration
+  # - Multi-tenant logging: Isolate tenant-specific logging configuration
   #
   # The forked logger inherits the parent's initial state but changes are isolated:
-  # - **Inherited**: Initial level, progname, and device (through forwarding)
-  # - **Isolated**: Subsequent changes to level, progname, and attributes
-  # - **Combined**: Attributes are merged when logging (forked + parent attributes)
+  #
+  # - Inherited: Initial level, progname, and device (through forwarding)
+  # - Isolated: subsequent changes to level, progname, and attributes do not affect the parent logger
+  # - Combined: attributes from the parent and the forked loggers are merged when logging
   #
   # @example Basic forked logger
   #   parent = Lumberjack::Logger.new(STDOUT, level: :info)
@@ -38,7 +36,7 @@ module Lumberjack
   #   db_logger = Lumberjack::ForkedLogger.new(main_logger)
   #   db_logger.progname = "Database"
   #   db_logger.tag!(component: "database", version: "1.2.3")
-  #   db_logger.info("Connection established")  # Includes component attributes
+  #   db_logger.info("Connection established")  # Includes component attributes and different progname
   #
   # @example Request-scoped logging
   #   def handle_request(request_id)
@@ -49,11 +47,6 @@ module Lumberjack
   #     # ... process request ...
   #     request_logger.info("Request completed")   # All logs tagged with request info
   #   end
-  #
-  # @example Different logging levels
-  #   debug_logger = Lumberjack::ForkedLogger.new(production_logger)
-  #   debug_logger.level = :debug
-  #   debug_logger.debug("Detailed debugging info")
   #
   # @see Lumberjack::Logger
   # @see Lumberjack::ContextLogger
@@ -70,7 +63,7 @@ module Lumberjack
     # its own independent context for future changes.
     #
     # @param logger [Lumberjack::ContextLogger, #add_entry] The parent logger to forward entries to.
-    #   Must respond to either `add_entry` (for Lumberjack loggers) or standard Logger methods.
+    #   Must respond to either +add_entry+ (for Lumberjack loggers) or standard Logger methods.
     def initialize(logger)
       init_fiber_locals!
       @parent_logger = logger
@@ -103,6 +96,13 @@ module Lumberjack
           end
         end
       end
+    end
+
+    # Flush any buffered log entries in the parent logger's device.
+    #
+    # @return [void]
+    def flush
+      parent_logger.flush
     end
 
     private

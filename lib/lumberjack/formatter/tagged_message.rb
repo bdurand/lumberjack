@@ -5,6 +5,7 @@ require_relative "../message_attributes"
 module Lumberjack
   # This is a deprecated alias for Lumberjack::MessageAttributes.
   #
+  # @deprecated Use Lumberjack::MessageAttributes instead.
   # @see MessageAttributes
   class Formatter::TaggedMessage < MessageAttributes
     def initialize(message, attributes)

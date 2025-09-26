@@ -18,6 +18,12 @@ RSpec.describe Lumberjack::ForkedLogger do
     })
   end
 
+  it "flushes the parent logger's device" do
+    forked_logger = Lumberjack::ForkedLogger.new(logger)
+    expect(logger).to receive(:flush)
+    forked_logger.flush
+  end
+
   it "inherits the parent logger's level" do
     logger.level = Logger::WARN
     forked_logger = Lumberjack::ForkedLogger.new(logger)

@@ -6,17 +6,8 @@ module Lumberjack
   #
   # This class serves as the central formatting coordinator in the Lumberjack logging pipeline,
   # bringing together two specialized formatters:
-  # 1. **Message Formatter** ({Lumberjack::Formatter}) - Formats the main log message content
-  # 2. **Attribute Formatter** ({Lumberjack::AttributeFormatter}) - Formats key-value attribute pairs
-  #
-  # ## Architecture
-  #
-  # The EntryFormatter acts as a facade that:
-  # - Delegates message formatting to a Formatter instance
-  # - Delegates attribute formatting to an AttributeFormatter instance
-  # - Provides a unified configuration interface through method chaining
-  # - Handles the coordination between message and attribute formatting
-  # - Manages special message types like MessageAttributes that carry embedded attributes
+  # 1. Message Formatter ({Lumberjack::Formatter}) - Formats the main log message content
+  # 2. Attribute Formatter ({Lumberjack::AttributeFormatter}) - Formats key-value attribute pairs
   #
   # @example Complete entry formatting setup
   #   formatter = Lumberjack::EntryFormatter.build do |config|
@@ -64,7 +55,7 @@ module Lumberjack
       #     config.add(User, :id)  # Message formatting
       #     config.add(Time, :date_time, "%Y-%m-%d")
       #
-      #     config.add_attribute("password") { "[REDACTED]" }
+      #     config.add_attribute("password") { "[REDACTED]" } # ensure passwords are not logged
       #     config.add_attribute_class(Exception) { |e| {error: e.class.name, message: e.message} }
       #   end
       def build(message_formatter: nil, attribute_formatter: nil, &block)
@@ -125,7 +116,7 @@ module Lumberjack
     # @example Adding message formatters
     #   formatter.add(User, :id)  # Use ID formatter for User objects
     #   formatter.add(Time, :date_time, "%Y-%m-%d")  # Custom time format
-    #   formatter.add(SecretToken) { |token| "[TOKEN]" }  # Block formatter
+    #   formatter.add(Array) { |vals| vals.join(", ") }  # Handle arrays
     #
     # @see Lumberjack::Formatter#add
     def add(klass, formatter = nil, *args, &block)

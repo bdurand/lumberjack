@@ -6,7 +6,7 @@ module Lumberjack
   # backward compatibility with the 1.x API and will be removed in a future version.
   #
   # All functionality has been moved to {AttributeFormatter} with no changes to the API.
-  # Simply replace `TagFormatter` with `AttributeFormatter` in your code.
+  # Simply replace +TagFormatter+ with +AttributeFormatter+ in your code.
   #
   # @deprecated Use {Lumberjack::AttributeFormatter} instead.
   # @see Lumberjack::AttributeFormatter

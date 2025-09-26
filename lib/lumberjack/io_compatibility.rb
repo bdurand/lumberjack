@@ -28,10 +28,6 @@ module Lumberjack
   #   logger = Lumberjack::Logger.new("/var/log/app.log")
   #   $stdout = logger  # Redirect all puts/print calls to the logger
   #   puts "This goes to the log file"
-  #
-  # @example With external libraries
-  #   logger = Lumberjack::Logger.new(STDOUT)
-  #   some_library.run(output_stream: logger)  # Library writes to logger
   module IOCompatibility
     # Write a value to the log as a log entry. The value will be recorded with UNKNOWN severity,
     # ensuring it always appears in the log regardless of the current log level.

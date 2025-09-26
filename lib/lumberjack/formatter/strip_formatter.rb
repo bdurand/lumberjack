@@ -2,7 +2,7 @@
 
 module Lumberjack
   class Formatter
-    # Format an object by calling `to_s` on it and stripping leading and trailing whitespace.
+    # Format an object by calling +to_s+ on it and stripping leading and trailing whitespace.
     # This formatter is useful for cleaning up string values that may have unwanted whitespace
     # from user input, file processing, or other sources.
     #

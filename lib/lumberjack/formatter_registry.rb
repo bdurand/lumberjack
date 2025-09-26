@@ -5,7 +5,7 @@ module Lumberjack
   # in the constructor for Lumberjack::Logger and allows passing in a symbol to reference a
   # formatter.
   #
-  # Formatters must respond to the `call` method.
+  # Formatters must respond to the +call+ method.
   #
   # @example
   #
