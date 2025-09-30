@@ -105,6 +105,13 @@ module Lumberjack
       parent_logger.flush
     end
 
+    # Return the output device of the parent logger.
+    #
+    # @return [Lumberjack::Device] The parent logger's output device.
+    def device
+      parent_logger.device
+    end
+
     private
 
     # Return the default context for this forked logger. This provides the isolated

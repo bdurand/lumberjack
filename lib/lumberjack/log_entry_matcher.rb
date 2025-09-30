@@ -14,6 +14,8 @@ module Lumberjack
   #
   # @see Lumberjack::Device::Test
   class LogEntryMatcher
+    require_relative "log_entry_matcher/score"
+
     # Create a new log entry matcher with optional filtering criteria. All
     # parameters are optional and nil values indicate no filtering for that
     # component. The matcher uses case equality (===) for flexible pattern
@@ -53,7 +55,30 @@ module Lumberjack
       true
     end
 
+    # Find the closest matching log entry from a list of candidates. This method
+    # scores each entry based on how well it matches the specified criteria and
+    # returns the entry with the highest score, provided it meets a minimum
+    # threshold. If no entries meet the threshold, nil is returned.
+    #
+    # @param entries [Array<Lumberjack::LogEntry>] The list of log entries to evaluate
+    # @return [Lumberjack::LogEntry, nil] The closest matching log entry or nil if none match
+    def closest(entries)
+      scored_entries = entries.map { |entry| [entry, entry_score(entry)] }
+      best_score = scored_entries.max_by { |_, score| score }
+      (best_score&.last.to_f >= Score::MIN_SCORE_THRESHOLD) ? best_score.first : nil
+    end
+
     private
+
+    def entry_score(entry)
+      Score.calculate_match_score(
+        entry,
+        message: @message_filter,
+        severity: @severity_filter,
+        attributes: @attributes_filter,
+        progname: @progname_filter
+      )
+    end
 
     # Apply a filter pattern against a value using case equality. Returns true
     # if no filter is specified (nil) or if the filter matches the value.

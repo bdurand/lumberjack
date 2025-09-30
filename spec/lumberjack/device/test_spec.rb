@@ -134,10 +134,137 @@ RSpec.describe Lumberjack::Device::Test do
     end
   end
 
+  describe "#closest_match" do
+    let(:entry_1) { Lumberjack::LogEntry.new(Time.now, Logger::INFO, "User logged in successfully", nil, nil, {"user" => "alice"}) }
+    let(:entry_2) { Lumberjack::LogEntry.new(Time.now, Logger::WARN, "User failed to login", nil, nil, {"component" => "database"}) }
+    let(:entry_3) { Lumberjack::LogEntry.new(Time.now, Logger::ERROR, "Failed to authenticate user", nil, nil, {"user" => "bob"}) }
+
+    before do
+      device.write(entry_1)
+      device.write(entry_2)
+      device.write(entry_3)
+    end
+
+    it "returns the entry with an exact match" do
+      expect(device.closest_match(message: "User logged in successfully")).to eq(entry_1)
+    end
+
+    it "returns the closest matching entry based on message similarity" do
+      expect(device.closest_match(message: "User fail login", severity: Logger::ERROR)).to eq(entry_2)
+    end
+
+    it "returns nil if no entries meet the minimum score threshold" do
+      expect(device.closest_match(message: "Completely different message")).to be_nil
+    end
+  end
+
   describe "#dev" do
     it "returns self underlying stream" do
       device = Lumberjack::Device::Test.new
       expect(device.dev).to eq(device)
+    end
+  end
+
+  describe ".formatted_entry" do
+    it "should format a log entry into a string" do
+      entry = Lumberjack::LogEntry.new(
+        Time.new(2023, 1, 1, 12, 0, 0),
+        Logger::INFO,
+        "Test message",
+        "TestProgname",
+        1234,
+        {foo: "bar", baz: {one: 1, two: 2}}
+      )
+      expected = <<~STRING
+        2023-01-01 12:00:00 INFO: Test message
+          progname: TestProgname
+          baz.one: 1
+          baz.two: 2
+          foo: bar
+      STRING
+      expect(Lumberjack::Device::Test.formatted_entry(entry)).to eq(expected.chomp)
+    end
+
+    it "should omit nil values" do
+      entry = Lumberjack::LogEntry.new(
+        Time.new(2023, 1, 1, 12, 0, 0),
+        Logger::INFO,
+        "Test message",
+        nil,
+        nil,
+        nil
+      )
+      expected = "2023-01-01 12:00:00 INFO: Test message"
+      expect(Lumberjack::Device::Test.formatted_entry(entry)).to eq(expected.chomp)
+    end
+
+    it "should indent a specified number of spaces" do
+      entry = Lumberjack::LogEntry.new(
+        Time.new(2023, 1, 1, 12, 0, 0),
+        Logger::INFO,
+        "Test message",
+        "TestProgname",
+        1234,
+        {foo: "bar"}
+      )
+      expected = <<~STRING
+        2023-01-01 12:00:00 INFO: Test message
+          progname: TestProgname
+          foo: bar
+      STRING
+      expected = expected.split("\n").collect { |line| "    #{line}" }.join("\n")
+      expect(Lumberjack::Device::Test.formatted_entry(entry, indent: 4)).to eq(expected.chomp)
+    end
+  end
+
+  describe ".formatted_expectation" do
+    it "should format a log entry expectation into a string" do
+      expectation = {
+        severity: Logger::INFO,
+        message: "Test message",
+        progname: "TestProgname",
+        attributes: {foo: "bar", baz: {one: 1, two: 2}}
+      }
+      expected = <<~STRING
+        severity: INFO
+        message: Test message
+        progname: TestProgname
+        attributes: baz.one: 1
+                    baz.two: 2
+                    foo: "bar"
+      STRING
+      expect(Lumberjack::Device::Test.formatted_expectation(expectation)).to eq(expected.chomp)
+    end
+
+    it "should omit nil values" do
+      expectation = {
+        severity: Logger::INFO,
+        message: "Test message",
+        progname: nil,
+        attributes: nil
+      }
+      expected = <<~STRING
+        severity: INFO
+        message: Test message
+      STRING
+      expect(Lumberjack::Device::Test.formatted_expectation(expectation)).to eq(expected.chomp)
+    end
+
+    it "should indent a specified number of spaces" do
+      expectation = {
+        severity: Logger::INFO,
+        message: "Test message",
+        progname: "TestProgname",
+        attributes: {foo: "bar"}
+      }
+      expected = <<~STRING
+        severity: INFO
+        message: Test message
+        progname: TestProgname
+        attributes: foo: "bar"
+      STRING
+      expected = expected.split("\n").collect { |line| "    #{line}" }.join("\n")
+      expect(Lumberjack::Device::Test.formatted_expectation(expectation, indent: 4)).to eq(expected.chomp)
     end
   end
 end
