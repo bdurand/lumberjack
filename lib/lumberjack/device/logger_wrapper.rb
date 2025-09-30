@@ -93,7 +93,7 @@ module Lumberjack
             value = value.join(",") if value.is_a?(Enumerable)
             message_attributes << "[#{key}=#{value}]"
           end
-          message = "#{message} #{message_attributes.join(' ')}" unless message_attributes.empty?
+          message = "#{message} #{message_attributes.join(" ")}" unless message_attributes.empty?
         end
         @logger.add(entry.severity, message, entry.progname)
       end
