@@ -12,10 +12,10 @@ class Lumberjack::LogEntryMatcher::Score
     # Returns a score between 0.0 and 1.0, where 1.0 represents a perfect match.
     #
     # @param entry [Lumberjack::LogEntry] The log entry to score.
-    # @param message_filter [String, Regexp, nil] The message filter to match against.
-    # @param severity_filter [Integer, nil] The severity level to match against.
-    # @param attributes_filter [Hash, nil] The attributes hash to match against.
-    # @param progname_filter [String, nil] The program name to match against.
+    # @param message [String, Regexp, nil] The message filter to match against.
+    # @param severity [Integer, nil] The severity level to match against.
+    # @param attributes [Hash, nil] The attributes hash to match against.
+    # @param progname [String, nil] The program name to match against.
     # @return [Float] A score between 0.0 and 1.0 indicating match quality.
     def calculate_match_score(entry, message: nil, severity: nil, attributes: nil, progname: nil)
       scores = []
