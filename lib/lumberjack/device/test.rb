@@ -86,6 +86,66 @@ module Lumberjack
     # @return [Hash] A copy of the options hash passed during initialization
     attr_reader :options
 
+    class << self
+      # Helper method to format a log entry for display. This is useful for test failure messages.
+      #
+      # @param entry [Lumberjack::LogEntry] The log entry to format.
+      # @param indent [Integer] The indentation to prefix on every line.
+      # @return [String] The formatted log entry.
+      def formatted_entry(entry, indent: 0)
+        indent_str = " " * indent
+        timestamp = entry.time.strftime("%Y-%m-%d %H:%M:%S")
+        formatted = +"#{indent_str}#{timestamp} #{entry.severity_label}: #{entry.message}"
+        formatted << "\n#{indent_str}  progname: #{entry.progname}" if entry.progname.to_s != ""
+        if entry.attributes && !entry.attributes.empty?
+          Lumberjack::Utils.flatten_attributes(entry.attributes).to_a.sort_by(&:first).each do |name, value|
+            formatted << "\n#{indent_str}  #{name}: #{value}"
+          end
+        end
+        formatted
+      end
+
+      # Format a log entry or expectation hash into a more human readable format. This is
+      # intended for use in test failure messages to help diagnose why a match failed.
+      #
+      # @param expectation [Hash, Lumberjack::LogEntry] The expectation or log entry to format.
+      # @option severity [String, Symbol, Integer] The severity level to match.
+      # @option message [String, Regexp, Object] Pattern to match against log entry messages.
+      # @option attributes [Hash] Hash of attribute patterns to match against log entry attributes.
+      # @option progname [String, Regexp, Object] Pattern to match against the program name that generated the log entry.
+      # @param indent [Integer] The number of spaces to indent each line.
+      # @return [String] A formatted string representation of the expectation or log entry.
+      def formatted_expectation(expectation, indent: 0)
+        if expectation.is_a?(Lumberjack::LogEntry)
+          expectation = {
+            "severity" => expectation.severity_label,
+            "message" => expectation.message,
+            "progname" => expectation.progname,
+            "attributes" => expectation.attributes
+          }
+        end
+
+        expectation = expectation.transform_keys(&:to_s).compact
+        severity = Lumberjack::Severity.coerce(expectation["severity"]) if expectation.include?("severity")
+
+        message = []
+        indent_str = " " * indent
+        message << "#{indent_str}severity: #{Lumberjack::Severity.level_to_label(severity)}" if severity
+        message << "#{indent_str}message: #{expectation["message"]}" if expectation.include?("message")
+        message << "#{indent_str}progname: #{expectation["progname"]}" if expectation.include?("progname")
+        if expectation["attributes"].is_a?(Hash) && !expectation["attributes"].empty?
+          attributes = Lumberjack::Utils.flatten_attributes(expectation["attributes"])
+          label = "attributes:"
+          prefix = "#{indent_str}#{label}"
+          attributes.sort_by(&:first).each do |name, value|
+            message << "#{prefix} #{name}: #{value.inspect}"
+            prefix = "#{indent_str}#{" " * label.length}"
+          end
+        end
+        message.join("\n")
+      end
+    end
+
     # Initialize a new Test device with configurable buffer management.
     # The device creates a thread-safe in-memory buffer for capturing log
     # entries with automatic size management to prevent memory issues.
@@ -265,6 +325,30 @@ module Lumberjack
     def match(message: nil, severity: nil, attributes: nil, progname: nil)
       matcher = LogEntryMatcher.new(message: message, severity: severity, attributes: attributes, progname: progname)
       entries.detect { |entry| matcher.match?(entry) }
+    end
+
+    # Get the closest matching log entry from the captured entries based on a scoring system.
+    # This method evaluates how well each entry matches the specified criteria and
+    # returns the entry with the highest score, provided it meets a minimum threshold.
+    # If no entries meet the threshold, nil is returned.
+    #
+    # This method can be used in tests to return the best match when an assertion fails
+    # to aid in diagnosing why no entries met the criteria.
+    #
+    # @param message [String, Regexp, Object, nil] Pattern to match against
+    #   log entry messages. Supports exact strings, regular expressions, or
+    #   any object that responds to case equality (===)
+    # @param severity [String, Symbol, Integer, nil] The severity level to match.
+    #   Accepts symbols, strings, or numeric Logger constants
+    # @param attributes [Hash, nil] Hash of attribute patterns to match against
+    #   log entry attributes. Supports nested matching using dot notation
+    # @param progname [String, Regexp, Object, nil] Pattern to match against
+    #   the program name that generated the log entry
+    # @return [Lumberjack::LogEntry, nil] The closest matching log entry, or nil
+    #   if no entries meet the minimum score threshold
+    def closest_match(message: nil, severity: nil, attributes: nil, progname: nil)
+      matcher = LogEntryMatcher.new(message: message, severity: severity, attributes: attributes, progname: progname)
+      matcher.closest(entries)
     end
   end
 end
