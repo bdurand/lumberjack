@@ -76,7 +76,7 @@ module Lumberjack
           device
         elsif device.is_a?(Symbol)
           DeviceRegistry.new_device(device, options)
-        elsif device.is_a?(ContextLogger)
+        elsif device.is_a?(ContextLogger) || device.is_a?(::Logger)
           Device::LoggerWrapper.new(device)
         elsif device.is_a?(Array)
           devices = device.collect do |dev, dev_options|

@@ -530,6 +530,9 @@ logger = Lumberjack::Logger.new(target_logger)
 > [!NOTE]
 > Note that the level of the outer logger will take precedence. So if the outer logger is set to `:warn`, then only warning messages or higher will be forwarded to the target logger.
 
+> [!TIP]
+> You can also pass in a standard Ruby `Logger` instance. This allows you to use the enhanced Lumberjack logging features with a standard library logger.
+
 ##### Test Device
 
 The `Test` device logs entries in memory and is intended for use in test suites where you want to make assertions that specific log entries are recorded.

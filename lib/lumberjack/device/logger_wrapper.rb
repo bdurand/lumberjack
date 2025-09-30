@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  # A logging device that forwards log entries to another Lumberjack logger instance.
+  # A logging device that forwards log entries to another logger instance.
   # This device enables hierarchical logging architectures and broadcasting scenarios
   # where log entries need to be distributed to multiple loggers or processed through
   # different logging pipelines.
@@ -56,13 +56,15 @@ module Lumberjack
     # The target logger must be a Lumberjack logger that supports the ContextLogger
     # interface to ensure proper entry handling and attribute processing.
     #
-    # @param logger [Lumberjack::ContextLogger] The target logger to receive forwarded entries.
+    # @param logger [Lumberjack::ContextLogger, ::Logger] The target logger to receive forwarded entries.
     #   Must be a Lumberjack logger instance (Logger, ForkedLogger, etc.) that includes
     #   the ContextLogger mixin for proper entry processing.
     #
     # @raise [ArgumentError] If the provided logger is not a Lumberjack::ContextLogger
     def initialize(logger)
-      raise ArgumentError.new("Logger must be a Lumberjack logger") unless logger.is_a?(Lumberjack::ContextLogger)
+      unless logger.is_a?(Lumberjack::ContextLogger) || logger.is_a?(::Logger)
+        raise ArgumentError.new("Logger must be a Lumberjack logger")
+      end
 
       @logger = logger
     end
@@ -79,7 +81,22 @@ module Lumberjack
     # @param entry [Lumberjack::LogEntry] The log entry to forward to the target logger
     # @return [void]
     def write(entry)
-      @logger.add_entry(entry.severity, entry.message, entry.progname, entry.attributes)
+      if @logger.is_a?(Lumberjack::ContextLogger)
+        @logger.add_entry(entry.severity, entry.message, entry.progname, entry.attributes)
+      else
+        message = entry.message
+        if entry.attributes && !entry.attributes.empty?
+          message_attributes = []
+          entry.attributes.each do |key, value|
+            next if value.nil? || (value.respond_to?(:empty?) && value.empty?)
+
+            value = value.join(",") if value.is_a?(Enumerable)
+            message_attributes << "[#{key}=#{value}]"
+          end
+          message = "#{message} #{message_attributes.join(' ')}" unless message_attributes.empty?
+        end
+        @logger.add(entry.severity, message, entry.progname)
+      end
     end
 
     # Closes the target logger to release any resources or finalize log output.

@@ -75,6 +75,13 @@ RSpec.describe Lumberjack::Device do
       expect(device.logger).to equal(context_logger)
     end
 
+    it "wraps a ::Logger in a LoggerWrapper" do
+      logger = ::Logger.new(File::NULL)
+      device = Lumberjack::Device.open_device(logger)
+      expect(device).to be_a(Lumberjack::Device::LoggerWrapper)
+      expect(device.logger).to equal(logger)
+    end
+
     it "opens multiple devices when given an Array and can pass shared and device specific options" do
       out_1 = StringIO.new
       out_2 = StringIO.new
