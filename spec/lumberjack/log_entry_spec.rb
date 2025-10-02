@@ -174,6 +174,14 @@ RSpec.describe Lumberjack::LogEntry do
     end
   end
 
+  describe "#to_s" do
+    it "returns a formatted string representation of the log entry" do
+      time = Time.now
+      entry = Lumberjack::LogEntry.new(time, Logger::INFO, "test message", "myapp", 1234, "foo" => "bar", "baz" => "qux")
+      expected_string = "[#{time.strftime(Lumberjack::LogEntry::TIME_FORMAT)} INFO myapp(1234) foo=bar baz=qux] test message"
+    end
+  end
+
   describe "#as_json" do
     it "returns a hash representation of the log entry" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo.bar" => "baz")
