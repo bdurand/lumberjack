@@ -25,7 +25,7 @@ module Lumberjack
     #   @return [Hash<String, Object>] Custom attributes associated with the log entry
     attr_accessor :time, :message, :severity, :progname, :pid, :attributes
 
-    TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%L"
+    TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%3N"
 
     # Create a new log entry with the specified components. The entry captures
     # all relevant information about a logging event in a structured format.
