@@ -178,7 +178,8 @@ RSpec.describe Lumberjack::LogEntry do
     it "returns a formatted string representation of the log entry" do
       time = Time.now
       entry = Lumberjack::LogEntry.new(time, Logger::INFO, "test message", "myapp", 1234, "foo" => "bar", "baz" => "qux")
-      expected_string = "[#{time.strftime(Lumberjack::LogEntry::TIME_FORMAT)} INFO myapp(1234) foo=bar baz=qux] test message"
+      expected_string = "[#{time.strftime(Lumberjack::LogEntry::TIME_FORMAT)} INFO myapp(1234) foo:\"bar\" baz:\"qux\"] test message"
+      expect(entry.to_s).to eq(expected_string)
     end
   end
 

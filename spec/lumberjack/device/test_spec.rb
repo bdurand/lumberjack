@@ -165,58 +165,6 @@ RSpec.describe Lumberjack::Device::Test do
     end
   end
 
-  describe ".formatted_entry" do
-    it "should format a log entry into a string" do
-      entry = Lumberjack::LogEntry.new(
-        Time.new(2023, 1, 1, 12, 0, 0),
-        Logger::INFO,
-        "Test message",
-        "TestProgname",
-        1234,
-        {foo: "bar", baz: {one: 1, two: 2}}
-      )
-      expected = <<~STRING
-        2023-01-01 12:00:00 INFO: Test message
-          progname: TestProgname
-          baz.one: 1
-          baz.two: 2
-          foo: bar
-      STRING
-      expect(Lumberjack::Device::Test.formatted_entry(entry)).to eq(expected.chomp)
-    end
-
-    it "should omit nil values" do
-      entry = Lumberjack::LogEntry.new(
-        Time.new(2023, 1, 1, 12, 0, 0),
-        Logger::INFO,
-        "Test message",
-        nil,
-        nil,
-        nil
-      )
-      expected = "2023-01-01 12:00:00 INFO: Test message"
-      expect(Lumberjack::Device::Test.formatted_entry(entry)).to eq(expected.chomp)
-    end
-
-    it "should indent a specified number of spaces" do
-      entry = Lumberjack::LogEntry.new(
-        Time.new(2023, 1, 1, 12, 0, 0),
-        Logger::INFO,
-        "Test message",
-        "TestProgname",
-        1234,
-        {foo: "bar"}
-      )
-      expected = <<~STRING
-        2023-01-01 12:00:00 INFO: Test message
-          progname: TestProgname
-          foo: bar
-      STRING
-      expected = expected.split("\n").collect { |line| "    #{line}" }.join("\n")
-      expect(Lumberjack::Device::Test.formatted_entry(entry, indent: 4)).to eq(expected.chomp)
-    end
-  end
-
   describe ".formatted_expectation" do
     it "should format a log entry expectation into a string" do
       expectation = {

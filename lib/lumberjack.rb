@@ -54,6 +54,7 @@ module Lumberjack
   require_relative "lumberjack/rack"
   require_relative "lumberjack/severity"
   require_relative "lumberjack/template"
+  require_relative "lumberjack/test_log_template"
   require_relative "lumberjack/utils"
 
   # Deprecated

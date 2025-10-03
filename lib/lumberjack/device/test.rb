@@ -87,26 +87,9 @@ module Lumberjack
     attr_reader :options
 
     class << self
-      # Helper method to format a log entry for display. This is useful for test failure messages.
-      #
-      # @param entry [Lumberjack::LogEntry] The log entry to format.
-      # @param indent [Integer] The indentation to prefix on every line.
-      # @return [String] The formatted log entry.
-      def formatted_entry(entry, indent: 0)
-        indent_str = " " * indent
-        timestamp = entry.time.strftime("%Y-%m-%d %H:%M:%S")
-        formatted = +"#{indent_str}#{timestamp} #{entry.severity_label}: #{entry.message}"
-        formatted << "\n#{indent_str}  progname: #{entry.progname}" if entry.progname.to_s != ""
-        if entry.attributes && !entry.attributes.empty?
-          Lumberjack::Utils.flatten_attributes(entry.attributes).to_a.sort_by(&:first).each do |name, value|
-            formatted << "\n#{indent_str}  #{name}: #{value}"
-          end
-        end
-        formatted
-      end
-
       # Format a log entry or expectation hash into a more human readable format. This is
-      # intended for use in test failure messages to help diagnose why a match failed.
+      # intended for use in test failure messages to help diagnose why a match failed when
+      # calling +include?+ or +match+.
       #
       # @param expectation [Hash, Lumberjack::LogEntry] The expectation or log entry to format.
       # @option severity [String, Symbol, Integer] The severity level to match.
