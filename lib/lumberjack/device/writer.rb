@@ -62,6 +62,7 @@ module Lumberjack
         @template = Template::StandardFormatterTemplate.new(options[:standard_logger_formatter])
       else
         template = options[:template]
+        template = TestLogTemplate.new if template == :test
         @template = if template.respond_to?(:call)
           template
         else

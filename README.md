@@ -665,6 +665,10 @@ logger.info("Test message", user_id: 123, status: "active")
 # Output: 2025-09-03 14:30:15  INFO Test message [user_id=123] [status=active]
 ```
 
+##### Test Template
+
+You can use the value `:test` to use a template optimized for test environment logs. This template is designed to be easy to read and exclude attributes that are usually not useful in tests like the time and pid.
+
 ### Testing Utilities
 
 The `Test` device captures log entries in memory for testing and assertions:

@@ -96,6 +96,13 @@ RSpec.describe Lumberjack::Device::Writer do
     expect(stream.string).to eq("TEST MESSAGE#{Lumberjack::LINE_SEPARATOR}")
   end
 
+  it "can write to a test template" do
+    device = Lumberjack::Device::Writer.new(stream, template: :test)
+    device.write(entry)
+    device.flush
+    expect(stream.string).to eq(Lumberjack::TestLogTemplate.new.call(entry) + Lumberjack::LINE_SEPARATOR)
+  end
+
   it "should write to STDERR if an error is raised when flushing to the stream" do
     stderr = $stderr
     $stderr = StringIO.new
