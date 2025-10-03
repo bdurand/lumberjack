@@ -19,11 +19,11 @@ RSpec.describe Lumberjack::TestLogTemplate do
     expect(formatted).to eq(expected)
   end
 
-  it "can add the timestamp" do
-    template = Lumberjack::TestLogTemplate.new(exclude_timestamp: false)
+  it "can add the time" do
+    template = Lumberjack::TestLogTemplate.new(exclude_time: false)
     formatted = template.call(entry)
     expected = <<~STRING.chomp
-      #{entry.time.strftime("%Y-%m-%d %H:%M:%S.%3N")} INFO  test message
+      #{entry.time.strftime("%Y-%m-%d %H:%M:%S.%6N")} INFO  test message
         progname: myapp
         baz.bax: qux
         foo: bar
