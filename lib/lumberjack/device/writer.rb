@@ -62,7 +62,9 @@ module Lumberjack
         @template = Template::StandardFormatterTemplate.new(options[:standard_logger_formatter])
       else
         template = options[:template]
-        template = TestLogTemplate.new if template == :test
+
+        template = test_log_template(options) if template == :test
+
         @template = if template.respond_to?(:call)
           template
         else
@@ -207,6 +209,17 @@ module Lumberjack
     # @return [String] A formatted error message with exception details
     def error_message(e)
       "#{e.class.name}: #{e.message}#{" at " + e.backtrace.first if e.backtrace}#{Lumberjack::LINE_SEPARATOR}"
+    end
+
+    # Create a test log template.
+    def test_log_template(options)
+      kwargs = {
+        exclude_attributes: options[:exclude_attributes],
+        exclude_progname: options[:exclude_progname],
+        exclude_pid: options[:exclude_pid],
+        exclude_time: options[:exclude_time]
+      }
+      TestLogTemplate.new(**kwargs.compact)
     end
   end
 end
