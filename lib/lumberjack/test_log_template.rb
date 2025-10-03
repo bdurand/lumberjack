@@ -32,8 +32,8 @@ module Lumberjack
       formatted = +""
       formatted << entry.time.strftime("%Y-%m-%d %H:%M:%S.%6N ") unless exclude_time?
       formatted << "#{entry.severity_data.padded_label} #{entry.message}"
-      formatted << "\n  progname: #{entry.progname}" if entry.progname.to_s != "" && !exclude_progname?
-      formatted << "\n  pid: #{entry.pid}" unless exclude_pid?
+      formatted << "\n    progname: #{entry.progname}" if entry.progname.to_s != "" && !exclude_progname?
+      formatted << "\n    pid: #{entry.pid}" unless exclude_pid?
 
       if entry.attributes && !entry.attributes.empty? && !exclude_attributes?
         Lumberjack::Utils.flatten_attributes(entry.attributes).to_a.sort_by(&:first).each do |name, value|
@@ -44,7 +44,7 @@ module Lumberjack
             end
           end
 
-          formatted << "\n  #{name}: #{value}"
+          formatted << "\n    #{name}: #{value}"
         end
       end
 

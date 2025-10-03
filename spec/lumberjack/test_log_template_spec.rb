@@ -12,9 +12,9 @@ RSpec.describe Lumberjack::TestLogTemplate do
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       INFO  test message
-        progname: myapp
-        baz.bax: qux
-        foo: bar
+          progname: myapp
+          baz.bax: qux
+          foo: bar
     STRING
     expect(formatted).to eq(expected)
   end
@@ -24,9 +24,9 @@ RSpec.describe Lumberjack::TestLogTemplate do
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       #{entry.time.strftime("%Y-%m-%d %H:%M:%S.%6N")} INFO  test message
-        progname: myapp
-        baz.bax: qux
-        foo: bar
+          progname: myapp
+          baz.bax: qux
+          foo: bar
     STRING
     expect(formatted).to eq(expected)
   end
@@ -36,10 +36,10 @@ RSpec.describe Lumberjack::TestLogTemplate do
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       INFO  test message
-        progname: myapp
-        pid: 1234
-        baz.bax: qux
-        foo: bar
+          progname: myapp
+          pid: 1234
+          baz.bax: qux
+          foo: bar
     STRING
     expect(formatted).to eq(expected)
   end
@@ -49,8 +49,8 @@ RSpec.describe Lumberjack::TestLogTemplate do
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       INFO  test message
-        baz.bax: qux
-        foo: bar
+          baz.bax: qux
+          foo: bar
     STRING
     expect(formatted).to eq(expected)
   end
@@ -60,7 +60,7 @@ RSpec.describe Lumberjack::TestLogTemplate do
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       INFO  test message
-        progname: myapp
+          progname: myapp
     STRING
     expect(formatted).to eq(expected)
   end
@@ -70,8 +70,8 @@ RSpec.describe Lumberjack::TestLogTemplate do
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       INFO  test message
-        progname: myapp
-        baz.bax: qux
+          progname: myapp
+          baz.bax: qux
     STRING
     expect(formatted).to eq(expected)
   end
@@ -81,8 +81,8 @@ RSpec.describe Lumberjack::TestLogTemplate do
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       INFO  test message
-        progname: myapp
-        foo: bar
+          progname: myapp
+          foo: bar
     STRING
     expect(formatted).to eq(expected)
   end
