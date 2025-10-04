@@ -32,7 +32,7 @@ module Lumberjack
 
     SEVERITIES = [
       Data.new(TRACE, "TRACE", "🔍", 247).freeze,
-      Data.new(DEBUG, "DEBUG", "⚙️", 244).freeze,
+      Data.new(DEBUG, "DEBUG", "🔧", 244).freeze,
       Data.new(INFO, "INFO", "🔵", 33).freeze,
       Data.new(WARN, "WARN", "🟡", 208).freeze,
       Data.new(ERROR, "ERROR", "❌", 9).freeze,

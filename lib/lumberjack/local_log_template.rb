@@ -23,14 +23,14 @@ module Lumberjack
     # @option options [Boolean] :exclude_pid If true, the process ID is excluded. Defaults to true.
     # @option options [Boolean] :exclude_time If true, the time is excluded. Defaults to true.
     # @option options [Boolean] :colorize If true, colorize the output based on severity. Defaults to false.
-    # @option options [Boolean] :emoji If true, add emojis with severity levels. Defaults to false.
+    # @option options [String, Symbol] :severity_format The optional format for severity labels (padded, char, emoji).
     def initialize(options = {})
       self.exclude_progname = options.fetch(:exclude_progname, false)
       self.exclude_pid = options.fetch(:exclude_pid, true)
       self.exclude_time = options.fetch(:exclude_time, true)
       self.exclude_attributes = options.fetch(:exclude_attributes, nil)
       self.colorize = options.fetch(:colorize, false)
-      self.emoji = options.fetch(:emoji, false)
+      self.severity_format = options.fetch(:severity_format, nil)
     end
 
     # Format a log entry according to the template.
@@ -39,9 +39,8 @@ module Lumberjack
     # @return [String] The formatted log entry.
     def call(entry)
       formatted = +""
-      formatted << "#{entry.severity_data.emoji} " if emoji?
       formatted << entry.time.strftime("%Y-%m-%d %H:%M:%S.%6N ") unless exclude_time?
-      formatted << "#{entry.severity_label} #{entry.message}"
+      formatted << "#{severity_label(entry)} #{entry.message}"
       formatted << "#{Lumberjack::LINE_SEPARATOR}    progname: #{entry.progname}" if entry.progname.to_s != "" && !exclude_progname?
       formatted << "#{Lumberjack::LINE_SEPARATOR}    pid: #{entry.pid}" unless exclude_pid?
 
@@ -152,19 +151,35 @@ module Lumberjack
       @colorize = !!value
     end
 
-    # Return true if emojis are enabled, false otherwise.
+    # Set the severity format.
     #
-    # @return [Boolean]
-    def emoji?
-      @emoji
+    # @param value [String, Symbol] The severity format (:padded, :char, :emoji, :level, nil).
+    # @return [void]
+    def severity_format=(value)
+      @severity_format = value.to_s
     end
 
-    # Set whether to enable emojis.
+    # Return the current severity format.
     #
-    # @param value [Boolean]
-    # @return [void]
-    def emoji=(value)
-      @emoji = !!value
+    # @return [String]
+    attr_reader :severity_format
+
+    private
+
+    def severity_label(entry)
+      severity = entry.severity_data
+      case severity_format
+      when "padded"
+        severity.padded_label
+      when "char"
+        severity.char
+      when "emoji"
+        severity.emoji
+      when "level"
+        severity.level.to_s
+      else
+        severity.label
+      end
     end
   end
 end

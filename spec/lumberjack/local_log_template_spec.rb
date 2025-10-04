@@ -107,11 +107,50 @@ RSpec.describe Lumberjack::LocalLogTemplate do
     expect(formatted).to eq(expected)
   end
 
-  it "can add emojis for severity levels" do
-    template = Lumberjack::LocalLogTemplate.new(emoji: true)
+  it "can set the severity format to padded" do
+    template = Lumberjack::LocalLogTemplate.new(severity_format: :padded)
     formatted = template.call(entry)
     expected = <<~STRING.chomp
-      🔵 INFO test message
+      INFO  test message
+          progname: myapp
+          baz.bax: qux
+          foo: bar
+
+    STRING
+    expect(formatted).to eq(expected)
+  end
+
+  it "can set the severity format to emoji" do
+    template = Lumberjack::LocalLogTemplate.new(severity_format: :emoji)
+    formatted = template.call(entry)
+    expected = <<~STRING.chomp
+      🔵 test message
+          progname: myapp
+          baz.bax: qux
+          foo: bar
+
+    STRING
+    expect(formatted).to eq(expected)
+  end
+
+  it "can set the severity format to char" do
+    template = Lumberjack::LocalLogTemplate.new(severity_format: :char)
+    formatted = template.call(entry)
+    expected = <<~STRING.chomp
+      I test message
+          progname: myapp
+          baz.bax: qux
+          foo: bar
+
+    STRING
+    expect(formatted).to eq(expected)
+  end
+
+  it "can set the severity format to level" do
+    template = Lumberjack::LocalLogTemplate.new(severity_format: :level)
+    formatted = template.call(entry)
+    expected = <<~STRING.chomp
+      1 test message
           progname: myapp
           baz.bax: qux
           foo: bar
