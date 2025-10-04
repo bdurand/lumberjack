@@ -7,13 +7,11 @@ module Lumberjack
   # exclude certain components such as the times, process ID, program name,
   # and attributes.
   #
-  # It is registered with the TemplateRegistry as :local, :test, and :development.
+  # It is registered with the TemplateRegistry as :local.
   #
   # @see Template
   class LocalLogTemplate
     TemplateRegistry.add(:local, self)
-    TemplateRegistry.add(:test, self)
-    TemplateRegistry.add(:development, self)
 
     # Create a new LocalLogTemplate instance.
     #

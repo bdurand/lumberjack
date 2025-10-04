@@ -672,8 +672,6 @@ You can use symbols to refer to built-in templates:
 - `:default` - The default log template. This is the same as not specifying a template.
 - `:stdlib` - A template that mimics the default format of the standard library Logger.
 - `:local` - A simple, human readable template intended for local development and test environments. This template removes the time and pid from the log line since they are generally not needed in these environments. You can also exclude attributes by setting the `exclude_attributes` option to the list of attributes names to exclude. For example, you may want to add a `host` attribute for your production logs, but this just creates clutter in development logs since it is always the same value.
-- `:development` - This is an alias for the `:local` template.
-- `:test` - This is an alias for the `:local` template.
 
 ```ruby
 logger = Lumberjack::Logger.new(STDOUT, template: :local, exclude_attributes: ["host", "env", "version"])

@@ -3,13 +3,11 @@
 require "spec_helper"
 
 RSpec.describe Lumberjack::TemplateRegistry do
-  it "has :default, :stdlib, :local, :development, and :test registered by default" do
+  it "has :default, :stdlib, and :local registered by default" do
     expect(Lumberjack::TemplateRegistry.registered_templates).to eq({
       default: Lumberjack::Template::DEFAULT_FIRST_LINE_TEMPLATE,
       stdlib: Lumberjack::Template::STDLIB_FIRST_LINE_TEMPLATE,
-      local: Lumberjack::LocalLogTemplate,
-      development: Lumberjack::LocalLogTemplate,
-      test: Lumberjack::LocalLogTemplate
+      local: Lumberjack::LocalLogTemplate
     })
   end
 
@@ -23,7 +21,7 @@ RSpec.describe Lumberjack::TemplateRegistry do
   end
 
   it "can instantiate a template class by name and options" do
-    template = Lumberjack::TemplateRegistry.template(:test, exclude_pid: false)
+    template = Lumberjack::TemplateRegistry.template(:local, exclude_pid: false)
     expect(template).to be_a(Lumberjack::LocalLogTemplate)
     expect(template.exclude_pid?).to be false
   end
