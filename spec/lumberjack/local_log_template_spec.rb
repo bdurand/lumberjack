@@ -11,7 +11,7 @@ RSpec.describe Lumberjack::LocalLogTemplate do
     template = Lumberjack::LocalLogTemplate.new
     formatted = template.call(entry)
     expected = <<~STRING.chomp
-      INFO  test message
+      INFO test message
           progname: myapp
           baz.bax: qux
           foo: bar
@@ -23,7 +23,7 @@ RSpec.describe Lumberjack::LocalLogTemplate do
     template = Lumberjack::LocalLogTemplate.new(exclude_time: false)
     formatted = template.call(entry)
     expected = <<~STRING.chomp
-      #{entry.time.strftime("%Y-%m-%d %H:%M:%S.%6N")} INFO  test message
+      #{entry.time.strftime("%Y-%m-%d %H:%M:%S.%6N")} INFO test message
           progname: myapp
           baz.bax: qux
           foo: bar
@@ -35,7 +35,7 @@ RSpec.describe Lumberjack::LocalLogTemplate do
     template = Lumberjack::LocalLogTemplate.new(exclude_pid: false)
     formatted = template.call(entry)
     expected = <<~STRING.chomp
-      INFO  test message
+      INFO test message
           progname: myapp
           pid: 1234
           baz.bax: qux
@@ -48,7 +48,7 @@ RSpec.describe Lumberjack::LocalLogTemplate do
     template = Lumberjack::LocalLogTemplate.new(exclude_progname: true)
     formatted = template.call(entry)
     expected = <<~STRING.chomp
-      INFO  test message
+      INFO test message
           baz.bax: qux
           foo: bar
     STRING
@@ -59,7 +59,7 @@ RSpec.describe Lumberjack::LocalLogTemplate do
     template = Lumberjack::LocalLogTemplate.new(exclude_attributes: true)
     formatted = template.call(entry)
     expected = <<~STRING.chomp
-      INFO  test message
+      INFO test message
           progname: myapp
     STRING
     expect(formatted).to eq(expected)
@@ -69,7 +69,7 @@ RSpec.describe Lumberjack::LocalLogTemplate do
     template = Lumberjack::LocalLogTemplate.new(exclude_attributes: ["foo"])
     formatted = template.call(entry)
     expected = <<~STRING.chomp
-      INFO  test message
+      INFO test message
           progname: myapp
           baz.bax: qux
     STRING
@@ -80,7 +80,7 @@ RSpec.describe Lumberjack::LocalLogTemplate do
     template = Lumberjack::LocalLogTemplate.new(exclude_attributes: ["baz"])
     formatted = template.call(entry)
     expected = <<~STRING.chomp
-      INFO  test message
+      INFO test message
           progname: myapp
           foo: bar
     STRING

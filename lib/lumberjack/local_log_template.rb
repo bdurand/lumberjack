@@ -36,7 +36,7 @@ module Lumberjack
     def call(entry)
       formatted = +""
       formatted << entry.time.strftime("%Y-%m-%d %H:%M:%S.%6N ") unless exclude_time?
-      formatted << "#{entry.severity_data.padded_label} #{entry.message}"
+      formatted << "#{entry.severity_label} #{entry.message}"
       formatted << "\n    progname: #{entry.progname}" if entry.progname.to_s != "" && !exclude_progname?
       formatted << "\n    pid: #{entry.pid}" unless exclude_pid?
 
