@@ -437,7 +437,7 @@ module Lumberjack
       err = e.class.name.dup
       err << ": #{e.message}" unless e.message.to_s.empty?
       err << " at #{e.backtrace.first}" if e.backtrace
-      $stderr.write("#{err}\n#{entry}\n") # rubocop:disable Style/StderrPuts
+      $stderr.write("#{err}#{Lumberjack::LINE_SEPARATOR}#{entry}#{Lumberjack::LINE_SEPARATOR}") # rubocop:disable Style/StderrPuts
 
       raise e if Lumberjack.raise_logger_errors?
     end

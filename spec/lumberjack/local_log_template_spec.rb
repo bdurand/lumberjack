@@ -15,6 +15,7 @@ RSpec.describe Lumberjack::LocalLogTemplate do
           progname: myapp
           baz.bax: qux
           foo: bar
+
     STRING
     expect(formatted).to eq(expected)
   end
@@ -27,6 +28,7 @@ RSpec.describe Lumberjack::LocalLogTemplate do
           progname: myapp
           baz.bax: qux
           foo: bar
+
     STRING
     expect(formatted).to eq(expected)
   end
@@ -40,6 +42,7 @@ RSpec.describe Lumberjack::LocalLogTemplate do
           pid: 1234
           baz.bax: qux
           foo: bar
+
     STRING
     expect(formatted).to eq(expected)
   end
@@ -51,6 +54,7 @@ RSpec.describe Lumberjack::LocalLogTemplate do
       INFO test message
           baz.bax: qux
           foo: bar
+
     STRING
     expect(formatted).to eq(expected)
   end
@@ -61,6 +65,7 @@ RSpec.describe Lumberjack::LocalLogTemplate do
     expected = <<~STRING.chomp
       INFO test message
           progname: myapp
+
     STRING
     expect(formatted).to eq(expected)
   end
@@ -72,6 +77,7 @@ RSpec.describe Lumberjack::LocalLogTemplate do
       INFO test message
           progname: myapp
           baz.bax: qux
+
     STRING
     expect(formatted).to eq(expected)
   end
@@ -83,6 +89,33 @@ RSpec.describe Lumberjack::LocalLogTemplate do
       INFO test message
           progname: myapp
           foo: bar
+
+    STRING
+    expect(formatted).to eq(expected)
+  end
+
+  it "can colorize the output" do
+    template = Lumberjack::LocalLogTemplate.new(colorize: true)
+    formatted = template.call(entry)
+    expected = <<~STRING.chomp
+      \e7#{entry.severity_data.terminal_color}INFO test message\e8
+      \e7#{entry.severity_data.terminal_color}    progname: myapp\e8
+      \e7#{entry.severity_data.terminal_color}    baz.bax: qux\e8
+      \e7#{entry.severity_data.terminal_color}    foo: bar\e8
+
+    STRING
+    expect(formatted).to eq(expected)
+  end
+
+  it "can add emojis for severity levels" do
+    template = Lumberjack::LocalLogTemplate.new(emoji: true)
+    formatted = template.call(entry)
+    expected = <<~STRING.chomp
+      🔵 INFO test message
+          progname: myapp
+          baz.bax: qux
+          foo: bar
+
     STRING
     expect(formatted).to eq(expected)
   end

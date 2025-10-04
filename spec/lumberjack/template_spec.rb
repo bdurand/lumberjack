@@ -7,6 +7,13 @@ RSpec.describe Lumberjack::Template do
   let(:time) { Time.parse(time_string) }
   let(:entry) { Lumberjack::LogEntry.new(time, Logger::INFO, "line 1#{Lumberjack::LINE_SEPARATOR}line 2#{Lumberjack::LINE_SEPARATOR}line 3", "app", 12345, "unit_of_work_id" => "ABCD", "foo" => "bar") }
 
+  describe ".colorize_entry" do
+    it "wraps each line in terminal save/restore sequences" do
+      colored = Lumberjack::Template.colorize_entry("line 1#{Lumberjack::LINE_SEPARATOR}line 2", entry)
+      expect(colored).to eq("\e7\e[38;5;33mline 1\e8#{Lumberjack::LINE_SEPARATOR}\e7\e[38;5;33mline 2\e8")
+    end
+  end
+
   describe "format" do
     it "has a default format" do
       template = Lumberjack::Template.new

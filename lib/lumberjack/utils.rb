@@ -48,7 +48,7 @@ module Lumberjack
                 non_lumberjack_caller = caller[4..].detect { |line| !line.start_with?(__dir__) }
                 trace = [non_lumberjack_caller] if non_lumberjack_caller
               end
-              message = "DEPRECATION WARNING: #{message} Called from #{trace.join("\n")}"
+              message = "DEPRECATION WARNING: #{message} Called from #{trace.join(Lumberjack::LINE_SEPARATOR)}"
 
               if Lumberjack.deprecation_mode == :raise
                 raise DeprecationError, message

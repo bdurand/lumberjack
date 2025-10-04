@@ -104,6 +104,15 @@ module Lumberjack
     RESET_CHAR = "\e[0m"
     private_constant :TEMPLATE_ARGUMENT_ORDER, :MILLISECOND_TIME_FORMAT, :MICROSECOND_TIME_FORMAT, :PLACEHOLDER_PATTERN, :V1_PLACEHOLDER_PATTERN, :RESET_CHAR
 
+    class << self
+      def colorize_entry(formatted_string, entry)
+        color_start = entry.severity_data.terminal_color
+        formatted_string.split(Lumberjack::LINE_SEPARATOR).collect do |line|
+          "\e7#{color_start}#{line}\e8"
+        end.join(Lumberjack::LINE_SEPARATOR)
+      end
+    end
+
     # Create a new template with customizable formatting options. The template
     # supports different formatting for single-line and multi-line messages,
     # custom time formatting, and configurable attribute display.
@@ -225,7 +234,7 @@ module Lumberjack
         message << Lumberjack::LINE_SEPARATOR if chomped
       end
 
-      message = colorize_entry(message, entry) if @colorize
+      message = Template.colorize_entry(message, entry) if @colorize
 
       message
     end
@@ -308,13 +317,6 @@ module Lumberjack
         end
       end
       [template, attribute_vars]
-    end
-
-    def colorize_entry(formatted_string, entry)
-      color_start = entry.severity_data.terminal_color
-      formatted_string.split(Lumberjack::LINE_SEPARATOR).collect do |line|
-        "#{color_start}#{line}#{RESET_CHAR}"
-      end.join(Lumberjack::LINE_SEPARATOR)
     end
   end
 end

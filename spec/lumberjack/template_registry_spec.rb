@@ -31,7 +31,7 @@ RSpec.describe Lumberjack::TemplateRegistry do
     expect(template).to be_a(Lumberjack::Template)
     entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test message", "myapp", 1234, "foo" => "bar", "baz.bax" => "qux")
     formatted = template.call(entry)
-    expected = "I, [#{entry.time.strftime("%Y-%m-%dT%H:%M:%S.%3N")} 1234] INFO  -- myapp: test message [foo:bar] [baz.bax:qux]\n"
+    expected = "I, [#{entry.time.strftime("%Y-%m-%dT%H:%M:%S.%3N")} 1234] INFO  -- myapp: test message [foo:bar] [baz.bax:qux]#{Lumberjack::LINE_SEPARATOR}"
     expect(formatted).to eq(expected)
   end
 end

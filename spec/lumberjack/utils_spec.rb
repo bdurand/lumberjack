@@ -186,13 +186,13 @@ RSpec.describe Lumberjack::Utils do
     it "prints only the current line if $VERBOSE is false", deprecation_mode: :normal do
       $VERBOSE = false
       Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
-      expect($stderr.string.chomp.split("\n").length).to eq 1
+      expect($stderr.string.chomp.split(Lumberjack::LINE_SEPARATOR).length).to eq 1
     end
 
     it "prints the full stack trace if $VERBOSE is true", deprecation_mode: :normal do
       $VERBOSE = true
       Lumberjack::Utils.deprecated("test_method_3", "This is deprecated") { :foo }
-      expect($stderr.string.chomp.split("\n").length).to be > 1
+      expect($stderr.string.chomp.split(Lumberjack::LINE_SEPARATOR).length).to be > 1
     end
   end
 

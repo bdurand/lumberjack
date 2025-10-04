@@ -115,8 +115,8 @@ RSpec.describe Lumberjack::Logger do
       expect(device).to be_a(Lumberjack::Device::Multi)
       expect(device.devices.collect(&:dev)).to eq [stream_1, stream_2]
       logger.info("test", foo: "bar")
-      expect(stream_1.string).to eq("INFO - test [foo=bar]\n")
-      expect(stream_2.string).to eq("INFO - test (foo:bar)\n")
+      expect(stream_1.string).to eq("INFO - test [foo=bar]#{Lumberjack::LINE_SEPARATOR}")
+      expect(stream_2.string).to eq("INFO - test (foo:bar)#{Lumberjack::LINE_SEPARATOR}")
     end
 
     it "should set the level with a numeric" do
@@ -154,7 +154,7 @@ RSpec.describe Lumberjack::Logger do
       logger = Lumberjack::Logger.new(output, {level: :warn, template: "{{message}} {{attributes}}"}, attribute_format: "%s=%s")
       expect(logger.level).to eq(Logger::WARN)
       logger.warn("test", foo: "bar")
-      expect(output.string).to eq("test foo=bar\n")
+      expect(output.string).to eq("test foo=bar#{Lumberjack::LINE_SEPARATOR}")
     end
 
     it "allows using the deprecated :max_size option without blowing up", deprecation_mode: :silent do
@@ -225,7 +225,7 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.device.class).to eq(Lumberjack::Device::Writer)
       logger.info("foo")
       logger.flush
-      expect(out.string).to include("foo\n")
+      expect(out.string).to include("foo#{Lumberjack::LINE_SEPARATOR}")
     end
   end
 
@@ -240,7 +240,7 @@ RSpec.describe Lumberjack::Logger do
         expect(logger.datetime_format).to eq "%m-%d-%Y"
         logger.info("two")
         logger.flush
-        expect(out.string).to eq "#{Time.now.strftime("%Y-%m-%d")} one\n#{Time.now.strftime("%m-%d-%Y")} two\n"
+        expect(out.string).to eq "#{Time.now.strftime("%Y-%m-%d")} one#{Lumberjack::LINE_SEPARATOR}#{Time.now.strftime("%m-%d-%Y")} two#{Lumberjack::LINE_SEPARATOR}"
       end
     end
   end

@@ -94,8 +94,8 @@ RSpec.describe Lumberjack::Device do
 
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test", "test", 123, {"foo" => "bar"})
       device.write(entry)
-      expect(out_1.string).to eq("Test [foo:bar]\n")
-      expect(out_2.string).to eq("Test (foo=bar)\n")
+      expect(out_1.string).to eq("Test [foo:bar]#{Lumberjack::LINE_SEPARATOR}")
+      expect(out_2.string).to eq("Test (foo=bar)#{Lumberjack::LINE_SEPARATOR}")
     end
   end
 end

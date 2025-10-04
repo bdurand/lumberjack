@@ -101,7 +101,7 @@ RSpec.describe Lumberjack::Device::Writer do
     device.write(entry)
     device.flush
     template = Lumberjack::LocalLogTemplate.new(exclude_pid: false)
-    expect(stream.string).to eq(template.call(entry) + Lumberjack::LINE_SEPARATOR)
+    expect(stream.string).to eq(template.call(entry))
   end
 
   it "should write to STDERR if an error is raised when flushing to the stream" do
@@ -143,7 +143,7 @@ RSpec.describe Lumberjack::Device::Writer do
       device = Lumberjack::Device::Writer.new(stream, colorize: true)
       entry = Lumberjack::LogEntry.new(time, Logger::INFO, "line 1#{Lumberjack::LINE_SEPARATOR}line 2#", "app", 12345, "foo" => "ABCD")
       device.write(entry)
-      expect(stream.string).to eq("\e[38;5;33m[2011-01-15T14:23:45.123 INFO  app(12345)] line 1 [foo:ABCD]\e[0m\n\e[38;5;33m> line 2#\e[0m\n")
+      expect(stream.string).to eq("\e7\e[38;5;33m[2011-01-15T14:23:45.123 INFO  app(12345)] line 1 [foo:ABCD]\e8#{Lumberjack::LINE_SEPARATOR}\e7\e[38;5;33m> line 2#\e8#{Lumberjack::LINE_SEPARATOR}")
     end
   end
 

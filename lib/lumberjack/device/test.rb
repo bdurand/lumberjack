@@ -125,7 +125,7 @@ module Lumberjack
             prefix = "#{indent_str}#{" " * label.length}"
           end
         end
-        message.join("\n")
+        message.join(Lumberjack::LINE_SEPARATOR)
       end
     end
 

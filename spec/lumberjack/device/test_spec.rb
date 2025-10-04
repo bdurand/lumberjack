@@ -211,7 +211,7 @@ RSpec.describe Lumberjack::Device::Test do
         progname: TestProgname
         attributes: foo: "bar"
       STRING
-      expected = expected.split("\n").collect { |line| "    #{line}" }.join("\n")
+      expected = expected.split(Lumberjack::LINE_SEPARATOR).collect { |line| "    #{line}" }.join(Lumberjack::LINE_SEPARATOR)
       expect(Lumberjack::Device::Test.formatted_expectation(expectation, indent: 4)).to eq(expected.chomp)
     end
   end
