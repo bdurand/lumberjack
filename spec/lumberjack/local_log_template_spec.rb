@@ -2,13 +2,13 @@
 
 require "spec_helper"
 
-RSpec.describe Lumberjack::TestLogTemplate do
+RSpec.describe Lumberjack::LocalLogTemplate do
   let(:entry) do
     Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test message", "myapp", 1234, "foo" => "bar", "baz.bax" => "qux")
   end
 
   it "formats log entries with values pertinent to test environments" do
-    template = Lumberjack::TestLogTemplate.new
+    template = Lumberjack::LocalLogTemplate.new
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       INFO  test message
@@ -20,7 +20,7 @@ RSpec.describe Lumberjack::TestLogTemplate do
   end
 
   it "can add the time" do
-    template = Lumberjack::TestLogTemplate.new(exclude_time: false)
+    template = Lumberjack::LocalLogTemplate.new(exclude_time: false)
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       #{entry.time.strftime("%Y-%m-%d %H:%M:%S.%6N")} INFO  test message
@@ -32,7 +32,7 @@ RSpec.describe Lumberjack::TestLogTemplate do
   end
 
   it "can add the pid" do
-    template = Lumberjack::TestLogTemplate.new(exclude_pid: false)
+    template = Lumberjack::LocalLogTemplate.new(exclude_pid: false)
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       INFO  test message
@@ -45,7 +45,7 @@ RSpec.describe Lumberjack::TestLogTemplate do
   end
 
   it "can exclude the progname" do
-    template = Lumberjack::TestLogTemplate.new(exclude_progname: true)
+    template = Lumberjack::LocalLogTemplate.new(exclude_progname: true)
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       INFO  test message
@@ -56,7 +56,7 @@ RSpec.describe Lumberjack::TestLogTemplate do
   end
 
   it "can exclude all attributes" do
-    template = Lumberjack::TestLogTemplate.new(exclude_attributes: true)
+    template = Lumberjack::LocalLogTemplate.new(exclude_attributes: true)
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       INFO  test message
@@ -66,7 +66,7 @@ RSpec.describe Lumberjack::TestLogTemplate do
   end
 
   it "can exclude specific attributes" do
-    template = Lumberjack::TestLogTemplate.new(exclude_attributes: ["foo"])
+    template = Lumberjack::LocalLogTemplate.new(exclude_attributes: ["foo"])
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       INFO  test message
@@ -77,7 +77,7 @@ RSpec.describe Lumberjack::TestLogTemplate do
   end
 
   it "can exclude specific nested attributes" do
-    template = Lumberjack::TestLogTemplate.new(exclude_attributes: ["baz"])
+    template = Lumberjack::LocalLogTemplate.new(exclude_attributes: ["baz"])
     formatted = template.call(entry)
     expected = <<~STRING.chomp
       INFO  test message

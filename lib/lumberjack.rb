@@ -34,6 +34,10 @@ module Lumberjack
 
   LINE_SEPARATOR = ((RbConfig::CONFIG["host_os"] =~ /mswin/i) ? "\r\n" : "\n")
 
+  require_relative "lumberjack/device_registry"
+  require_relative "lumberjack/template_registry"
+  require_relative "lumberjack/formatter_registry"
+
   require_relative "lumberjack/attribute_formatter"
   require_relative "lumberjack/attributes_helper"
   require_relative "lumberjack/context"
@@ -42,19 +46,17 @@ module Lumberjack
   require_relative "lumberjack/io_compatibility"
   require_relative "lumberjack/log_entry"
   require_relative "lumberjack/log_entry_matcher"
-  require_relative "lumberjack/device_registry"
   require_relative "lumberjack/device"
   require_relative "lumberjack/entry_formatter"
-  require_relative "lumberjack/formatter_registry"
   require_relative "lumberjack/formatter"
   require_relative "lumberjack/forked_logger"
   require_relative "lumberjack/logger"
+  require_relative "lumberjack/local_log_template"
   require_relative "lumberjack/message_attributes"
   require_relative "lumberjack/remap_attribute"
   require_relative "lumberjack/rack"
   require_relative "lumberjack/severity"
   require_relative "lumberjack/template"
-  require_relative "lumberjack/test_log_template"
   require_relative "lumberjack/utils"
 
   # Deprecated

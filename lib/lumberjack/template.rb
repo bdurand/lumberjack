@@ -42,8 +42,12 @@ module Lumberjack
   #   template = Lumberjack::Template.new("[{{time}} {{severity}}] (usr:{{user_id}} {{message}} -- {{attributes}})")
   class Template
     DEFAULT_FIRST_LINE_TEMPLATE = "[{{time}} {{severity(padded)}} {{progname}}({{pid}})] {{message}} {{attributes}}"
+    STDLIB_FIRST_LINE_TEMPLATE = "{{severity(char)}}, [{{time}} {{pid}}] {{severity(padded)}} -- {{progname}}: {{message}} {{attributes}}"
     DEFAULT_ADDITIONAL_LINES_TEMPLATE = "#{Lumberjack::LINE_SEPARATOR}> {{message}}"
     DEFAULT_ATTRIBUTE_FORMAT = "[%s:%s]"
+
+    TemplateRegistry.add(:default, DEFAULT_FIRST_LINE_TEMPLATE)
+    TemplateRegistry.add(:stdlib, STDLIB_FIRST_LINE_TEMPLATE)
 
     # A wrapper template that delegates formatting to a standard Ruby Logger formatter.
     # This provides compatibility with existing Logger::Formatter implementations while

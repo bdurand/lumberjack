@@ -32,6 +32,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Added `Lumberjack::Formatter::Tags` for formatting attributes as "tags" in the logs. Arrays of values will be formatted as "[val1] [val2]" and hashes will be formatted as "[key1=value1] [key2=value2]".
 - Added `Lumberjack::FormatterRegistry` as a means of associating formatters with a symbol. Symbols can be used when adding class and attribute formatters. This extends the behavior previously limited to the built in formatters so that users can define their own formatters and register them for use.
 - Added `Lumberjack::DeviceRegistry` as a means for associating devices with a symbol. Symbols can then be passed to the constructor when creating a logger and the logger will take care of instantiating the device.
+- Added `Lumberjack::TemplateRegistry` as a means for associating templates with a symbol. Symbols can then be passed to the logger constructor in lieu of the template definition.
 - Added `Lumberjack::Logger#clear_attributes` to remove all attributes from the logger.
 - Added `Lumberjack::MessageAttributes` to replace `Lumberjack::Formatter::TaggedMessage`.
 - Added `Lumberjack::RemapAttribute` to facilitate attribute remapping in attribute formatters.

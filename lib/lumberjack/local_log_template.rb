@@ -1,27 +1,34 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  # This is a log template designed for test environments. It provides a simple,
+  # This is a log template designed for local environments. It provides a simple,
   # human-readable format that includes key information about log entries while
   # omitting extraneous details. The template can be configured to include or
   # exclude certain components such as the times, process ID, program name,
   # and attributes.
   #
+  # It is registered with the TemplateRegistry as :local, :test, and :development.
+  #
   # @see Template
-  class TestLogTemplate
-    # Create a new TestLogTemplate instance.
+  class LocalLogTemplate
+    TemplateRegistry.add(:local, self)
+    TemplateRegistry.add(:test, self)
+    TemplateRegistry.add(:development, self)
+
+    # Create a new LocalLogTemplate instance.
     #
-    # @param exclude_attributes [Boolean, Array<String>, nil] If true, all attributes are excluded.
+    # @param options [Hash] Options for configuring the template.
+    # @option options [Boolean, Array<String>, nil] :exclude_attributes If true, all attributes are excluded.
     #   If an array of strings is provided, those attributes (and their sub-attributes) are excluded.
     #   Defaults to nil (include all attributes).
-    # @param exclude_progname [Boolean] If true, the progname is excluded. Defaults to false.
-    # @param exclude_pid [Boolean] If true, the process ID is excluded. Defaults to true.
-    # @param exclude_time [Boolean] If true, the time is excluded. Defaults to true.
-    def initialize(exclude_attributes: nil, exclude_progname: false, exclude_pid: true, exclude_time: true)
-      self.exclude_progname = exclude_progname
-      self.exclude_pid = exclude_pid
-      self.exclude_time = exclude_time
-      self.exclude_attributes = exclude_attributes
+    # @option options [Boolean] :exclude_progname If true, the progname is excluded. Defaults to false.
+    # @option options [Boolean] :exclude_pid If true, the process ID is excluded. Defaults to true.
+    # @option options [Boolean] :exclude_time If true, the time is excluded. Defaults to true.
+    def initialize(options = {})
+      self.exclude_progname = options.fetch(:exclude_progname, false)
+      self.exclude_pid = options.fetch(:exclude_pid, true)
+      self.exclude_time = options.fetch(:exclude_time, true)
+      self.exclude_attributes = options.fetch(:exclude_attributes, nil)
     end
 
     # Format a log entry according to the template.
