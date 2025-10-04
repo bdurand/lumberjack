@@ -96,11 +96,11 @@ RSpec.describe Lumberjack::Device::Writer do
     expect(stream.string).to eq("TEST MESSAGE#{Lumberjack::LINE_SEPARATOR}")
   end
 
-  it "can write to a test template" do
-    device = Lumberjack::Device::Writer.new(stream, template: :test, exclude_pid: false)
+  it "can write to a template registry template" do
+    device = Lumberjack::Device::Writer.new(stream, template: :local, exclude_pid: false)
     device.write(entry)
     device.flush
-    template = Lumberjack::TestLogTemplate.new(exclude_pid: false)
+    template = Lumberjack::LocalLogTemplate.new(exclude_pid: false)
     expect(stream.string).to eq(template.call(entry) + Lumberjack::LINE_SEPARATOR)
   end
 

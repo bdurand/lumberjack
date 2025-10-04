@@ -63,7 +63,7 @@ module Lumberjack
       else
         template = options[:template]
 
-        template = test_log_template(options) if template == :test
+        template = TemplateRegistry.template(template, options) if template.is_a?(Symbol)
 
         @template = if template.respond_to?(:call)
           template

@@ -665,9 +665,19 @@ logger.info("Test message", user_id: 123, status: "active")
 # Output: 2025-09-03 14:30:15  INFO Test message [user_id=123] [status=active]
 ```
 
-##### Test Template
+##### Built-in Templates
 
-You can use the value `:test` to use a template optimized for test environment logs. This template is designed to be easy to read and exclude attributes that are usually not useful in tests like the time and pid.
+You can use symbols to refer to built-in templates:
+
+- `:default` - The default log template. This is the same as not specifying a template.
+- `:stdlib` - A template that mimics the default format of the standard library Logger.
+- `:local` - A simple, human readable template intended for local development and test environments. This template removes the time and pid from the log line since they are generally not needed in these environments. You can also exclude attributes by setting the `exclude_attributes` option to the list of attributes names to exclude. For example, you may want to add a `host` attribute for your production logs, but this just creates clutter in development logs since it is always the same value.
+- `:development` - This is an alias for the `:local` template.
+- `:test` - This is an alias for the `:local` template.
+
+```ruby
+logger = Lumberjack::Logger.new(STDOUT, template: :local, exclude_attributes: ["host", "env", "version"])
+```
 
 ### Testing Utilities
 
