@@ -7,6 +7,7 @@ RSpec.describe Lumberjack::TemplateRegistry do
     expect(Lumberjack::TemplateRegistry.registered_templates).to eq({
       default: Lumberjack::Template::DEFAULT_FIRST_LINE_TEMPLATE,
       stdlib: Lumberjack::Template::STDLIB_FIRST_LINE_TEMPLATE,
+      message: "{{message}}",
       local: Lumberjack::LocalLogTemplate
     })
   end

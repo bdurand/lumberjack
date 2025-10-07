@@ -48,6 +48,7 @@ module Lumberjack
 
     TemplateRegistry.add(:default, DEFAULT_FIRST_LINE_TEMPLATE)
     TemplateRegistry.add(:stdlib, STDLIB_FIRST_LINE_TEMPLATE)
+    TemplateRegistry.add(:message, "{{message}}")
 
     # A wrapper template that delegates formatting to a standard Ruby Logger formatter.
     # This provides compatibility with existing Logger::Formatter implementations while
