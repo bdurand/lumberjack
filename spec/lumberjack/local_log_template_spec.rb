@@ -158,4 +158,48 @@ RSpec.describe Lumberjack::LocalLogTemplate do
     STRING
     expect(formatted).to eq(expected)
   end
+
+  it "can formats exceptions with a backtrace by default" do
+    exception = begin
+      raise StandardError, "Something went wrong"
+    rescue => e
+      e
+    end
+
+    entry = Lumberjack::LogEntry.new(Time.now, Logger::ERROR, exception, "myapp", 1234, "foo" => "bar")
+    template = Lumberjack::LocalLogTemplate.new
+    formatted = template.call(entry)
+    expected = <<~STRING.chomp
+      ERROR StandardError: Something went wrong
+        #{exception.backtrace.join("#{Lumberjack::LINE_SEPARATOR}  ")}
+          progname: myapp
+          foo: bar
+
+    STRING
+    expect(formatted).to eq(expected)
+  end
+
+  it "can use a custom exception formatter" do
+    exception = begin
+      raise StandardError, "Something went wrong"
+    rescue => e
+      e
+    end
+
+    entry = Lumberjack::LogEntry.new(Time.now, Logger::ERROR, exception, "myapp", 1234, "foo" => "bar")
+
+    custom_formatter = lambda do |ex|
+      "CustomException: #{ex.class}: #{ex.message}"
+    end
+
+    template = Lumberjack::LocalLogTemplate.new(exception_formatter: custom_formatter)
+    formatted = template.call(entry)
+    expected = <<~STRING.chomp
+      ERROR CustomException: StandardError: Something went wrong
+          progname: myapp
+          foo: bar
+
+    STRING
+    expect(formatted).to eq(expected)
+  end
 end

@@ -23,6 +23,10 @@ module Lumberjack
     # @option options [Boolean] :exclude_pid If true, the process ID is excluded. Defaults to true.
     # @option options [Boolean] :exclude_time If true, the time is excluded. Defaults to true.
     # @option options [Boolean] :colorize If true, colorize the output based on severity. Defaults to false.
+    # @option options [Symbol, Formatter, #call] :exception_formatter The formatter to use for exceptions in messages.
+    #   Can be a symbol registered in the FormatterRegistry, a Formatter instance, or any object that responds to #call.
+    #   Defaults to nil (use default exception formatting). If the logger does not have an exception formatter
+    #   configured, then the device will use this to format exceptions.
     # @option options [String, Symbol] :severity_format The optional format for severity labels (padded, char, emoji).
     def initialize(options = {})
       self.exclude_progname = options.fetch(:exclude_progname, false)
@@ -31,6 +35,7 @@ module Lumberjack
       self.exclude_attributes = options.fetch(:exclude_attributes, nil)
       self.colorize = options.fetch(:colorize, false)
       self.severity_format = options.fetch(:severity_format, nil)
+      self.exception_formatter = options.fetch(:exception_formatter, :exception)
     end
 
     # Format a log entry according to the template.
@@ -38,9 +43,14 @@ module Lumberjack
     # @param entry [LogEntry] The log entry to format.
     # @return [String] The formatted log entry.
     def call(entry)
+      message = entry.message
+      if message.is_a?(Exception) && exception_formatter
+        message = exception_formatter.call(message)
+      end
+
       formatted = +""
       formatted << entry.time.strftime("%Y-%m-%d %H:%M:%S.%6N ") unless exclude_time?
-      formatted << "#{severity_label(entry)} #{entry.message}"
+      formatted << "#{severity_label(entry)} #{message}"
       formatted << "#{Lumberjack::LINE_SEPARATOR}    progname: #{entry.progname}" if entry.progname.to_s != "" && !exclude_progname?
       formatted << "#{Lumberjack::LINE_SEPARATOR}    pid: #{entry.pid}" unless exclude_pid?
 
@@ -163,6 +173,20 @@ module Lumberjack
     #
     # @return [String]
     attr_reader :severity_format
+
+    # Set the exception formatter. Can be a symbol registered in the FormatterRegistry,
+    # a Formatter instance, or any object that responds to #call.
+    #
+    # @param value [Symbol, Formatter, #call] The exception formatter to use.
+    # @return [void]
+    def exception_formatter=(value)
+      @exception_formatter = value.is_a?(Symbol) ? FormatterRegistry.formatter(value) : value
+    end
+
+    # Return the exception formatter.
+    #
+    # @return [#call, nil]
+    attr_reader :exception_formatter
 
     private
 
