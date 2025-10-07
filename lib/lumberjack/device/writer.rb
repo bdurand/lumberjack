@@ -161,21 +161,10 @@ module Lumberjack
       stream.path if stream.respond_to?(:path)
     end
 
-    protected
-
-    # Set the underlying stream. This protected method allows subclasses to
-    # change the output destination, which is useful for log rotation or
-    # stream redirection scenarios.
-    #
-    # @return [void]
-    attr_writer :stream
-
-    # Access the underlying stream for subclass operations. This protected
-    # method provides stream access for inheritance patterns while maintaining
-    # encapsulation.
+    # The underlying stream object that is being written to.
     #
     # @return [IO] The current stream object
-    attr_reader :stream
+    attr_accessor :stream
 
     private
 
