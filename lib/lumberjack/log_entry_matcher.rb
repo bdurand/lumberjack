@@ -30,6 +30,7 @@ module Lumberjack
     # @param attributes [Hash, nil] Hash of attribute patterns to match against
     #   log entry attributes. Supports nested attribute matching and dot notation
     def initialize(message: nil, severity: nil, progname: nil, attributes: nil)
+      message = message.strip if message.is_a?(String)
       @message_filter = message
       @severity_filter = Severity.coerce(severity) if severity
       @progname_filter = progname

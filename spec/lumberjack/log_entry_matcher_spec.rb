@@ -49,6 +49,11 @@ RSpec.describe Lumberjack::LogEntryMatcher do
         matcher = Lumberjack::LogEntryMatcher.new(message: String)
         expect(matcher.match?(entry)).to be true
       end
+
+      it "strips leading and trailing whitespace from string message filters" do
+        matcher = Lumberjack::LogEntryMatcher.new(message: "  Test message\n")
+        expect(matcher.match?(entry)).to be true
+      end
     end
 
     describe "progname filter" do
