@@ -109,7 +109,14 @@ module Lumberjack
     #
     # @return [Lumberjack::Device] The parent logger's output device.
     def device
-      parent_logger.device
+      parent_logger.device if parent_logger.respond_to?(:device)
+    end
+
+    # Return the formatter of the parent logger.
+    #
+    # @return [Lumberjack::EntryFormatter] The parent logger's formatter.
+    def formatter
+      parent_logger.formatter if parent_logger.respond_to?(:formatter)
     end
 
     private

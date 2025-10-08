@@ -94,4 +94,17 @@ RSpec.describe Lumberjack::ForkedLogger do
       attributes: nil
     })
   end
+
+  it "returns the parent logger's device" do
+    logger = Lumberjack::Logger.new(:test)
+    forked_logger = Lumberjack::ForkedLogger.new(logger)
+    expect(forked_logger.device).to eq(logger.device)
+  end
+
+  it "returns the parent logger's formatter" do
+    formatter = Lumberjack::EntryFormatter.new
+    logger = Lumberjack::Logger.new(:test, formatter: formatter)
+    forked_logger = Lumberjack::ForkedLogger.new(logger)
+    expect(forked_logger.formatter).to eq(logger.formatter)
+  end
 end
