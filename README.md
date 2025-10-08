@@ -702,7 +702,7 @@ expect(logger.device).to include(
 expect(logger.device).to include(severity: :error, message: /Payment/)
 ```
 
-You should make sure to call `logger.flush` between tests to clear the captured logs.
+You should make sure to call `logger.device.clear` between tests to clear the captured logs on any global loggers that are using the `Test` device.
 
 > [!NOTE]
 > Log entries are captured after formatters have been applied. This provides a mechanism for including the formatting logic in your tests.
@@ -720,8 +720,8 @@ Application.logger = Lumberjack::Logger.new(:test)
 RSpec.configure do |config|
   failed_test_logs = Lumberjack::Logger.new("log/test_failures.log")
   config.around do |example|
-    # Flush will clear the captured logs so we start with a clean slate.
-    Application.logger.flush
+    # Clear the captured logs so we start with a clean slate.
+    Application.logger.clear
 
     example.run
 

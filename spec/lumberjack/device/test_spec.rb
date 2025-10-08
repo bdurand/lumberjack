@@ -36,12 +36,12 @@ RSpec.describe Lumberjack::Device::Test do
     end
   end
 
-  describe "#flush" do
+  describe "#clear" do
     it "clears all captured log entries" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test message", nil, nil, nil)
       device.write(entry)
       expect(device.entries).to eq([entry])
-      device.flush
+      device.clear
       expect(device.entries).to be_empty
     end
   end

@@ -60,7 +60,7 @@ module Lumberjack
   #     failed_test_logs = Lumberjack::Logger.new("log/test.log")
   #
   #     config.around do |example|
-  #       Application.logger.flush
+  #       Application.logger.device.clear
   #
   #       example.run
   #
@@ -188,7 +188,7 @@ module Lumberjack
     # fresh log capture without creating a new device instance.
     #
     # @return [void]
-    def flush
+    def clear
       @buffer = []
       nil
     end
