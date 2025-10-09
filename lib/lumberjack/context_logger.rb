@@ -363,7 +363,7 @@ module Lumberjack
     #     logger.tag(action: "login") do
     #       # Add the user_id attribute to the outermost context along with request_id so that
     #       # it doesn't fall out of scope after this tag block ends.
-    #       logger.tag_outermost_context(user_id: "67890")
+    #       logger.tag_all_contexts(user_id: "67890")
     #     end
     #   end
     def tag_all_contexts(attributes)
