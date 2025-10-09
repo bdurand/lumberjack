@@ -86,6 +86,18 @@ module Lumberjack
       use_context(Context.new(current_context), &block)
     end
 
+    # Ensure that the block of code is wrapped by a global context. If there is not already
+    # a context in scope, one will be created.
+    #
+    # @return [Object] The result of the block.
+    def ensure_context(&block)
+      if in_context?
+        yield
+      else
+        context(&block)
+      end
+    end
+
     # Set the context to use within a block.
     #
     # @param context [Lumberjack::Context] The context to use within the block.

@@ -414,6 +414,18 @@ module Lumberjack
       end
     end
 
+    # Ensure that the block of code is wrapped by a context. If there is not already
+    # a context in scope for this logger, one will be created.
+    #
+    # @return [Object] The result of the block.
+    def ensure_context(&block)
+      if in_context?
+        yield
+      else
+        context(&block)
+      end
+    end
+
     # Forks a new logger with a new context that will send output through this logger.
     # The new logger will inherit the level, progname, and attributes of the current logger
     # context. Any changes to those values, though, will be isolated to just the forked logger.

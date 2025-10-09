@@ -2,7 +2,7 @@
 
 module Lumberjack
   module Rack
-    # Rack middleware that establishes a scoped Lumberjack global context for
+    # Rack middleware ensures that a global Lumberjack context exists for
     # the duration of each HTTP request. This middleware creates an isolated
     # logging context that automatically cleans up after the request completes,
     # ensuring that request-specific attributes don't leak between requests.
@@ -65,7 +65,7 @@ module Lumberjack
       # @param env [Hash] The Rack environment hash containing request information
       # @return [Array] The standard Rack response array [status, headers, body]
       def call(env)
-        Lumberjack.context do
+        Lumberjack.ensure_context do
           apply_attributes(env) if @env_attributes
           @app.call(env)
         end

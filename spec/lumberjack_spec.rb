@@ -31,6 +31,29 @@ RSpec.describe Lumberjack do
     end
   end
 
+  describe "#ensure_context" do
+    it "should create a context if one does not exist" do
+      expect(Lumberjack.in_context?).to eq false
+      value = Lumberjack.ensure_context do
+        expect(Lumberjack.in_context?).to eq true
+        :foo
+      end
+      expect(Lumberjack.in_context?).to eq false
+      expect(value).to eq :foo
+    end
+
+    it "does not create a new context if one already exists" do
+      Lumberjack.context do
+        value = Lumberjack.ensure_context do
+          Lumberjack.tag(baz: "bap")
+          :foo
+        end
+        expect(Lumberjack.context_attributes).to eq({"baz" => "bap"})
+        expect(value).to eq :foo
+      end
+    end
+  end
+
   describe "#use_context" do
     it "should return the result of the use_context block" do
       result = Lumberjack.use_context(nil) { :foo }

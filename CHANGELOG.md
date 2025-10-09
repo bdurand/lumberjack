@@ -15,6 +15,7 @@ This is a major update with several breaking changes. See the [upgrade guide](UP
 - Added `Lumberjack::Logger#untag!` to remove global tags from a logger.
 - Added `Lumberjack::Logger#in_context?` as a replacement for `Lumberjack::Logger#in_tag_context?` and `Lumberjack.in_context?` as a replacement for `Lumberjack.context?`.
 - Added `Lumberjack::Logger#tag_all_contexts` as a means to add attributes to parent context blocks. This allows setting attributes for the scope of the outermost context block.
+- Added `ensure_context` methods to `Lumberjack` and `Lumberjack::Logger` to ensure that a logging context exists and only create one if necessary.
 - Added IO compatibility methods for logging. Calling `logger.write`, `logger.puts`, `logger.print`, or `logger.printf` will write log entries. The severity of the log entries can be set with `default_severity`.
 - Added `Lumberjack::Device::LoggerWrapper` as a device that forwards entries to another Lumberjack logger.
 - Added `Lumberjack::Device::Test` class for use in testing logging functionality. This device will buffer log entries and has `match?` and `include?` methods that can be used for assertions in tests.

@@ -310,6 +310,29 @@ RSpec.describe Lumberjack::ContextLogger do
     end
   end
 
+  describe "#ensure_context" do
+    it "should create a context if one does not exist" do
+      expect(logger.in_context?).to eq false
+      value = logger.ensure_context do
+        expect(logger.in_context?).to eq true
+        :foo
+      end
+      expect(logger.in_context?).to eq false
+      expect(value).to eq :foo
+    end
+
+    it "does not create a new context if one already exists" do
+      logger.context do
+        value = logger.ensure_context do
+          logger.tag(baz: "bap")
+          :foo
+        end
+        expect(logger.attributes).to eq({"baz" => "bap"})
+        expect(value).to eq :foo
+      end
+    end
+  end
+
   describe "#tag" do
     it "adds attributes inside of a block" do
       logger.tag(foo: "bar") do
