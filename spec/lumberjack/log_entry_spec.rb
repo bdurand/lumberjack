@@ -69,7 +69,7 @@ RSpec.describe Lumberjack::LogEntry do
       expect(entry.attributes).to eq("foo" => "ABCD")
     end
 
-    it "should compact attributes that are set to empty values" do
+    it "should flatten attributes that are set to empty values" do
       attributes = {
         "a" => "A",
         "b" => nil,
@@ -79,7 +79,7 @@ RSpec.describe Lumberjack::LogEntry do
       }
 
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, attributes)
-      expect(entry.attributes).to eq("a" => "A", "d" => {"e" => "E"})
+      expect(entry.attributes).to eq("a" => "A", "d.e" => "E")
     end
   end
 
@@ -178,7 +178,7 @@ RSpec.describe Lumberjack::LogEntry do
     it "returns a formatted string representation of the log entry" do
       time = Time.now
       entry = Lumberjack::LogEntry.new(time, Logger::INFO, "test message", "myapp", 1234, "foo" => "bar", "baz" => "qux")
-      expected_string = "[#{time.strftime(Lumberjack::LogEntry::TIME_FORMAT)} INFO myapp(1234) foo:\"bar\" baz:\"qux\"] test message"
+      expected_string = "[#{time.strftime(Lumberjack::LogEntry::TIME_FORMAT)} INFO myapp(1234)] test message [foo:bar] [baz:qux]"
       expect(entry.to_s).to eq(expected_string)
     end
   end

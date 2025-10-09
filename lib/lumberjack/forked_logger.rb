@@ -105,14 +105,14 @@ module Lumberjack
       parent_logger.flush
     end
 
-    # Return the output device of the parent logger.
+    # Return the log device of the parent logger, if available.
     #
     # @return [Lumberjack::Device] The parent logger's output device.
     def device
       parent_logger.device if parent_logger.respond_to?(:device)
     end
 
-    # Return the formatter of the parent logger.
+    # Return the formatter of the parent logger, if available.
     #
     # @return [Lumberjack::EntryFormatter] The parent logger's formatter.
     def formatter

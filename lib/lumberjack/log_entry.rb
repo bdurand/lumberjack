@@ -42,7 +42,7 @@ module Lumberjack
       @message = message
       @progname = progname
       @pid = pid
-      @attributes = compact_attributes(attributes) if attributes.is_a?(Hash)
+      @attributes = flatten_attributes(attributes) if attributes.is_a?(Hash)
     end
 
     # Get the human-readable severity label corresponding to the numeric severity level.
@@ -63,7 +63,11 @@ module Lumberjack
     #
     # @return [String] A formatted string representation of the complete log entry
     def to_s
-      "[#{time.strftime(TIME_FORMAT)} #{severity_label} #{progname}(#{pid})#{attributes_to_s}] #{message}"
+      msg = +"[#{time.strftime(TIME_FORMAT)} #{severity_label} #{progname}(#{pid})] #{message}"
+      attributes&.each do |key, value|
+        msg << " [#{key}:#{value}]"
+      end
+      msg
     end
 
     # Return a string representation suitable for debugging and inspection.
@@ -179,44 +183,30 @@ module Lumberjack
       attributes_string
     end
 
-    # Remove nil, empty string, and empty collection values from the attributes
-    # hash recursively. This cleanup ensures that meaningless attributes don't
-    # clutter the log entry while preserving all meaningful data.
+    # Flatten nested attributes and remove empty values.
     #
     # @param attributes [Hash] The attributes hash to compact
-    # @return [Hash] A new hash with empty values removed
-    def compact_attributes(attributes, seen = nil)
-      return {} if seen&.include?(attributes.object_id)
+    # @return [Hash] The flattened attributes with empty values removed
+    def flatten_attributes(attributes)
+      unless attributes.all? { |key, value| key.is_a?(String) && !value.is_a?(Hash) }
+        attributes = Utils.flatten_attributes(attributes)
+      end
 
       delete_keys = nil
-      compacted_keys = nil
-
       attributes.each do |key, value|
         if value.nil? || value == ""
           delete_keys ||= []
           delete_keys << key
-        elsif value.is_a?(Hash)
-          seen ||= Set.new
-          seen << attributes.object_id
-          compacted_value = compact_attributes(value, seen)
-          if compacted_value.empty?
-            delete_keys ||= []
-            delete_keys << key
-          elsif !value.equal?(compacted_value)
-            compacted_keys ||= []
-            compacted_keys << [key, compacted_value]
-          end
         elsif value.is_a?(Array) && value.empty?
           delete_keys ||= []
           delete_keys << key
         end
       end
 
-      return attributes if delete_keys.nil? && compacted_keys.nil?
+      return attributes if delete_keys.nil?
 
       attributes = attributes.dup
       delete_keys&.each { |key| attributes.delete(key) }
-      compacted_keys&.each { |key, value| attributes[key] = value }
 
       attributes
     end
