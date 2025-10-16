@@ -493,24 +493,16 @@ RSpec.describe Lumberjack::Logger do
     end
 
     describe "message" do
-      it "should apply the default formatter to the message" do
+      it "should apply the message formatter to the message" do
         logger = Lumberjack::Logger.new(out, template: "{{message}}")
-        logger.formatter.add(String) { |msg| msg.upcase }
+        logger.formatter.format_message(String) { |msg| msg.upcase }
         logger.info("test")
         expect(out.string.chomp).to eq "TEST"
       end
 
-      it "should apply the message formatter instead of the default formatter if it applies" do
-        logger = Lumberjack::Logger.new(out, template: "{{message}}")
-        logger.formatter.add(String) { |msg| msg.upcase }
-        logger.message_formatter.add(String) { |msg| msg.reverse }
-        logger.info("test")
-        expect(out.string.chomp).to eq "tset"
-      end
-
       it "should copy attributes from the message if the formatter returns a Lumberjack::MessageAttributes" do
         logger = Lumberjack::Logger.new(out, template: "{{message}} {{attributes}}")
-        logger.formatter.add(String) { |msg| Lumberjack::MessageAttributes.new(msg.upcase, tag: msg.downcase) }
+        logger.formatter.format_message(String) { |msg| Lumberjack::MessageAttributes.new(msg.upcase, tag: msg.downcase) }
         logger.info("Test")
         expect(out.string.chomp).to eq "TEST [tag:test]"
       end
@@ -545,7 +537,7 @@ RSpec.describe Lumberjack::Logger do
       end
 
       it "should be able to extract attributes from an object with a formatter that returns Lumberjack::MessageAttributes" do
-        logger.formatter.add(Exception, ->(e) {
+        logger.formatter.format_message(Exception, ->(e) {
           Lumberjack::MessageAttributes.new(e.inspect, {message: e.message, class: e.class.name})
         })
         error = StandardError.new("foobar")

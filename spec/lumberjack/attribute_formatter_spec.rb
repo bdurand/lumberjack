@@ -196,6 +196,28 @@ RSpec.describe Lumberjack::AttributeFormatter do
     end
   end
 
+  describe "#include_class?" do
+    it "returns true if a formatter exists for a specific class" do
+      formatter = Lumberjack::AttributeFormatter.build do |config|
+        config.add_class(Array, :inspect)
+      end
+      expect(formatter.include_class?(Array)).to be true
+      expect(formatter.include_class?("Array")).to be true
+      expect(formatter.include_class?(String)).to be false
+    end
+  end
+
+  describe "#include_attribute?" do
+    it "returns true if a formatter exists for a specific attribute" do
+      formatter = Lumberjack::AttributeFormatter.build do |config|
+        config.add_attribute(:foo, :inspect)
+      end
+      expect(formatter.include_attribute?(:foo)).to be true
+      expect(formatter.include_attribute?("foo")).to be true
+      expect(formatter.include_attribute?(:bar)).to be false
+    end
+  end
+
   describe "#formatter_for_class" do
     let(:formatter) do
       Lumberjack::AttributeFormatter.build do |config|

@@ -431,7 +431,7 @@ class JsonFormatter
   end
 end
 
-logger.formatter.add(Hash, JsonFormatter.new)
+logger.formatter.format_class(Hash, JsonFormatter.new)
 ```
 
 ### **Custom Templates**
@@ -492,8 +492,8 @@ logger = Lumberjack::Logger.new("/var/log/app.log") do |config|
   config.shift_size = 50.megabytes
 
   # Structured attribute formatting
-  config.attribute_formatter.add_attribute("password") { |value| "[REDACTED]" }
-  config.attribute_formatter.add_class(Time, :iso8601)
+  config.format_attribute_name("password") { |value| "[REDACTED]" }
+  config.formatter.format_class(Time, :iso8601)
 end
 ```
 
@@ -504,8 +504,8 @@ logger = Lumberjack::Logger.new(STDOUT) do |config|
   config.template = "[:time :severity] :message :attributes"
 
   # Pretty-print complex objects
-  config.formatter.add(Hash, :pretty_print)
-  config.formatter.add(Array, :pretty_print)
+  config.format_class(Hash, :pretty_print)
+  config.format_class(Array, :pretty_print)
 end
 ```
 

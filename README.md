@@ -286,14 +286,16 @@ end
 
 ### Formatters
 
-Lumberjack provides a sophisticated formatting system that controls how objects are converted to strings in log entries. There are two types of formatters.
+Lumberjack provides a powerful formatting system that controls how objects are converted to strings in log entries. With this feature you can pass objects to the logger and rely on the formatters to handle formatting thereby simplifying the logging code and improving consistency.
+
+There are two types of formatters.
 
 #### Message Formatters
 
 Message formatters control how different types of objects are converted to strings when logged as messages. Message formatters are registered for specific classes or modules. When you log an object, the formatter will be looked up based on the object's class.
 
 ```ruby
-logger.formatter.add(Array) { |arr| arr.join(", ") }
+logger.formatter.format_message(Array) { |arr| arr.join(", ") }
 
 logger.info([1, 2, 3]) # Logs "1, 2, 3"
 ```
@@ -301,7 +303,7 @@ logger.info([1, 2, 3]) # Logs "1, 2, 3"
 For log messages you can use the `Lumberjack::MessageAttributes` class to extract structured data from a log message. This can be used to allow logging objects directly and extracting metadata from the objects in the log attributes.
 
 ```ruby
-logger.formatter.add(Exception) do |error|
+logger.formatter.format_message(Exception) do |error|
   Lumberjack::MessageAttributes.new(
     error.inspect, # This will be used as the log message
     error: { # This will be added to the log attributes
@@ -323,13 +325,25 @@ logger.error(exception)
 
 Attribute formatters control how attribute values (the key-value pairs in structured logging) are formatted. They provide fine-grained control over different attributes and data types.
 
-You can specify how to format specific attributes by name:
+You can specify how to format object types when they are logged as attributes:
+
+```ruby
+logger.formatter.format_attribute(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+logger.formatter.format_attribute([Float, BigDecimal], :round, 2)
+
+logger.info("Data processed",
+  created_at: Time.now,          # → "2025-08-22 14:30:00"
+  price: 29.099,                 # → 29.10
+)
+```
+
+You can also format attributes based on the attribute name:
 
 ```ruby
 # Configure attribute formatting
-logger.attribute_formatter.add_attribute("password") { |pwd| "[REDACTED]" }
-logger.attribute_formatter.add_attribute("email") { |email| email.downcase }
-logger.attribute_formatter.add_attribute("cost", :round, 2)
+logger.formatter.format_attribute_name("password") { |pwd| "[REDACTED]" }
+logger.formatter.format_attribute_name("email") { |email| email.downcase }
+logger.formatter.format_attribute_name("cost", :round, 2)
 
 # Now attributes are formatted according to the rules
 logger.info("User created",
@@ -339,32 +353,20 @@ logger.info("User created",
 )
 ```
 
-You can also format attributes based on their object type:
-
-```ruby
-logger.attribute_formatter.add_class(Time, :date_time, "%Y-%m-%d %H:%M:%S")
-logger.attribute_formatter.add_class([Float, BigDecimal], :round, 2)
-
-logger.info("Data processed",
-  created_at: Time.now,          # → "2025-08-22 14:30:00"
-  price: 29.099,                 # → 29.10
-)
-```
-
 You can remap attributes to other attribute names by returning a `Lumberjack::RemapAttribute` instance.
 
 ```ruby
 # Move the email attribute under the user attributes.
-logger.attribute_formatter.add_attribute("email") do |value|
+logger.formatter.format_attribute_name("email") do |value|
   Lumberjack::RemapAttribute.new("user.email" => value)
 end
 
 # Transform duration_millis and duration_micros to seconds and move to
 # the duration attribute.
-logger.attribute_formatter.add_attribute("duration_ms") do |value|
+logger.formatter.format_attribute_name("duration_ms") do |value|
   Lumberjack::RemapAttribute.new("duration" => value.to_f / 1000)
 end
-logger.attribute_formatter.add_attribute("duration_micros") do |value|
+logger.formatter.format_attribute_name("duration_micros") do |value|
   Lumberjack::RemapAttribute.new("duration" => value.to_f / 1_000_000)
 end
 ```
@@ -372,7 +374,7 @@ end
 Finally, you can add a default formatter for all other attributes:
 
 ```ruby
-logger.attribute_formatter.default { |value| value.to_s.strip[0..100] }
+logger.formatter.default_attribute_format { |value| value.to_s.strip[0..100] }
 ```
 
 #### Built-in Formatters
@@ -383,8 +385,8 @@ Lumberjack provides several predefined formatters that can be referenced by symb
 logger = Lumberjack::Logger.new
 
 # Configure the formatter
-logger.formatter.add(Float, :round, 2)           # Round floats to 2 decimals
-logger.formatter.add(Time, :date_time, "%H:%M")  # Custom time format
+logger.formatter.format_class(Float, :round, 2)           # Round floats to 2 decimals
+logger.formatter.format_class(Time, :date_time, "%H:%M")  # Custom time format
 
 # Now these objects will be formatted according to the rules
 logger.info(3.14159)                             # "3.14"
@@ -416,17 +418,17 @@ You can create custom formatters using blocks, callable objects, or custom class
 
 ```ruby
 # Block-based formatters
-logger.formatter.add(User) { |user| "User[#{user.id}:#{user.name}]" }
-logger.formatter.add(BigDecimal) { |decimal| "$#{decimal.round(2)}" }
+logger.formatter.format_class(User) { |user| "User[#{user.id}:#{user.name}]" }
+logger.formatter.format_class(BigDecimal) { |decimal| "$#{decimal.round(2)}" }
 
 # Callable object formatters
-class PasswordFormatter
-  def call(password)
-    "[PASSWORD:#{password.length} chars]"
+class TimeFormatter
+  def call(time)
+    time.strftime("%Y-%m-%d %H:%M:%S")
   end
 end
 
-logger.formatter.add(SecureString, PasswordFormatter.new)
+logger.formatter.format_class(SecureString, PasswordFormatter.new)
 ```
 
 Classes can also implement `to_log_format` to define how instances should be serialized for logging. This will apply to both message and attribute formatting.
@@ -452,14 +454,16 @@ The Entry Formatter coordinates both message and attribute formatting, providing
 ```ruby
 # Build a comprehensive entry formatter
 entry_formatter = Lumberjack.build_formatter do |formatter|
-  # Message formatting (for the main log message)
-  formatter.add(User, :id)                             # Show user IDs only
-  formatter.add(Time, :date_time, "%Y-%m-%d %H:%M:%S") # Time format for messages
+  # Format for ActiveRecord models that applies to both messages and attributes.
+  formatter.format_class(ActiveRecord::Base, :id)
+
+  # Format for the User class when it is logged as the log message.
+  formatter.format_message(User) { |user| "User[#{user.id}:#{user.username}]" }
 
   # Attribute formatting
-  formatter.add_attribute_class(Time, :date_time, "%Y-%m-%d %H:%M:%S")
-  formatter.add_attribute_class([Float, BigDecimal], :round, 6)
-  formatter.add_attribute("email", :redact)
+  formatter.format_attribute(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+  formatter.format_attribute([Float, BigDecimal], :round, 6)
+  formatter.format_attribute_name("email", :redact)
 end
 
 # Use with logger
@@ -473,7 +477,7 @@ You can merge other formatters into your formatter with the `include` method. Do
 ```ruby
 # Translate the duration tag to microseconds.
 duration_formatter = Lumberjack::EntryFormatter.build do |formatter|
-  formatter.add_attribute(:duration) { |seconds| (seconds.to_f * 1_000_000).round }
+  formatter.format_attribute_name(:duration) { |seconds| (seconds.to_f * 1_000_000).round }
 end
 
 entry_formatter = Lumberjack::EntryFormatter.build do |formatter|

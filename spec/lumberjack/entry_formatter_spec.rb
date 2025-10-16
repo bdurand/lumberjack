@@ -23,31 +23,61 @@ RSpec.describe Lumberjack::EntryFormatter do
     it "can add new message formatters in a chain" do
       entry_formatter = Lumberjack::EntryFormatter.new
       formatter = lambda {}
-      expect(entry_formatter.add(Object, formatter)).to eq(entry_formatter)
+      expect(entry_formatter.format_class(Object, formatter)).to eq(entry_formatter)
       expect(entry_formatter.message_formatter.formatter_for(Object)).to eq(formatter)
     end
 
     it "can remove message formatters in a chain" do
       entry_formatter = Lumberjack::EntryFormatter.new
       formatter = lambda {}
-      entry_formatter.add(Object, formatter)
-      expect(entry_formatter.remove(Object)).to eq(entry_formatter)
+      entry_formatter.format_class(Object, formatter)
+      expect(entry_formatter.remove_class(Object)).to eq(entry_formatter)
       expect(entry_formatter.message_formatter.formatter_for(Object)).to be_nil
     end
 
     it "can add new attribute formatters in a chain" do
       entry_formatter = Lumberjack::EntryFormatter.new
       formatter = lambda {}
-      expect(entry_formatter.add_attribute_class(Object, formatter)).to eq(entry_formatter)
+      expect(entry_formatter.format_attribute(Object, formatter)).to eq(entry_formatter)
       expect(entry_formatter.attribute_formatter).to_not be_empty
     end
 
     it "can remove attribute formatters in a chain" do
       entry_formatter = Lumberjack::EntryFormatter.new
       formatter = lambda {}
-      entry_formatter.add_attribute_class(Object, formatter)
+      entry_formatter.format_attribute(Object, formatter)
       expect(entry_formatter.remove_attribute_class(Object)).to eq(entry_formatter)
       expect(entry_formatter.attribute_formatter).to be_empty
+    end
+
+    it "can add formatters for both message and attributes" do
+      entry_formatter = Lumberjack::EntryFormatter.new
+      entry_formatter.format_class(String) { |obj| obj.upcase }
+      expect(entry_formatter.message_formatter.format("foo")).to eq("FOO")
+      expect(entry_formatter.attribute_formatter.format("foo" => "bar")).to eq({"foo" => "BAR"})
+    end
+
+    it "can add formatters for just the message" do
+      entry_formatter = Lumberjack::EntryFormatter.new
+      entry_formatter.format_message(String) { |obj| obj.upcase }
+      expect(entry_formatter.message_formatter.format("foo")).to eq("FOO")
+      expect(entry_formatter.attribute_formatter.format("foo" => "bar")).to eq({"foo" => "bar"})
+    end
+
+    it "does not overwrite message formatters with generic formatters" do
+      entry_formatter = Lumberjack::EntryFormatter.new
+      entry_formatter.format_message(String) { |obj| obj.upcase }
+      entry_formatter.format_class(String) { |obj| obj.downcase }
+      expect(entry_formatter.message_formatter.format("FooBar")).to eq("FOOBAR")
+      expect(entry_formatter.attribute_formatter.format("foo" => "FooBar")).to eq({"foo" => "foobar"})
+    end
+
+    it "does not overwrite attribute formatters with generic formatters" do
+      entry_formatter = Lumberjack::EntryFormatter.new
+      entry_formatter.format_attribute(String) { |obj| obj.upcase }
+      entry_formatter.format_class(String) { |obj| obj.downcase }
+      expect(entry_formatter.message_formatter.format("FooBar")).to eq("foobar")
+      expect(entry_formatter.attribute_formatter.format("foo" => "FooBar")).to eq({"foo" => "FOOBAR"})
     end
 
     it "can set the attribute default formatter in a chain" do
@@ -58,9 +88,9 @@ RSpec.describe Lumberjack::EntryFormatter do
 
     it "build a formatter with a build block" do
       entry_formatter = Lumberjack::EntryFormatter.build do |config|
-        config.add(String) { |obj| obj.to_s.upcase }
-        config.add_attribute("status") { |obj| "[#{obj}]" }
-        config.add_attribute_class(Array) { |obj| obj.join("|") }
+        config.format_class(String) { |obj| obj.to_s.upcase }
+        config.format_attribute_name("status") { |obj| "[#{obj}]" }
+        config.format_attribute(Array) { |obj| obj.join("|") }
       end
 
       expect(entry_formatter.message_formatter.format("foobar")).to eq("FOOBAR")
@@ -72,14 +102,14 @@ RSpec.describe Lumberjack::EntryFormatter do
   describe "#include" do
     it "merges the formats from the formatter" do
       formatter_1 = Lumberjack::EntryFormatter.build do |config|
-        config.add(String) { |obj| obj.to_s.upcase }
-        config.add_attribute("status") { |obj| "[#{obj}]" }
-        config.add_attribute("foo") { |obj| "foo:#{obj}" }
+        config.format_class(String) { |obj| obj.to_s.upcase }
+        config.format_attribute_name("status") { |obj| "[#{obj}]" }
+        config.format_attribute_name("foo") { |obj| "foo:#{obj}" }
       end
 
       formatter_2 = Lumberjack::EntryFormatter.build do |config|
-        config.add(String) { |obj| obj.to_s.downcase }
-        config.add_attribute("foo") { |obj| "(#{obj})" }
+        config.format_class(String) { |obj| obj.to_s.downcase }
+        config.format_attribute_name("foo") { |obj| "(#{obj})" }
       end
 
       expect(formatter_2.include(formatter_1)).to eq formatter_2
@@ -94,14 +124,14 @@ RSpec.describe Lumberjack::EntryFormatter do
   describe "#prepend" do
     it "prepends the formats from the formatter" do
       formatter_1 = Lumberjack::EntryFormatter.build do |config|
-        config.add(String) { |obj| obj.to_s.upcase }
-        config.add_attribute("status") { |obj| "[#{obj}]" }
-        config.add_attribute("foo") { |obj| "foo:#{obj}" }
+        config.format_class(String) { |obj| obj.to_s.upcase }
+        config.format_attribute_name("status") { |obj| "[#{obj}]" }
+        config.format_attribute_name("foo") { |obj| "foo:#{obj}" }
       end
 
       formatter_2 = Lumberjack::EntryFormatter.build do |config|
-        config.add(String) { |obj| obj.to_s.downcase }
-        config.add_attribute("foo") { |obj| "(#{obj})" }
+        config.format_class(String) { |obj| obj.to_s.downcase }
+        config.format_attribute_name("foo") { |obj| "(#{obj})" }
       end
 
       expect(formatter_2.prepend(formatter_1)).to eq formatter_2
@@ -113,7 +143,7 @@ RSpec.describe Lumberjack::EntryFormatter do
     end
   end
 
-  describe "#entry" do
+  describe "#format" do
     let(:entry_formatter) { Lumberjack::EntryFormatter.new }
 
     it "does nothing with no message or attribute formatter" do
@@ -125,7 +155,7 @@ RSpec.describe Lumberjack::EntryFormatter do
     end
 
     it "formats the message on the entry" do
-      entry_formatter.add(String) { |obj| "String: #{obj}" }
+      entry_formatter.format_class(String) { |obj| "String: #{obj}" }
       message, _ = entry_formatter.format("foobar", {"foo" => "bar"})
       expect(message).to eq("String: foobar")
     end
@@ -135,15 +165,15 @@ RSpec.describe Lumberjack::EntryFormatter do
       expect(message).to eq("foobar")
     end
 
-    it "splits the message and attributes if the message formatter is a attributeged message" do
-      entry_formatter.add(String) { |obj| Lumberjack::MessageAttributes.new("attributeged: #{obj}", {"attribute" => obj}) }
+    it "splits the message and attributes if the message formatter is a attributed message" do
+      entry_formatter.format_message(String) { |obj| Lumberjack::MessageAttributes.new("attributeged: #{obj}", {"attribute" => obj}) }
       message, attributes = entry_formatter.format("foobar", {"foo" => "bar"})
       expect(message).to eq("attributeged: foobar")
       expect(attributes).to eq({"attribute" => "foobar", "foo" => "bar"})
     end
 
     it "applies the attribute formatter to the attributes" do
-      entry_formatter.add_attribute("foo") { |obj| "Foo: #{obj}" }
+      entry_formatter.format_attribute_name("foo") { |obj| "Foo: #{obj}" }
       message, attributes = entry_formatter.format("foobar", {"foo" => "bar"})
       expect(message).to eq("foobar")
       expect(attributes).to eq({"foo" => "Foo: bar"})
@@ -163,7 +193,7 @@ RSpec.describe Lumberjack::EntryFormatter do
     end
 
     it "handles nil attributes" do
-      entry_formatter.add_attribute("foo") { |obj| "Foo: #{obj}" }
+      entry_formatter.format_attribute_name("foo") { |obj| "Foo: #{obj}" }
       message, attributes = entry_formatter.format("foobar", nil)
       expect(message).to eq("foobar")
       expect(attributes).to be_nil

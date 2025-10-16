@@ -109,10 +109,10 @@ RSpec.describe Lumberjack do
   end
 
   it "can build a formatter" do
-    formatter = Lumberjack.build_formatter do |config|
-      config.add(Integer) { |i| i * 2 }
+    entry_formatter = Lumberjack.build_formatter do |formatter|
+      formatter.format_class(Integer) { |i| i * 2 }
     end
-    expect(formatter).to be_a(Lumberjack::EntryFormatter)
-    expect(formatter.format(12, nil).first).to eq(24)
+    expect(entry_formatter).to be_a(Lumberjack::EntryFormatter)
+    expect(entry_formatter.format(12, nil).first).to eq(24)
   end
 end
