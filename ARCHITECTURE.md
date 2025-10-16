@@ -90,7 +90,11 @@ classDiagram
         +Formatter message_formatter
         +AttributeFormatter attribute_formatter
         +format(message, attributes) Array
-        +call(entry) String
+        +format_class(classes, formatter, *args) self
+        +format_message(classes, formatter, *args) self
+        +format_attribute(classes, formatter, *args) self
+        +format_attribute_name(names, formatter, *args) self
+        +call(severity, timestamp, progname, msg) String
     }
 
     class Formatter {
@@ -104,10 +108,14 @@ classDiagram
         +Hash attribute_formatters
         +Formatter class_formatter
         +Formatter default_formatter
-        +add(names_or_classes, formatter, &block)
-        +add_class(classes, formatter, &block)
-        +add_attribute(names, formatter, &block)
+        +add(names_or_classes, formatter, *args, &block) self
+        +add_class(classes, formatter, *args, &block) self
+        +add_attribute(names, formatter, *args, &block) self
+        +default(formatter, *args, &block) self
+        +remove_class(classes) self
+        +remove_attribute(names) self
         +format(attributes) Hash
+        +include_class?(class_or_name) Boolean
     }
 
     %% Device Architecture
@@ -117,47 +125,84 @@ classDiagram
         +flush() void
         +close() void
         +reopen(logdev) void
+        +datetime_format() String
+        +datetime_format=(format) void
     }
 
-    class Device::Writer {
+    class DeviceWriter["Device::Writer"] {
         +IO stream
         +Template template
+        +Buffer buffer
         +initialize(stream, options)
         +write(entry) void
         +flush() void
         +close() void
+        +reopen(logdev) void
+        +datetime_format() String
+        +datetime_format=(format) void
     }
 
-    class Device::LogFile {
+    class DeviceLogFile["Device::LogFile"] {
         +String path
         +initialize(path, options)
-        +path() String
+        +reopen(logdev) void
     }
 
-    class Device::Multi {
+    class DeviceDateRollingLogFile["Device::DateRollingLogFile"] {
+        +String path
+        +String frequency
+        +initialize(path, options)
+        +roll_file?() Boolean
+    }
+
+    class DeviceSizeRollingLogFile["Device::SizeRollingLogFile"] {
+        +String path
+        +Integer max_size
+        +Integer keep
+        +initialize(path, options)
+        +roll_file?() Boolean
+    }
+
+    class DeviceMulti["Device::Multi"] {
         +Array devices
         +initialize(*devices)
         +write(entry) void
         +flush() void
         +close() void
+        +reopen(logdev) void
+        +datetime_format() String
+        +datetime_format=(format) void
     }
 
-    class Device::Test {
+    class DeviceTest["Device::Test"] {
         +Array entries
         +Integer max_entries
+        +initialize(options)
         +write(entry) void
         +include?(options) Boolean
         +match(**options) LogEntry
+        +clear() void
     }
 
-    class Device::Null {
+    class DeviceNull["Device::Null"] {
+        +initialize()
         +write(entry) void
     }
 
-    class Device::LoggerWrapper {
+    class DeviceLoggerWrapper["Device::LoggerWrapper"] {
         +Logger logger
         +initialize(logger)
         +write(entry) void
+    }
+
+    class DeviceBuffer["Device::Buffer"] {
+        +Array values
+        +Integer size
+        +initialize()
+        +<<(string) void
+        +empty?() Boolean
+        +pop!() Array
+        +clear() void
     }
 
     %% Template System
@@ -200,22 +245,24 @@ classDiagram
     EntryFormatter --* AttributeFormatter : uses
     AttributeFormatter --* Formatter : uses
 
-    Device <|-- WriterDevice : implements
-    Device <|-- LogFileDevice : implements
-    Device <|-- MultiDevice : implements
-    Device <|-- TestDevice : implements
-    Device <|-- NullDevice : implements
-    Device <|-- LoggerDevice : implements
-    WriterDevice <|-- LogFileDevice : inherits
+    Device <|-- DeviceWriter : implements
+    Device <|-- DeviceMulti : implements
+    Device <|-- DeviceTest : implements
+    Device <|-- DeviceNull : implements
+    Device <|-- DeviceLoggerWrapper : implements
+    DeviceWriter <|-- DeviceLogFile : inherits
+    DeviceLogFile <|-- DeviceDateRollingLogFile : inherits
+    DeviceLogFile <|-- DeviceSizeRollingLogFile : inherits
 
-    WriterDevice --* Template : uses
+    DeviceWriter --* Template : uses
+    DeviceWriter --* DeviceBuffer : uses
     Logger --> LogEntry : creates
     EntryFormatter --> LogEntry : processes
     Device --> LogEntry : receives
 
-    MultiDevice --* Device : aggregates
-    LoggerDevice --* Logger : forwards to
-    TestDevice --* LogEntry : stores
+    DeviceMulti --* Device : aggregates
+    DeviceLoggerWrapper --* Logger : forwards to
+    DeviceTest --* LogEntry : stores
 ```
 
 ## Component Responsibilities
@@ -391,9 +438,10 @@ sequenceDiagram
 - Attribute compaction removes empty values automatically
 
 ### **Thread Safety**
-- Fiber-local storage for context isolation
+- Fiber-local storage for context isolation (contexts are fiber-scoped)
 - Mutex-protected device operations where needed
 - Immutable data structures prevent race conditions
+- FiberLocals module manages per-fiber state
 
 ### **Lazy Evaluation**
 - Block-based message generation for expensive operations
@@ -412,13 +460,26 @@ The framework provides several extension points for customization:
 ### **Custom Devices**
 ```ruby
 class DatabaseDevice < Lumberjack::Device
+  def initialize(connection)
+    @connection = connection
+  end
+
   def write(entry)
-    database.insert_log(
-      timestamp: entry.time,
-      level: entry.severity_label,
-      message: entry.message,
-      attributes: entry.attributes
+    @connection.execute(
+      "INSERT INTO logs (timestamp, level, message, attributes) VALUES (?, ?, ?, ?)",
+      entry.time,
+      entry.severity_label,
+      entry.message,
+      JSON.generate(entry.attributes || {})
     )
+  end
+
+  def flush
+    # Database connections typically auto-flush
+  end
+
+  def close
+    @connection.close
   end
 end
 ```
@@ -431,7 +492,7 @@ class JsonFormatter
   end
 end
 
-logger.formatter.add(Hash, JsonFormatter.new)
+logger.formatter.format_class(Hash, JsonFormatter.new)
 ```
 
 ### **Custom Templates**
@@ -453,10 +514,12 @@ device = Lumberjack::Device::Writer.new(STDOUT, template: json_template)
 ### **Web Application Integration**
 ```ruby
 # Rack middleware for request context
-use Lumberjack::Rack::Context, {
-  request_id: ->(env) { env["HTTP_X_REQUEST_ID"] },
-  user_id: ->(env) { env["warden"]&.user&.id }
-}
+use Lumberjack::Rack::Context do |env|
+  {
+    request_id: env["HTTP_X_REQUEST_ID"],
+    user_id: env["warden"]&.user&.id
+  }
+end
 ```
 
 ### **Component Isolation**
@@ -486,26 +549,19 @@ expect(logger.device).to include(
 
 ### **Production Configuration**
 ```ruby
-logger = Lumberjack::Logger.new("/var/log/app.log") do |config|
-  config.level = :info
-  config.shift_age = 10    # Keep 10 old files
-  config.shift_size = 50.megabytes
-
+logger = Lumberjack::Logger.new("/var/log/app.log", shift_age: 10, shift_size: "50M", level: :info) do |config|
   # Structured attribute formatting
-  config.attribute_formatter.add_attribute("password") { |value| "[REDACTED]" }
-  config.attribute_formatter.add_class(Time, :iso8601)
+  config.formatter.format_attribute_name("password") { |value| "[REDACTED]" }
+  config.formatter.format_class(Time, :iso8601)
 end
 ```
 
 ### **Development Configuration**
 ```ruby
-logger = Lumberjack::Logger.new(STDOUT) do |config|
-  config.level = :debug
-  config.template = "[:time :severity] :message :attributes"
-
+logger = Lumberjack::Logger.new(STDOUT, level: :debug, template: "[{{time}} {{severity}}] {{message}} {{attributes}}") do |config|
   # Pretty-print complex objects
-  config.formatter.add(Hash, :pretty_print)
-  config.formatter.add(Array, :pretty_print)
+  config.formatter.format_class(Hash, :pretty_print)
+  config.formatter.format_class(Array, :pretty_print)
 end
 ```
 
@@ -524,3 +580,13 @@ logger = Lumberjack::Logger.new(multi_device)
 ```
 
 This architecture enables Lumberjack to provide a powerful, flexible logging solution that scales from simple applications to complex, multi-component systems while maintaining excellent performance and developer experience.
+
+## Version Notes
+
+This documentation reflects the current Lumberjack architecture. Note that:
+
+- Template syntax has evolved from `:placeholder` to `{{placeholder}}` format (old syntax is deprecated)
+- Some method names have changed over versions (e.g., `tag_formatter` is now `attribute_formatter`)
+- Configuration options have been streamlined to use keyword arguments
+- Fiber-local storage is used for context isolation rather than thread-local storage
+- The `EntryFormatter` class provides the primary formatting interface, with `format()` being the main method and `call()` for Logger compatibility

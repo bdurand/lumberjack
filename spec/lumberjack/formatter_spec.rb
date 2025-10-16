@@ -61,6 +61,30 @@ RSpec.describe Lumberjack::Formatter do
     end
   end
 
+  describe "#include?" do
+    it "returns true if a class has been added" do
+      formatter = Lumberjack::Formatter.new
+      expect(formatter.include?(Object)).to be false
+      formatter.add(Object, :inspect)
+      expect(formatter.include?(Object)).to be true
+      expect(formatter.include?("Object")).to be true
+    end
+
+    it "does not return true for subclasses" do
+      formatter = Lumberjack::Formatter.new
+      formatter.add(Object, :inspect)
+      expect(formatter.include?(Exception)).to be false
+      expect(formatter.include?(Object)).to be true
+    end
+
+    it "only returns true for one of the default formatters if it's been overridden" do
+      formatter = Lumberjack::Formatter.new
+      expect(formatter.include?(String)).to be false
+      formatter.add(String, :inspect)
+      expect(formatter.include?(String)).to be true
+    end
+  end
+
   describe "#format" do
     it "should have a default set of formatters" do
       expect(formatter.format("abc")).to eq("abc")
@@ -137,7 +161,7 @@ RSpec.describe Lumberjack::Formatter do
       expect(formatter.format(10.1)).to eq("number: 10.1")
     end
 
-    it "should have a default formatter" do
+    it "should have a default object formatter" do
       expect(formatter.format(:test)).to eq(":test")
       formatter.remove(Object)
       expect(formatter.format(:test)).to eq(:test)
@@ -171,7 +195,7 @@ RSpec.describe Lumberjack::Formatter do
       end
     end
 
-    describe "clear" do
+    describe ".clear" do
       it "should clear all mappings" do
         expect(formatter.format(:test)).to eq(":test")
         formatter.clear
@@ -180,7 +204,7 @@ RSpec.describe Lumberjack::Formatter do
     end
   end
 
-  describe "empty", deprecation_mode: :silent do
+  describe ".empty", deprecation_mode: :silent do
     it "should be able to get an empty formatter" do
       expect(Lumberjack::Formatter.empty.format(:test)).to eq(:test)
     end

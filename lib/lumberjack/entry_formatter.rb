@@ -10,21 +10,23 @@ module Lumberjack
   # 2. Attribute Formatter ({Lumberjack::AttributeFormatter}) - Formats key-value attribute pairs
   #
   # @example Complete entry formatting setup
-  #   formatter = Lumberjack::EntryFormatter.build do |config|
-  #     # Message formatting (delegates to Formatter)
-  #     config.add(ActiveRecord::Base, :id)
-  #     config.add(Exception, :exception)
-  #     config.add(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+  #   entry_formatter = Lumberjack::EntryFormatter.build do |formatter|
+  #     # Formatter will be used in both log messages and attributes
+  #     formatter.format_class(ActiveRecord::Base, :id)
   #
-  #     # Attribute formatting (delegates to AttributeFormatter)
-  #     config.add_attribute("password") { |value| "[REDACTED]" }
-  #     config.add_attribute("user_id", :id)
-  #     config.add_attribute_class(Time, :date_time, "%Y-%m-%d")
-  #     config.default_attribute_format { |value| value.to_s.strip }
+  #     # Message specific formatters
+  #     formatter.format_message(Exception, :exception)
+  #     formatter.format_message(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+  #
+  #     # Attribute specific formatters
+  #     formatter.format_attribute(Time, :date_time, "%Y-%m-%d")
+  #     formatter.format_attribute_name("password") { |value| "[REDACTED]" }
+  #     formatter.format_attribute_name("user_id", :id)
+  #     formatter.default_attribute_format { |value| value.to_s.strip }
   #   end
   #
   # @example Using with a logger
-  #   logger = Lumberjack::Logger.new(STDOUT, formatter: formatter)
+  #   logger = Lumberjack::Logger.new(STDOUT, formatter: entry_formatter)
   #   logger.info("User login", user: user_object, timestamp: Time.now)
   #   # Both the message and attributes are formatted according to the rules
   #
@@ -103,36 +105,70 @@ module Lumberjack
       @attribute_formatter = value || AttributeFormatter.new
     end
 
-    # Add a message formatter for specific classes or modules. This method delegates to the
-    # underlying message formatter, allowing you to configure message formatting rules
-    # through the EntryFormatter interface.
+    # Add a formatter for specific classes or modules. This method adds the formatter
+    # for both log messages and attributes.
     #
-    # @param klass [Class, Module, String, Array<Class, Module, String>] The class(es) to format.
+    # @param classes_or_names [Class, Module, String, Array<Class, Module, String>] The class(es) to format.
     # @param formatter [Symbol, Class, #call, nil] The formatter to use.
     # @param args [Array] Arguments to pass to the formatter constructor (when formatter is a Class).
     # @yield [obj] Block-based formatter that receives the object to format.
     # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
     #
-    # @example Adding message formatters
-    #   formatter.add(User, :id)  # Use ID formatter for User objects
-    #   formatter.add(Time, :date_time, "%Y-%m-%d")  # Custom time format
-    #   formatter.add(Array) { |vals| vals.join(", ") }  # Handle arrays
+    # @example Adding formatters
+    #   formatter.format_class(User, :id)  # Use ID formatter for User objects
+    #   formatter.format_class(Array) { |vals| vals.join(", ") }  # Handle arrays
+    #   formatter.format_class(Time, :date_time, "%Y-%m-%d")  # Custom time format only
     #
     # @see Lumberjack::Formatter#add
-    def add(klass, formatter = nil, *args, &block)
-      @message_formatter.add(klass, formatter, *args, &block)
+    def format_class(classes_or_names, formatter = nil, *args, &block)
+      Array(classes_or_names).each do |class_or_name|
+        unless @message_formatter.include?(class_or_name)
+          @message_formatter.add(class_or_name, formatter, *args, &block)
+        end
+
+        unless @attribute_formatter.include_class?(class_or_name)
+          @attribute_formatter.add_class(class_or_name, formatter, *args, &block)
+        end
+      end
+
       self
     end
 
-    # Remove a message formatter for specific classes or modules. This method delegates
-    # to the underlying message formatter.
+    # Remove a formatter for specific classes or modules. This method removes the formatter
+    # for both log messages and attributes.
     #
-    # @param klass [Class, Module, String, Array<Class, Module, String>] The class(es) to remove formatters for.
+    # @param classes_or_names [Class, Module, String, Array<Class, Module, String>] The class(es) to remove formatters for.
     # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
     #
     # @see Lumberjack::Formatter#remove
-    def remove(klass)
-      @message_formatter.remove(klass)
+    def remove_class(classes_or_names)
+      @message_formatter.remove(classes_or_names)
+      @attribute_formatter.remove_class(classes_or_names)
+      self
+    end
+
+    # Add a message formatter for specific classes or modules.
+    #
+    # @param classes_or_names [String, Module, Array<String, Module>] Class names or modules.
+    # @param formatter [Symbol, Class, #call, nil] The formatter to use
+    # @param args [Array] Arguments to pass to the formatter constructor (when formatter is a Class).
+    # @yield [obj] Block-based formatter that receives the object to format.
+    # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
+    #
+    # @see Lumberjack::Formatter#add
+    def format_message(classes_or_names, formatter = nil, *args, &block)
+      @message_formatter.add(classes_or_names, formatter, *args, &block)
+      self
+    end
+
+    # Remove a message formatter for specific classes or modules.
+    #
+    # @param classes_or_names [String, Module, Array<String, Module>] Class names or modules.
+    # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
+    #
+    # @see Lumberjack::Formatter#remove
+    def remove_message_formatter(classes_or_names)
+      @message_formatter.remove(classes_or_names)
       self
     end
 
@@ -145,7 +181,7 @@ module Lumberjack
     # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
     #
     # @see Lumberjack::AttributeFormatter#add_attribute
-    def add_attribute(names, formatter = nil, *args, &block)
+    def format_attribute_name(names, formatter = nil, *args, &block)
       @attribute_formatter.add_attribute(names, formatter, *args, &block)
       self
     end
@@ -159,7 +195,7 @@ module Lumberjack
     # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
     #
     # @see Lumberjack::AttributeFormatter#add_attribute
-    def add_attribute_class(classes_or_names, formatter = nil, *args, &block)
+    def format_attribute(classes_or_names, formatter = nil, *args, &block)
       @attribute_formatter.add_class(classes_or_names, formatter, *args, &block)
       self
     end
@@ -185,7 +221,7 @@ module Lumberjack
     # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
     #
     # @see Lumberjack::AttributeFormatter#remove_attribute
-    def remove_attribute(names)
+    def remove_attribute_name(names)
       @attribute_formatter.remove_attribute(names)
       self
     end

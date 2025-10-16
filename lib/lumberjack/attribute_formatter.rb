@@ -189,6 +189,10 @@ module Lumberjack
       formatter = dereference_formatter(formatter, args)
 
       Array(attribute_names).collect(&:to_s).each do |attribute_name|
+        if attribute_name.is_a?(Module)
+          raise ArgumentError.new("attribute_name cannot be a Module/Class; use #add_class to add class-based formatters")
+        end
+
         if formatter.nil?
           @attribute_formatter.delete(attribute_name)
         else
@@ -334,6 +338,22 @@ module Lumberjack
     # @return [#call, nil] The formatter for the attribute, or nil if not found.
     def formatter_for_attribute(name)
       @attribute_formatter[name.to_s]
+    end
+
+    # Check if a formatter exists for a specific class or class name.
+    #
+    # @param class_or_name [Class, Module, String] The class or class name to check.
+    # @return [Boolean] true if a formatter exists, false otherwise.
+    def include_class?(class_or_name)
+      @class_formatter.include?(class_or_name.to_s)
+    end
+
+    # Check if a formatter exists for a specific attribute name.
+    #
+    # @param name [String, Symbol] The attribute name to check.
+    # @return [Boolean] true if a formatter exists, false otherwise.
+    def include_attribute?(name)
+      @attribute_formatter.include?(name.to_s)
     end
 
     private

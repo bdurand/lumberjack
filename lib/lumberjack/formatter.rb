@@ -326,6 +326,16 @@ module Lumberjack
       formatter
     end
 
+    # Check if a formatter exists for a specific class or class name.
+    #
+    # @param class_or_name [Class, Module, String] The class or class name to check.
+    # @return [Boolean] true if a formatter exists, false otherwise.
+    def include?(class_or_name)
+      @class_formatters.include?(class_or_name.to_s)
+    end
+
+    private
+
     # Update internal optimization flags based on currently registered formatters.
     # This enables fast-path optimization for common primitive types.
     #
