@@ -92,7 +92,7 @@ classDiagram
         +format(message, attributes) Array
         +format_class(classes, formatter, *args) self
         +format_message(classes, formatter, *args) self
-        +format_attribute(classes, formatter, *args) self
+        +format_attributes(classes, formatter, *args) self
         +format_attribute_name(names, formatter, *args) self
         +call(severity, timestamp, progname, msg) String
     }

@@ -328,8 +328,8 @@ Attribute formatters control how attribute values (the key-value pairs in struct
 You can specify how to format object types when they are logged as attributes:
 
 ```ruby
-logger.formatter.format_attribute(Time, :date_time, "%Y-%m-%d %H:%M:%S")
-logger.formatter.format_attribute([Float, BigDecimal], :round, 2)
+logger.formatter.format_attributes(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+logger.formatter.format_attributes([Float, BigDecimal], :round, 2)
 
 logger.info("Data processed",
   created_at: Time.now,          # → "2025-08-22 14:30:00"
@@ -461,8 +461,8 @@ entry_formatter = Lumberjack.build_formatter do |formatter|
   formatter.format_message(User) { |user| "User[#{user.id}:#{user.username}]" }
 
   # Attribute formatting
-  formatter.format_attribute(Time, :date_time, "%Y-%m-%d %H:%M:%S")
-  formatter.format_attribute([Float, BigDecimal], :round, 6)
+  formatter.format_attributes(Time, :date_time, "%Y-%m-%d %H:%M:%S")
+  formatter.format_attributes([Float, BigDecimal], :round, 6)
   formatter.format_attribute_name("email", :redact)
 end
 

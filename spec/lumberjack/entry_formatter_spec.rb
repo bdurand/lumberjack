@@ -38,14 +38,14 @@ RSpec.describe Lumberjack::EntryFormatter do
     it "can add new attribute formatters in a chain" do
       entry_formatter = Lumberjack::EntryFormatter.new
       formatter = lambda {}
-      expect(entry_formatter.format_attribute(Object, formatter)).to eq(entry_formatter)
+      expect(entry_formatter.format_attributes(Object, formatter)).to eq(entry_formatter)
       expect(entry_formatter.attribute_formatter).to_not be_empty
     end
 
     it "can remove attribute formatters in a chain" do
       entry_formatter = Lumberjack::EntryFormatter.new
       formatter = lambda {}
-      entry_formatter.format_attribute(Object, formatter)
+      entry_formatter.format_attributes(Object, formatter)
       expect(entry_formatter.remove_attribute_class(Object)).to eq(entry_formatter)
       expect(entry_formatter.attribute_formatter).to be_empty
     end
@@ -74,7 +74,7 @@ RSpec.describe Lumberjack::EntryFormatter do
 
     it "does not overwrite attribute formatters with generic formatters" do
       entry_formatter = Lumberjack::EntryFormatter.new
-      entry_formatter.format_attribute(String) { |obj| obj.upcase }
+      entry_formatter.format_attributes(String) { |obj| obj.upcase }
       entry_formatter.format_class(String) { |obj| obj.downcase }
       expect(entry_formatter.message_formatter.format("FooBar")).to eq("foobar")
       expect(entry_formatter.attribute_formatter.format("foo" => "FooBar")).to eq({"foo" => "FOOBAR"})
@@ -90,7 +90,7 @@ RSpec.describe Lumberjack::EntryFormatter do
       entry_formatter = Lumberjack::EntryFormatter.build do |config|
         config.format_class(String) { |obj| obj.to_s.upcase }
         config.format_attribute_name("status") { |obj| "[#{obj}]" }
-        config.format_attribute(Array) { |obj| obj.join("|") }
+        config.format_attributes(Array) { |obj| obj.join("|") }
       end
 
       expect(entry_formatter.message_formatter.format("foobar")).to eq("FOOBAR")

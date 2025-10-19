@@ -19,7 +19,7 @@ module Lumberjack
   #     formatter.format_message(Time, :date_time, "%Y-%m-%d %H:%M:%S")
   #
   #     # Attribute specific formatters
-  #     formatter.format_attribute(Time, :date_time, "%Y-%m-%d")
+  #     formatter.format_attributes(Time, :date_time, "%Y-%m-%d")
   #     formatter.format_attribute_name("password") { |value| "[REDACTED]" }
   #     formatter.format_attribute_name("user_id", :id)
   #     formatter.default_attribute_format { |value| value.to_s.strip }
@@ -195,7 +195,7 @@ module Lumberjack
     # @return [Lumberjack::EntryFormatter] Returns self for method chaining.
     #
     # @see Lumberjack::AttributeFormatter#add_attribute
-    def format_attribute(classes_or_names, formatter = nil, *args, &block)
+    def format_attributes(classes_or_names, formatter = nil, *args, &block)
       @attribute_formatter.add_class(classes_or_names, formatter, *args, &block)
       self
     end
