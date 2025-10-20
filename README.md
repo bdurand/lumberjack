@@ -737,6 +737,12 @@ RSpec.configure do |config|
 end
 ```
 
+Lumberjack will catch any errors raised when logging and output the error message and backtrace to STDERR. This prevents logging errors from crashing your application. You should disable this behavior in your test suite so that logging errors are raised and can be fixed.
+
+```ruby
+Lumberjack.raise_logging_errors = true
+```
+
 ### Using As A Stream
 
 Lumberjack loggers implement methods necessary for treating them like a stream. You can use this to augment output from components that write output to a stream with metadata like a timestamp and attributes.
