@@ -6,36 +6,30 @@ module Lumberjack
       # Transform hash keys to strings. This method exists for optimization and backward compatibility.
       # If a hash already has string keys, it will be returned as is.
       #
-      # @param [Hash] hash The hash to transform.
+      # @param hash [Hash] The hash to transform.
       # @return [Hash] The hash with string keys.
+      # @deprecated No longer supported
       def stringify_keys(hash)
-        return nil if hash.nil?
-        if hash.keys.all? { |key| key.is_a?(String) }
-          hash
-        else
-          hash.transform_keys(&:to_s)
+        Utils.deprecated("Lumberjack::Tags.stringify_keys", "Lumberjack::Tags.stringify_keys is no longer supported and will be removed in version 2.1") do
+          return nil if hash.nil?
+
+          if hash.keys.all? { |key| key.is_a?(String) }
+            hash
+          else
+            hash.transform_keys(&:to_s)
+          end
         end
       end
 
-      # Ensure keys are strings and expand any values in a hash that are Proc's by calling them and replacing
-      # the value with the result. This allows setting global tags with runtime values.
+      # Alias to AttributesHelper.expand_runtime_values
       #
-      # @param [Hash] hash The hash to transform.
+      # @param hash [Hash] The hash to transform.
       # @return [Hash] The hash with string keys and expanded values.
+      # @deprecated Use {Lumberjack::AttributesHelper.expand_runtime_values} instead.
       def expand_runtime_values(hash)
-        return nil if hash.nil?
-        if hash.all? { |key, value| key.is_a?(String) && !value.is_a?(Proc) }
-          return hash
+        Utils.deprecated("Lumberjack::Tags.expand_runtime_values", "Lumberjack::Tags.expand_runtime_values is deprecated and will be removed in version 2.1; use Lumberjack::AttributesHelper.expand_runtime_values instead.") do
+          AttributesHelper.expand_runtime_values(hash)
         end
-
-        copy = {}
-        hash.each do |key, value|
-          if value.is_a?(Proc) && (value.arity == 0 || value.arity == -1)
-            value = value.call
-          end
-          copy[key.to_s] = value
-        end
-        copy
       end
     end
   end

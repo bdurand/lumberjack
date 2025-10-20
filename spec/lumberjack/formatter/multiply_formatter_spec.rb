@@ -3,6 +3,10 @@
 require "spec_helper"
 
 RSpec.describe Lumberjack::Formatter::MultiplyFormatter do
+  it "is registered as :multiply" do
+    expect(Lumberjack::FormatterRegistry.formatter(:multiply, 2)).to be_a(Lumberjack::Formatter::MultiplyFormatter)
+  end
+
   it "multiplies a numeric value" do
     formatter = Lumberjack::Formatter::MultiplyFormatter.new(2)
     expect(formatter.call(5)).to eq(10)

@@ -1,24 +1,26 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 
 RSpec.describe Lumberjack::LogEntry do
-  describe "attributes" do
+  describe "entry values" do
     it "should have a time" do
       t = Time.now
-      entry = Lumberjack::LogEntry.new(t, Logger::INFO, "test", "app", 1500, "unit_of_work_id" => "ABCD")
+      entry = Lumberjack::LogEntry.new(t, Logger::INFO, "test", "app", 1500, "foo" => "ABCD")
       expect(entry.time).to eq(t)
       entry.time = t + 1
       expect(entry.time).to eq(t + 1)
     end
 
     it "should have a severity" do
-      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "unit_of_work_id" => "ABCD")
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo" => "ABCD")
       expect(entry.severity).to eq(Logger::INFO)
       entry.severity = Logger::WARN
       expect(entry.severity).to eq(Logger::WARN)
     end
 
     it "should convert a severity label to a numeric level" do
-      entry = Lumberjack::LogEntry.new(Time.now, "INFO", "test", "app", 1500, "unit_of_work_id" => "ABCD")
+      entry = Lumberjack::LogEntry.new(Time.now, "INFO", "test", "app", 1500, "foo" => "ABCD")
       expect(entry.severity).to eq(Logger::INFO)
     end
 
@@ -28,40 +30,47 @@ RSpec.describe Lumberjack::LogEntry do
       expect(Lumberjack::LogEntry.new(Time.now, Logger::WARN, "test", "app", 1500, nil).severity_label).to eq("WARN")
       expect(Lumberjack::LogEntry.new(Time.now, Logger::ERROR, "test", "app", 1500, nil).severity_label).to eq("ERROR")
       expect(Lumberjack::LogEntry.new(Time.now, Logger::FATAL, "test", "app", 1500, nil).severity_label).to eq("FATAL")
-      expect(Lumberjack::LogEntry.new(Time.now, -100, "test", "app", 1500, nil).severity_label).to eq("UNKNOWN")
-      expect(Lumberjack::LogEntry.new(Time.now, 1000, "test", "app", 1500, nil).severity_label).to eq("UNKNOWN")
+      expect(Lumberjack::LogEntry.new(Time.now, -100, "test", "app", 1500, nil).severity_label).to eq("ANY")
+      expect(Lumberjack::LogEntry.new(Time.now, 1000, "test", "app", 1500, nil).severity_label).to eq("ANY")
     end
 
     it "should have a message" do
-      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "unit_of_work_id" => "ABCD")
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo" => "ABCD")
       expect(entry.message).to eq("test")
       entry.message = "new message"
       expect(entry.message).to eq("new message")
     end
 
     it "should have a progname" do
-      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "unit_of_work_id" => "ABCD")
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo" => "ABCD")
       expect(entry.progname).to eq("app")
       entry.progname = "prog"
       expect(entry.progname).to eq("prog")
     end
 
     it "should have a pid" do
-      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "unit_of_work_id" => "ABCD")
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo" => "ABCD")
       expect(entry.pid).to eq(1500)
       entry.pid = 150
       expect(entry.pid).to eq(150)
     end
   end
 
-  describe "#tags" do
-    it "should have tags" do
-      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "unit_of_work_id" => "ABCD")
-      expect(entry.tags).to eq("unit_of_work_id" => "ABCD")
+  describe "#severity_data" do
+    it "returns the severity data object" do
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo" => "ABCD")
+      expect(entry.severity_data).to eq(Lumberjack::Severity.data(Logger::INFO))
+    end
+  end
+
+  describe "#attributes" do
+    it "should have attributes" do
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo" => "ABCD")
+      expect(entry.attributes).to eq("foo" => "ABCD")
     end
 
-    it "should compact tags that are set to empty values" do
-      tags = {
+    it "should flatten attributes that are set to empty values" do
+      attributes = {
         "a" => "A",
         "b" => nil,
         "c" => "",
@@ -69,28 +78,13 @@ RSpec.describe Lumberjack::LogEntry do
         "g" => {"h" => "", "i" => []}
       }
 
-      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, tags)
-      expect(entry.tags).to eq("a" => "A", "d" => {"e" => "E"})
-    end
-  end
-
-  describe "#unit_of_work_id" do
-    it "should have a unit_of_work_id for backward compatibility with the 1.0 API", suppress_warnings: true do
-      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "ABCD")
-      expect(entry.unit_of_work_id).to eq("ABCD")
-      entry.unit_of_work_id = "1234"
-      expect(entry.unit_of_work_id).to eq("1234")
-    end
-
-    it "should be converted to a string" do
-      t = Time.parse("2011-01-29T12:15:32.001")
-      entry = Lumberjack::LogEntry.new(t, Logger::INFO, "test", "app", 1500, "unit_of_work_id" => "ABCD")
-      expect(entry.to_s).to eq('[2011-01-29T12:15:32.001 INFO app(1500) unit_of_work_id:"ABCD"] test')
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, attributes)
+      expect(entry.attributes).to eq("a" => "A", "d.e" => "E")
     end
   end
 
   describe "#empty?" do
-    it "is empty if the log has no message and no tags" do
+    it "is empty if the log has no message and no attributes" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, nil, "app", 1500, nil)
       expect(entry.empty?).to be true
 
@@ -100,41 +94,106 @@ RSpec.describe Lumberjack::LogEntry do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "message", "app", 1500, nil)
       expect(entry.empty?).to be false
 
-      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, nil, "app", 1500, {tag: "value"})
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, nil, "app", 1500, {attribute: "value"})
       expect(entry.empty?).to be false
     end
   end
 
-  describe "#tag" do
-    it "returns the tag value for a given name" do
+  describe "#[]]" do
+    it "returns the attribute value for a given name" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "a" => 1, "b" => 2)
-      expect(entry.tag("a")).to eq(1)
-      expect(entry.tag("b")).to eq(2)
-      expect(entry.tag("non_existent")).to be_nil
+      expect(entry["a"]).to eq(1)
+      expect(entry["b"]).to eq(2)
+      expect(entry["non_existent"]).to be_nil
     end
 
-    it "returns a hash when a tag is a parent of a dot notation key" do
+    it "returns a hash when a attribute is a parent of a dot notation key" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo.bar" => "baz", "foo.far" => "qux")
-      expect(entry.tag("foo")).to eq({"bar" => "baz", "far" => "qux"})
-      expect(entry.tag("foo.bar")).to eq("baz")
-      expect(entry.tag("foo.far")).to eq("qux")
+      expect(entry["foo"]).to eq({"bar" => "baz", "far" => "qux"})
+      expect(entry["foo.bar"]).to eq("baz")
+      expect(entry["foo.far"]).to eq("qux")
     end
 
     it "return nil if there are no tags" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, nil)
-      expect(entry.tag("a")).to be_nil
+      expect(entry["a"]).to be_nil
     end
   end
 
-  describe "#nested_tags" do
-    it "expands tags into a nested structure" do
+  describe "#nested_attributes" do
+    it "expands attributes into a nested structure" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "a.b.c" => 1, "a.b.d" => 2)
-      expect(entry.nested_tags).to eq({"a" => {"b" => {"c" => 1, "d" => 2}}})
+      expect(entry.nested_attributes).to eq({"a" => {"b" => {"c" => 1, "d" => 2}}})
     end
 
-    it "returns an empty hash if there are no tags" do
+    it "returns an empty hash if there are no attributes" do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, nil)
-      expect(entry.nested_tags).to eq({})
+      expect(entry.nested_attributes).to eq({})
+    end
+  end
+
+  describe "==" do
+    let(:entry) { Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo" => "bar") }
+    it "is equal to a log entry with the same attributes" do
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname, entry.pid, entry.attributes)
+      expect(entry).to eq(other_entry)
+    end
+
+    it "is not equal to another class type" do
+      expect(entry).not_to eq("not a log entry")
+    end
+
+    it "is not equal to an entry with a different time" do
+      other_entry = Lumberjack::LogEntry.new(entry.time + 1, entry.severity, entry.message, entry.progname, entry.pid, entry.attributes)
+      expect(entry).not_to eq(other_entry)
+    end
+
+    it "is not equal to an entry with a different severity" do
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity + 1, entry.message, entry.progname, entry.pid, entry.attributes)
+      expect(entry).not_to eq(other_entry)
+    end
+
+    it "is not equal to an entry with a different message" do
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message + " altered", entry.progname, entry.pid, entry.attributes)
+      expect(entry).not_to eq(other_entry)
+    end
+
+    it "is not equal to an entry with a different progname" do
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname + " altered", entry.pid, entry.attributes)
+      expect(entry).not_to eq(other_entry)
+    end
+
+    it "is not equal to an entry with a different pid" do
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname, entry.pid + 1, entry.attributes)
+      expect(entry).not_to eq(other_entry)
+    end
+
+    it "is not equal to an entry with different attributes" do
+      other_entry = Lumberjack::LogEntry.new(entry.time, entry.severity, entry.message, entry.progname, entry.pid, {"foo" => "baz"})
+      expect(entry).not_to eq(other_entry)
+    end
+  end
+
+  describe "#to_s" do
+    it "returns a formatted string representation of the log entry" do
+      time = Time.now
+      entry = Lumberjack::LogEntry.new(time, Logger::INFO, "test message", "myapp", 1234, "foo" => "bar", "baz" => "qux")
+      expected_string = "[#{time.strftime(Lumberjack::LogEntry::TIME_FORMAT)} INFO myapp(1234)] test message [foo:bar] [baz:qux]"
+      expect(entry.to_s).to eq(expected_string)
+    end
+  end
+
+  describe "#as_json" do
+    it "returns a hash representation of the log entry" do
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, "foo.bar" => "baz")
+      expect(entry.as_json).to eq({
+        "time" => entry.time,
+        "severity" => "INFO",
+        "message" => entry.message,
+        "progname" => entry.progname,
+        "pid" => entry.pid,
+        "attributes" => {"foo" => {"bar" => "baz"}}
+      })
     end
   end
 end

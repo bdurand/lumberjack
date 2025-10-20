@@ -4,7 +4,7 @@ Gem::Specification.new do |spec|
   spec.authors = ["Brian Durand"]
   spec.email = ["bbdurand@gmail.com"]
 
-  spec.summary = "A simple, powerful, and fast logging utility with excellent structured logging support that can be a drop in replacement for the standard library Logger."
+  spec.summary = "Extension of Ruby’s standard Logger for advanced, structured logging. Includes log entry attributes, context isolation, customizable formatters, flexible output devices, and testing tools."
   spec.homepage = "https://github.com/bdurand/lumberjack"
   spec.license = "MIT"
 
@@ -31,7 +31,9 @@ Gem::Specification.new do |spec|
 
   spec.require_paths = ["lib"]
 
-  spec.required_ruby_version = ">= 2.5.0"
+  spec.required_ruby_version = ">= 2.7"
+
+  spec.add_runtime_dependency "logger"
 
   spec.add_development_dependency "bundler"
 end

@@ -5,10 +5,11 @@ gemspec
 gem "rake"
 gem "rspec", "~> 3.12"
 gem "timecop"
-gem "appraisal"
+gem "appraisal", require: false
 gem "standard", require: false
 gem "simplecov", require: false
-gem "yard"
+gem "rdoc", require: false
+gem "yard", require: false
 
 group :development do
   gem "ruby-prof", require: false

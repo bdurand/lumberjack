@@ -1,6 +1,12 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 
 RSpec.describe Lumberjack::Formatter::IdFormatter do
+  it "is registered as :id" do
+    expect(Lumberjack::FormatterRegistry.formatter(:id)).to be_a(Lumberjack::Formatter::IdFormatter)
+  end
+
   it "should format an object as a hash of class and id" do
     obj = Object.new
     def obj.id

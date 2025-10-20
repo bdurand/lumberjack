@@ -1,206 +1,214 @@
 # frozen_string_literal: true
 
 module Lumberjack
-  class Device
-    # This logging device writes log entries as strings to an IO stream. By default, messages will be buffered
-    # and written to the stream in a batch when the buffer is full or when +flush+ is called.
+  # A versatile logging device that writes formatted log entries to IO streams.
+  # This device serves as the foundation for most output-based logging, converting
+  # LogEntry objects into formatted strings using configurable templates and
+  # writing them to any IO-compatible stream.
+  #
+  # The Writer device supports extensive customization through templates, encoding
+  # options, stream management, and error handling. It can write to files, console
+  # output, network streams, or any object that implements the IO interface.
+  #
+  # Templates can be either string-based (compiled into Template objects) or
+  # callable objects (Procs, lambdas) for maximum flexibility. The device handles
+  # character encoding, whitespace normalization, and provides robust error
+  # recovery when stream operations fail.
+  #
+  # @see Template
+  class Device::Writer < Device
+    EDGE_WHITESPACE_PATTERN = /\A\s|[ \t\f\v][\r\n]*\z/
+
+    # Initialize a new Writer device with configurable formatting and stream options.
+    # The device supports multiple template types, encoding control, and stream
+    # behavior configuration for flexible output handling.
     #
-    # Subclasses can implement a +before_flush+ method if they have logic to execute before flushing the log.
-    # If it is implemented, it will be called before every flush inside a mutex lock.
-    class Writer < Device
-      DEFAULT_FIRST_LINE_TEMPLATE = "[:time :severity :progname(:pid) #:unit_of_work_id] :message :tags"
-      DEFAULT_ADDITIONAL_LINES_TEMPLATE = "#{Lumberjack::LINE_SEPARATOR}> [#:unit_of_work_id] :message"
+    # @param stream [IO, #write] The target stream for log output. Can be any object
+    #   that responds to write(), including File objects, STDOUT/STDERR, StringIO,
+    #   network streams, or custom IO-like objects
+    # @param options [Hash] Configuration options for the writer device
+    #
+    # @option options [String, Proc, nil] :template The formatting template for log entries.
+    #   - String: Compiled into a Template object (default: "[:time :severity :progname(:pid)] :message")
+    #   - Proc: Called with LogEntry, should return formatted string
+    #   - nil: Uses default template
+    #
+    # @option options [Logger::Formatter] :standard_logger_formatter Use a Ruby Logger
+    #   formatter for compatibility with existing logging code
+    #
+    # @option options [String, nil] :additional_lines Template for formatting additional
+    #   lines in multi-line messages (default: "\n  :message")
+    #
+    # @option options [String, Symbol] :time_format Format for timestamps in templates.
+    #   Accepts strftime patterns or :milliseconds/:microseconds shortcuts
+    #
+    # @option options [String] :attribute_format Printf-style format for attributes
+    #   with exactly two %s placeholders for name and value (default: "[%s:%s]")
+    #
+    # @option options [Boolean] :autoflush (true) Whether to automatically flush
+    #   the stream after each write for immediate output
+    #
+    # @option options [Boolean] :binmode (false) Whether to treat the stream as
+    #   binary, skipping UTF-8 encoding conversion
+    #
+    # @option options [Boolean] :colorize (false) Whether to colorize log output
+    def initialize(stream, options = {})
+      @stream = stream
+      @stream.sync = true if @stream.respond_to?(:sync=) && options[:autoflush] != false
 
-      # The size of the internal buffer. Defaults to 32K.
-      attr_reader :buffer_size
+      @binmode = options[:binmode]
 
-      # Internal buffer to batch writes to the stream.
-      class Buffer # :nodoc:
-        attr_reader :size
+      if options[:standard_logger_formatter]
+        @template = Template::StandardFormatterTemplate.new(options[:standard_logger_formatter])
+      else
+        template = options[:template]
 
-        def initialize
-          @values = []
-          @size = 0
-        end
+        template = TemplateRegistry.template(template, options) if template.is_a?(Symbol)
 
-        def <<(string)
-          @values << string
-          @size += string.size
-        end
-
-        def empty?
-          @values.empty?
-        end
-
-        def pop!
-          return nil if @values.empty?
-          popped = @values
-          clear
-          popped
-        end
-
-        def clear
-          @values = []
-          @size = 0
-        end
-      end
-
-      # Create a new device to write log entries to a stream. Entries are converted to strings
-      # using a Template. The template can be specified using the :template option. This can
-      # either be a Proc or a string that will compile into a Template object.
-      #
-      # If the template is a Proc, it should accept an LogEntry as its only argument and output a string.
-      #
-      # If the template is a template string, it will be used to create a Template. The
-      # :additional_lines and :time_format options will be passed through to the
-      # Template constuctor.
-      #
-      # The default template is "[:time :severity :progname(:pid)] :message"
-      # with additional lines formatted as "\n  :message".
-      #
-      # The size of the internal buffer in bytes can be set by providing :buffer_size (defaults to 32K).
-      #
-      # @param [IO] stream The stream to write log entries to.
-      # @param [Hash] options The options for the device.
-      def initialize(stream, options = {})
-        @lock = Mutex.new
-        @stream = stream
-        @stream.sync = true if @stream.respond_to?(:sync=)
-        @buffer = Buffer.new
-        @buffer_size = options[:buffer_size] || 0
-        template = options[:template] || DEFAULT_FIRST_LINE_TEMPLATE
-        if template.respond_to?(:call)
-          @template = template
+        @template = if template.respond_to?(:call)
+          template
         else
-          additional_lines = options[:additional_lines] || DEFAULT_ADDITIONAL_LINES_TEMPLATE
-          @template = Template.new(template, additional_lines: additional_lines, time_format: options[:time_format])
+          Template.new(
+            template,
+            additional_lines: options[:additional_lines],
+            time_format: options[:time_format],
+            attribute_format: options[:attribute_format],
+            colorize: options[:colorize]
+          )
         end
       end
+    end
 
-      # Set the buffer size in bytes. The device will only be physically written to when the buffer size
-      # is exceeded.
-      #
-      # @param [Integer] value The size of the buffer in bytes.
-      # @return [void]
-      def buffer_size=(value)
-        @buffer_size = value
-        flush
+    # Write a log entry to the stream with automatic formatting and error handling.
+    # The entry is converted to a string using the configured template, processed
+    # for encoding and whitespace, and written to the stream with robust error recovery.
+    #
+    # @param entry [LogEntry, String] The log entry to write. LogEntry objects are
+    #   formatted using the template, while strings are written directly after
+    #   encoding and whitespace processing
+    # @return [void]
+    def write(entry)
+      string = (entry.is_a?(LogEntry) ? @template.call(entry) : entry)
+      return if string.nil?
+
+      if !@binmode && string.encoding != Encoding::UTF_8
+        string = string.encode("UTF-8", invalid: :replace, undef: :replace)
       end
 
-      # Write an entry to the stream. The entry will be converted into a string using the defined template.
-      #
-      # @param [LogEntry, String] entry The entry to write to the stream.
-      # @return [void]
-      def write(entry)
-        string = (entry.is_a?(LogEntry) ? @template.call(entry) : entry)
-        return if string.nil?
-        string = string.strip
-        return if string.length == 0
+      string = string.strip if string.match?(EDGE_WHITESPACE_PATTERN)
+      return if string.length == 0 || string == Lumberjack::LINE_SEPARATOR
 
-        unless string.encoding == Encoding::UTF_8
-          string = string.encode("UTF-8", invalid: :replace, undef: :replace)
-        end
+      write_to_stream(string)
+    end
 
-        if buffer_size > 1
-          @lock.synchronize do
-            @buffer << string
-          end
-          flush if @buffer.size >= buffer_size
-        else
-          flush if respond_to?(:before_flush, true)
-          write_to_stream(string)
-        end
+    # Close the underlying stream and release any associated resources. This method
+    # ensures all buffered data is flushed before closing the stream, providing
+    # clean shutdown behavior for file handles and network connections.
+    #
+    # @return [void]
+    def close
+      flush
+      stream.close
+    end
+
+    # Flush the underlying stream to ensure all buffered data is written to the
+    # destination. This method is safe to call on streams that don't support
+    # flushing, making it suitable for various IO types.
+    #
+    # @return [void]
+    def flush
+      stream.flush if stream.respond_to?(:flush)
+    end
+
+    # Get the current datetime format from the template if supported. Returns the
+    # format string used for timestamp formatting in log entries.
+    #
+    # @return [String, nil] The datetime format string if the template supports it,
+    #   or nil if the template doesn't provide datetime formatting
+    def datetime_format
+      @template.datetime_format if @template.respond_to?(:datetime_format)
+    end
+
+    # Set the datetime format on the template if supported. This allows dynamic
+    # reconfiguration of timestamp formatting without recreating the device.
+    #
+    # @param format [String] The datetime format string (strftime pattern) to
+    #   apply to the template for timestamp formatting
+    # @return [void]
+    def datetime_format=(format)
+      if @template.respond_to?(:datetime_format=)
+        @template.datetime_format = format
       end
+    end
 
-      # Close the underlying stream.
-      #
-      # @return [void]
-      def close
-        flush
-        stream.close
-      end
+    # Access the underlying IO stream for direct manipulation or compatibility
+    # with code expecting Logger device interface. This method provides the
+    # raw stream object for advanced use cases.
+    #
+    # @return [IO] The underlying stream object used for output
+    # @api private
+    def dev
+      stream
+    end
 
-      # Flush the underlying stream.
-      #
-      # @return [void]
-      def flush
-        lines = nil
-        @lock.synchronize do
-          before_flush if respond_to?(:before_flush, true)
-          lines = @buffer.pop!
-        end
-        write_to_stream(lines) if lines
-      end
+    # Get the file system path of the underlying stream if available. This method
+    # is useful for monitoring, log rotation, or any operations that need to
+    # work with the actual file path.
+    #
+    # @return [String, nil] The file system path if the stream is file-based,
+    #   or nil for non-file streams (STDOUT, StringIO, network streams, etc.)
+    def path
+      stream.path if stream.respond_to?(:path)
+    end
 
-      # Get the datetime format.
-      #
-      # @return [String] The datetime format.
-      def datetime_format
-        @template.datetime_format if @template.respond_to?(:datetime_format)
-      end
+    # The underlying stream object that is being written to.
+    #
+    # @return [IO] The current stream object
+    attr_accessor :stream
 
-      # Set the datetime format.
-      #
-      # @param [String] format The datetime format.
-      # @return [void]
-      def datetime_format=(format)
-        if @template.respond_to?(:datetime_format=)
-          @template.datetime_format = format
-        end
-      end
+    private
 
-      # Return the underlying stream. Provided for API compatibility with Logger devices.
-      #
-      # @return [IO] The underlying stream.
-      def dev
-        @stream
-      end
-
-      protected
-
-      # Set the underlying stream.
-      attr_writer :stream
-
-      # Get the underlying stream.
-      attr_reader :stream
-
-      private
-
-      def write_to_stream(lines)
-        return if lines.empty?
-        lines = lines.first if lines.is_a?(Array) && lines.size == 1
-        out = if lines.is_a?(Array)
-          "#{lines.join(Lumberjack::LINE_SEPARATOR)}#{Lumberjack::LINE_SEPARATOR}"
-        else
-          "#{lines}#{Lumberjack::LINE_SEPARATOR}"
-        end
-
+    # Write a formatted line to the stream with robust error handling. This method
+    # ensures proper line termination, handles IO errors gracefully, and provides
+    # fallback error reporting to STDERR when the primary stream fails.
+    #
+    # @param line [String] The formatted log line to write
+    # @return [void]
+    def write_to_stream(line)
+      out = line.end_with?(Lumberjack::LINE_SEPARATOR) ? line : "#{line}#{Lumberjack::LINE_SEPARATOR}"
+      begin
         begin
-          begin
-            stream.write(out)
-          rescue IOError => e
-            # This condition can happen if another thread closed the stream in the `before_flush` call.
-            # Synchronizing will handle the race condition, but since it's an exceptional case we don't
-            # want to lock the thread on every stream write call.
-            @lock.synchronize do
-              if stream.closed?
-                raise e
-              else
-                stream.write(out)
-              end
-            end
-          end
-          begin
-            stream.flush
-          rescue
-            nil
-          end
-        rescue => e
-          $stderr.write("#{e.class.name}: #{e.message}#{" at " + e.backtrace.first if e.backtrace}")
-          $stderr.write(out)
-          $stderr.flush
+          stream.write(out)
+        rescue IOError => e
+          raise e if stream.closed?
+
+          stream.write(out)
         end
+      rescue => e
+        $stderr.write(error_message(e))
+        $stderr.write(out)
       end
+    end
+
+    # Generate a detailed error message for logging failures. This method creates
+    # informative error messages that include exception details and backtrace
+    # information for debugging stream write failures.
+    #
+    # @param e [Exception] The exception that occurred during stream operations
+    # @return [String] A formatted error message with exception details
+    def error_message(e)
+      "#{e.class.name}: #{e.message}#{" at " + e.backtrace.first if e.backtrace}#{Lumberjack::LINE_SEPARATOR}"
+    end
+
+    # Create a test log template.
+    def test_log_template(options)
+      kwargs = {
+        exclude_attributes: options[:exclude_attributes],
+        exclude_progname: options[:exclude_progname],
+        exclude_pid: options[:exclude_pid],
+        exclude_time: options[:exclude_time]
+      }
+      TestLogTemplate.new(**kwargs.compact)
     end
   end
 end

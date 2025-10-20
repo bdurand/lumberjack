@@ -2,35 +2,86 @@
 
 module Lumberjack
   module Rack
-    # Middleware to create a global context for Lumberjack for the scope of a rack request.
+    # Rack middleware ensures that a global Lumberjack context exists for
+    # the duration of each HTTP request. This middleware creates an isolated
+    # logging context that automatically cleans up after the request completes,
+    # ensuring that request-specific attributes don't leak between requests.
     #
-    # The optional `env_tags` parameter can be used to set up global tags from the request
-    # environment. This is useful for setting tags that are relevant to the entire request
-    # like the request id, host, etc.
+    # The middleware supports dynamic attribute extraction from the Rack environment,
+    # allowing automatic tagging of log entries with request-specific information
+    # such as request IDs, user agents, IP addresses, or any other data available
+    # in the Rack environment.
+    #
+    # This is particularly useful in web applications where you want to correlate
+    # all log entries within a single request with common identifying information,
+    # making it easier to trace request flows and debug issues.
+    #
+    # @example Basic usage in a Rack application
+    #   use Lumberjack::Rack::Context
+    #
+    # @example With static attributes
+    #   use Lumberjack::Rack::Context, {
+    #     app_name: "MyWebApp",
+    #     version: "1.2.3"
+    #   }
+    #
+    # @example With dynamic attributes from request environment
+    #   use Lumberjack::Rack::Context, {
+    #     request_id: ->(env) { env["HTTP_X_REQUEST_ID"] },
+    #     user_agent: ->(env) { env["HTTP_USER_AGENT"] },
+    #     remote_ip: ->(env) { env["REMOTE_ADDR"] },
+    #     method: ->(env) { env["REQUEST_METHOD"] },
+    #     path: ->(env) { env["PATH_INFO"] }
+    #   }
+    #
+    # @example Rails integration
+    #   # In config/application.rb
+    #   config.middleware.use Lumberjack::Rack::Context, {
+    #     request_id: ->(env) { env["action_dispatch.request_id"] },
+    #     session_id: ->(env) { env["rack.session"]&.id },
+    #     user_id: ->(env) { env["warden"]&.user&.id }
+    #   }
+    #
+    # @see Lumberjack.context
+    # @see Lumberjack.tag
     class Context
-      # @param [Object] app The rack application.
-      # @param [Hash] env_tags A hash of tags to set from the request environment. If a tag value is
-      #   a Proc, it will be called with the request `env` as an argument to allow dynamic tag values
-      #   based on request data.
-      def initialize(app, env_tags = nil)
+      # Initialize the middleware with the Rack application and optional environment
+      # attribute configuration. The middleware will create a scoped logging context
+      # for each request and automatically apply the specified attributes.
+      #
+      # @param app [Object] The next Rack application in the middleware stack
+      # @param env_attributes [Hash, nil] Optional hash defining attributes to extract
+      #   from the request environment. Values can be:
+      #   - Static values: Applied directly to all requests
+      #   - Proc objects: Called with the Rack env hash to generate dynamic values
+      #   - Any callable: Invoked with env to produce request-specific attributes
+      def initialize(app, env_attributes = nil)
         @app = app
-        @env_tags = env_tags
+        @env_attributes = env_attributes
       end
 
+      # Process a Rack request within a scoped Lumberjack logging context.
+      #
+      # @param env [Hash] The Rack environment hash containing request information
+      # @return [Array] The standard Rack response array [status, headers, body]
       def call(env)
-        Lumberjack.context do
-          apply_tags(env) if @env_tags
+        Lumberjack.ensure_context do
+          apply_attributes(env) if @env_attributes
           @app.call(env)
         end
       end
 
       private
 
-      def apply_tags(env)
-        tags = @env_tags.transform_values do |value|
+      # Apply configured environment attributes to the current logging context.
+      #
+      # @param env [Hash] The Rack environment hash
+      # @return [void]
+      def apply_attributes(env)
+        attributes = @env_attributes.transform_values do |value|
           value.is_a?(Proc) ? value.call(env) : value
         end
-        Lumberjack.tag(tags)
+        Lumberjack.tag(attributes)
       end
     end
   end

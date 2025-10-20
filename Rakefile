@@ -4,9 +4,6 @@ rescue LoadError
   puts "You must `gem install bundler` and `bundle install` to run rake tasks"
 end
 
-require "yard"
-YARD::Rake::YardocTask.new(:yard)
-
 require "bundler/gem_tasks"
 
 task :verify_release_branch do
@@ -16,7 +13,7 @@ task :verify_release_branch do
   end
 end
 
-task release: :verify_release_branch
+Rake::Task[:release].enhance([:verify_release_branch])
 
 require "rspec/core/rake_task"
 
@@ -35,8 +32,6 @@ namespace :appraisals do
     exec "bundle exec appraisal install"
   end
 end
-
-require "standard/rake"
 
 namespace :profile do
   desc "Profile logger CPU usage. Set LOGGER=Logger to profile the standard libary logger. Set LOG_LEVEL=warn to profile with a higher log level."
@@ -71,5 +66,21 @@ namespace :profile do
     MemoryProfiler.report do
       1000.times { logger.info(message) }
     end.pretty_print
+  end
+end
+
+namespace :colors do
+  desc "Print the color codes for each severity level"
+  task :print do
+    require_relative "lib/lumberjack"
+
+    logger = Lumberjack::Logger.new($stdout, level: :trace, template: "{{severity(emoji)}} {{severity(padded)}} {{message}}", colorize: true)
+    logger.trace("Test message")
+    logger.debug("Test message")
+    logger.info("Test message")
+    logger.warn("Test message")
+    logger.error("Test message")
+    logger.fatal("Test message")
+    logger.unknown("Test message")
   end
 end

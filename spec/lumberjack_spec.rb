@@ -1,97 +1,118 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 
 RSpec.describe Lumberjack do
-  describe "context" do
-    it "should create a context with tags for a block" do
+  describe "VERSION" do
+    it "is defined" do
+      expect(Lumberjack::VERSION).not_to be_nil
+    end
+  end
+
+  describe "#context" do
+    it "should create a context with attributes for a block" do
       Lumberjack.context do
         Lumberjack.tag(foo: "bar")
-        expect(Lumberjack.context[:foo]).to eq "bar"
+        expect(Lumberjack.context_attributes).to eq({"foo" => "bar"})
       end
-    end
-
-    it "should always return a context" do
-      context = Lumberjack.context
-      expect(context).to be_a(Lumberjack::Context)
-      expect(context).to_not eq(Lumberjack.context)
     end
 
     it "should determine if it is inside a context block" do
-      expect(Lumberjack.context?).to eq false
+      expect(Lumberjack.in_context?).to eq false
       Lumberjack.context do
-        expect(Lumberjack.context?).to eq true
+        expect(Lumberjack.in_context?).to eq true
       end
-      expect(Lumberjack.context?).to eq false
-    end
-
-    it "should inherit parent context tags in sub blocks" do
-      Lumberjack.context do
-        Lumberjack.tag(foo: "bar")
-        Lumberjack.context do
-          expect(Lumberjack.context[:foo]).to eq "bar"
-          Lumberjack.tag(foo: "baz")
-          expect(Lumberjack.context[:foo]).to eq "baz"
-        end
-        expect(Lumberjack.context[:foo]).to eq "bar"
-      end
-      expect(Lumberjack.context[:foo]).to eq nil
-    end
-
-    it "should return the context tags or nil if there are no tags" do
-      expect(Lumberjack.context_tags).to eq nil
-
-      Lumberjack.tag(foo: "bar")
-      expect(Lumberjack.context_tags).to eq nil
-
-      Lumberjack.context do
-        Lumberjack.tag(foo: "bar")
-        expect(Lumberjack.context_tags).to eq("foo" => "bar")
-      end
-    end
-
-    it "should be specify the context" do
-      context = Lumberjack::Context.new
-      context.tag(fog: "bar")
-      Lumberjack.use_context(context) do
-        expect(Lumberjack.context_tags).to eq("fog" => "bar")
-      end
+      expect(Lumberjack.in_context?).to eq false
     end
 
     it "should return the result of the context block" do
       result = Lumberjack.context { :foo }
       expect(result).to eq :foo
     end
+  end
 
+  describe "#ensure_context" do
+    it "should create a context if one does not exist" do
+      expect(Lumberjack.in_context?).to eq false
+      value = Lumberjack.ensure_context do
+        expect(Lumberjack.in_context?).to eq true
+        :foo
+      end
+      expect(Lumberjack.in_context?).to eq false
+      expect(value).to eq :foo
+    end
+
+    it "does not create a new context if one already exists" do
+      Lumberjack.context do
+        value = Lumberjack.ensure_context do
+          Lumberjack.tag(baz: "bap")
+          :foo
+        end
+        expect(Lumberjack.context_attributes).to eq({"baz" => "bap"})
+        expect(value).to eq :foo
+      end
+    end
+  end
+
+  describe "#use_context" do
     it "should return the result of the use_context block" do
       result = Lumberjack.use_context(nil) { :foo }
       expect(result).to eq :foo
     end
+
+    it "should create a context based on passed in context" do
+      context = Lumberjack::Context.new
+      context.assign_attributes(foo: "bar")
+      Lumberjack.use_context(context) do
+        expect(Lumberjack.context_attributes).to eq("foo" => "bar")
+      end
+    end
   end
 
-  describe "unit of work" do
-    it "should create a unit work with a unique id in a block in a tag", suppress_warnings: true do
-      expect(Lumberjack.unit_of_work_id).to eq(nil)
-      Lumberjack.unit_of_work do
-        id_1 = Lumberjack.unit_of_work_id
-        expect(id_1).to match(/^[0-9a-f]{12}$/)
-        expect(Lumberjack.context[:unit_of_work_id]).to eq id_1
-        Lumberjack.unit_of_work do
-          id_2 = Lumberjack.unit_of_work_id
-          expect(id_2).to match(/^[0-9a-f]{12}$/)
-          expect(id_2).not_to eq(id_1)
-          expect(Lumberjack.context[:unit_of_work_id]).to eq id_2
-        end
-        expect(id_1).to eq(Lumberjack.unit_of_work_id)
-        expect(Lumberjack.context[:unit_of_work_id]).to eq id_1
-      end
-      expect(Lumberjack.unit_of_work_id).to eq(nil)
-      expect(Lumberjack.context[:unit_of_work_id]).to eq nil
+  describe "#tag" do
+    it "does nothing when called outside of a context block" do
+      Lumberjack.tag(foo: "bar")
+      expect(Lumberjack.context_attributes).to be_nil
     end
 
-    it "should allow you to specify a unit of work id for a block", suppress_warnings: true do
-      Lumberjack.unit_of_work("foo") do
-        expect(Lumberjack.unit_of_work_id).to eq("foo")
+    it "sets attributes on the current context when called inside a context block" do
+      Lumberjack.context do
+        Lumberjack.tag(foo: "bar")
+        expect(Lumberjack.context_attributes).to eq({"foo" => "bar"})
       end
-      expect(Lumberjack.unit_of_work_id).to eq(nil)
     end
+
+    it "sets attributes in a new context block" do
+      expect(Lumberjack.context_attributes).to be_nil
+      Lumberjack.tag(foo: "bar") do
+        expect(Lumberjack.context_attributes).to eq({"foo" => "bar"})
+      end
+      expect(Lumberjack.context_attributes).to be_nil
+    end
+
+    it "returns the result of the block" do
+      result = Lumberjack.tag(foo: "bar") { :foobar }
+      expect(result).to eq :foobar
+    end
+
+    it "inherits attributes from the parent context" do
+      Lumberjack.tag(bip: "bap") do
+        Lumberjack.tag(foo: "bar")
+        expect(Lumberjack.context_attributes).to eq({"foo" => "bar", "bip" => "bap"})
+        Lumberjack.tag(baz: "boo") do
+          expect(Lumberjack.context_attributes).to eq({"foo" => "bar", "bip" => "bap", "baz" => "boo"})
+        end
+        expect(Lumberjack.context_attributes).to eq({"foo" => "bar", "bip" => "bap"})
+      end
+      expect(Lumberjack.context_attributes).to be_nil
+    end
+  end
+
+  it "can build a formatter" do
+    entry_formatter = Lumberjack.build_formatter do |formatter|
+      formatter.format_class(Integer) { |i| i * 2 }
+    end
+    expect(entry_formatter).to be_a(Lumberjack::EntryFormatter)
+    expect(entry_formatter.format(12, nil).first).to eq(24)
   end
 end

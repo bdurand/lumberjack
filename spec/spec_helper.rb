@@ -2,15 +2,10 @@
 
 require "logger"
 
-# ActiveSupport is only available on some Appraisal runs.
-begin
-  require "active_support/all"
-rescue LoadError => e
-end
-
 require "stringio"
 require "fileutils"
 require "timecop"
+require "tempfile"
 
 begin
   require "simplecov"
@@ -22,23 +17,25 @@ end
 
 require_relative "../lib/lumberjack"
 
+Lumberjack.raise_logger_errors = true
+Lumberjack.deprecation_mode = :raise
+
 RSpec.configure do |config|
   config.warnings = true
+  config.disable_monkey_patching!
+  config.default_formatter = "doc" if config.files_to_run.one?
   config.order = :random
+  Kernel.srand config.seed
 
-  config.around(:each, :suppress_warnings) do |example|
-    save_val = ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"]
-    ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = "true"
-    begin
+  config.around(:each, :deprecation_mode) do |example|
+    Lumberjack::Utils.with_deprecation_mode(example.metadata[:deprecation_mode]) do
       example.run
-    ensure
-      ENV["LUMBERJACK_NO_DEPRECATION_WARNINGS"] = save_val
     end
   end
 end
 
 def tmp_dir
-  File.expand_path("../tmp", __FILE__)
+  File.join(Dir.tmpdir, "lumberjack_test")
 end
 
 def create_tmp_dir
@@ -53,5 +50,45 @@ end
 def delete_tmp_files
   Dir.glob(File.join(tmp_dir, "*")) do |file|
     File.delete(file)
+  end
+end
+
+# Minimal implementation of a Lumberjack::ContextLogger for testing to ensure that methods from
+# Lumberjack::Logger are not polluting any of the logic.
+class TestContextLogger
+  include Lumberjack::ContextLogger
+
+  attr_reader :entries
+
+  def initialize(context = nil)
+    @context = context
+    @entries = []
+  end
+
+  def add_entry(severity, message, progname = nil, attributes = nil)
+    @entries << {
+      severity: severity,
+      message: message,
+      progname: progname,
+      attributes: attributes
+    }
+  end
+
+  private
+
+  def default_context
+    @context
+  end
+end
+
+class TestToLogFormat
+  attr_reader :value
+
+  def initialize(value)
+    @value = value
+  end
+
+  def to_log_format
+    "LOG FORMAT: #{@value}"
   end
 end

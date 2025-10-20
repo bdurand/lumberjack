@@ -1,56 +1,52 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 
 RSpec.describe Lumberjack::Device::LogFile do
-  before :all do
-    create_tmp_dir
+  let(:out) { StringIO.new }
+
+  it "wraps a ::Logger::LogDevice" do
+    device = Lumberjack::Device::LogFile.new(out, template: "{{severity}} {{message}}")
+    expect(device.class).to eq(Lumberjack::Device::LogFile)
+    device.write(Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test message", nil, Process.pid, nil))
+    expect(out.string.chomp).to eq("INFO Test message")
   end
 
-  after :all do
-    delete_tmp_dir
+  it "passes supported device options through to the underlying device" do
+    expect(Logger::LogDevice).to receive(:new).with(out, shift_age: 10).and_call_original
+    Lumberjack::Device::LogFile.new(out, template: "{{severity}} {{message}}", shift_age: 10)
   end
 
-  before :each do
-    delete_tmp_files
-  end
-
-  it "should append to a file" do
-    log_file = File.join(tmp_dir, "a#{rand(1000000000)}.log")
-    File.open(log_file, "w") do |f|
-      f.puts("Existing contents")
+  it "exposes the file path for the underlying stream" do
+    file = Tempfile.new("lumberjack_test")
+    file.close
+    begin
+      device = Lumberjack::Device::LogFile.new(file)
+      expect(device.path).to eq(file.path)
+    ensure
+      file.unlink
     end
-
-    device = Lumberjack::Device::LogFile.new(log_file, template: ":message")
-    device.write(Lumberjack::LogEntry.new(Time.now, 1, "New log entry", nil, Process.pid, nil))
-    device.close
-
-    expect(File.read(log_file)).to eq("Existing contents\nNew log entry#{Lumberjack::LINE_SEPARATOR}")
   end
 
-  it "properly handles messages with broken UTF-8 characters" do
-    log_file = File.join(tmp_dir, "a#{rand(1000000000)}.log")
-    device = Lumberjack::Device::LogFile.new(log_file, keep: 2, buffer_size: 32767)
-
-    message = [0xC4, 0x90, 0xE1, 0xBB].pack("c*").force_encoding "ASCII-8BIT"
-    entry = Lumberjack::LogEntry.new(Time.now, 1, message, nil, Process.pid, nil)
-    device.write entry
-
-    message = "проверка"
-    entry = Lumberjack::LogEntry.new(Time.now, 1, message, nil, Process.pid, nil)
-    device.write entry
-
-    expect do
-      device.flush
-    end.to_not raise_error
+  describe "#dev" do
+    it "returns the underlying stream" do
+      stream = StringIO.new
+      device = Lumberjack::Device::LogFile.new(stream)
+      expect(device.dev).to eq(stream)
+    end
   end
 
-  it "should reopen the file" do
-    log_file = File.join(tmp_dir, "a#{rand(1000000000)}.log")
-    device = Lumberjack::Device::LogFile.new(log_file, template: ":message")
-    device.write(Lumberjack::LogEntry.new(Time.now, 1, "message 1", nil, Process.pid, nil))
-    device.close
-    device.reopen
-    device.write(Lumberjack::LogEntry.new(Time.now, 1, "message 2", nil, Process.pid, nil))
-    device.close
-    expect(File.read(log_file)).to eq("message 1#{Lumberjack::LINE_SEPARATOR}message 2#{Lumberjack::LINE_SEPARATOR}")
+  describe "#reopen" do
+    it "calls reopen on the underlying stream with the correct parameters" do
+      file = Tempfile.new("lumberjack_test")
+      file.close
+      begin
+        device = Lumberjack::Device::LogFile.new(file.path)
+        expect_any_instance_of(::Logger::LogDevice).to receive(:reopen).with(nil).and_call_original
+        device.reopen
+      ensure
+        file.unlink
+      end
+    end
   end
 end
