@@ -85,7 +85,7 @@ module Lumberjack
     # @api private
     def add_entry(severity, message, progname = nil, attributes = nil)
       parent_logger.with_level(level || Logger::DEBUG) do
-        attributes = merge_attributes(attributes, local_attributes)
+        attributes = merge_attributes(local_attributes, attributes)
         progname ||= self.progname
 
         if parent_logger.is_a?(ContextLogger)
