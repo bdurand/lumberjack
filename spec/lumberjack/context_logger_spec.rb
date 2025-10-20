@@ -601,7 +601,10 @@ RSpec.describe Lumberjack::ContextLogger do
 
   describe "#fork" do
     it "returns a local logger that has an isolated context from the current logger" do
+      logger = Lumberjack::Logger.new(:test)
+      logger.tag!(one: 1, two: 2)
       forked_logger = logger.fork
+
       expect(forked_logger.level).to eq logger.level
       forked_logger.level = :warn
       expect(forked_logger.level).to_not eq logger.level
@@ -610,9 +613,12 @@ RSpec.describe Lumberjack::ContextLogger do
       forked_logger.progname = "ForkedLogger"
       expect(forked_logger.progname).to_not eq logger.progname
 
-      expect(forked_logger.attributes).to eq logger.attributes
-      forked_logger.tag!(foo: "bar")
-      expect(forked_logger.attributes).to_not eq logger.attributes
+      expect(forked_logger.attributes).to eq({})
+      forked_logger.tag!(foo: "bar", two: 22)
+      expect(forked_logger.attributes).to eq({"two" => 22, "foo" => "bar"})
+
+      logger.tag!(three: 3)
+      expect(forked_logger.attributes).to eq({"two" => 22, "foo" => "bar"})
     end
 
     it "can set the level on the local logger" do
