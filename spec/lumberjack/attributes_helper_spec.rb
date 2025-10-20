@@ -50,9 +50,8 @@ RSpec.describe Lumberjack::AttributesHelper do
       tag_context.update(foo: {bar: "baz", far: "qux"})
       expect(tag_context.to_h).to eq({"foo.bar" => "baz", "foo.far" => "qux"})
 
-      tag_context.update("foo.bip" => "bop", "foo.far" => "foe") do
-        expect(tag_context.to_h).to eq({"foo.bar" => "baz", "foo.bip" => "bop", "foo.far" => "foe"})
-      end
+      tag_context.update("foo.bip" => "bop", "foo.far" => "foe")
+      expect(tag_context.to_h).to eq({"foo.bar" => "baz", "foo.bip" => "bop", "foo.far" => "foe"})
     end
   end
 

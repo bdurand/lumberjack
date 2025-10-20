@@ -73,9 +73,8 @@ RSpec.describe Lumberjack::Context do
       context.assign_attributes(foo: {bar: "baz", far: "qux"})
       expect(context.attributes).to eq({"foo.bar" => "baz", "foo.far" => "qux"})
 
-      context.assign_attributes("foo.bip" => "bop", "foo.far" => "foe") do
-        expect(context.attributes).to eq({"foo.bar" => "baz", "foo.bip" => "bop", "foo.far" => "foe"})
-      end
+      context.assign_attributes("foo.bip" => "bop", "foo.far" => "foe")
+      expect(context.attributes).to eq({"foo.bar" => "baz", "foo.bip" => "bop", "foo.far" => "foe"})
     end
   end
 

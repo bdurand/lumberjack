@@ -36,8 +36,6 @@ jobs:
           - ruby: "3.1"
           - ruby: "3.0"
           - ruby: "2.7"
-          - ruby: "ruby"
-            appraisal: logger_gem
     steps:
       - uses: actions/checkout@v4
       - name: Set up Ruby ${{ matrix.ruby }}
