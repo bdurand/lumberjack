@@ -424,14 +424,24 @@ RSpec.describe Lumberjack::Logger do
       end
 
       it "should not get into infinite loops by logging entries while logging entries" do
-        time = Time.parse("2011-01-30T12:31:56.123")
+        time = Time.new(2011, 1, 30, 12, 31, 56, 0)
         allow(Time).to receive_messages(now: time)
         tag_proc = lambda do
           logger.warn("inner logging")
           "foo"
         end
-        logger.add_entry(Logger::INFO, "test", "spec", tag: tag_proc)
-        expect(out.string.chomp).to eq("[2011-01-30T12:31:56.123 INFO spec(#{Process.pid})] test [tag:foo]")
+
+        save_stderr = $stderr
+        captured_stderr = StringIO.new
+        begin
+          $stderr = captured_stderr
+          logger.add_entry(Logger::INFO, "test", "spec", tag: tag_proc)
+        ensure
+          $stderr = save_stderr
+        end
+
+        expect(out.string.chomp).to eq("[2011-01-30T12:31:56.000 INFO spec(#{Process.pid})] test [tag:foo]")
+        expect(captured_stderr.string).to include("WARN inner logging\n")
       end
     end
 

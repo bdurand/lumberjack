@@ -396,7 +396,12 @@ module Lumberjack
     # @api private
     def add_entry(severity, message, progname = nil, attributes = nil)
       return false unless device
-      return false if fiber_local&.logging
+
+      # Prevent infinite recursion if logging is attempted from within a logging call.
+      if fiber_local&.logging
+        log_to_stderr(severity, message)
+        return false
+      end
 
       severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
 
@@ -502,6 +507,12 @@ module Lumberjack
       end
 
       positional_arg_count == 4 && !has_forbidden_args
+    end
+
+    def log_to_stderr(severity, message)
+      severity = Severity.coerce(severity)
+      severity_label = Severity.level_to_label(severity)
+      $stderr.write("Recursive logging detected; you cannot write new log entries while logging other entries: #{severity_label} #{message}\n")
     end
   end
 end
