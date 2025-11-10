@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "fiber_locals"
+require_relative "context_locals"
 require_relative "io_compatibility"
 require_relative "severity"
 
@@ -26,7 +26,7 @@ module Lumberjack
 
     class << self
       def included(base)
-        base.include(FiberLocals) unless base.include?(FiberLocals)
+        base.include(ContextLocals) unless base.include?(ContextLocals)
         base.include(IOCompatibility) unless base.include?(IOCompatibility)
       end
     end
@@ -408,7 +408,7 @@ module Lumberjack
 
       new_context = Context.new(current_context)
       new_context.parent = local_context
-      fiber_locals do |locals|
+      context_locals do |locals|
         locals.context = new_context
         block.call(new_context)
       end
@@ -448,6 +448,7 @@ module Lumberjack
       logger.level = level if level
       logger.progname = progname if progname
       logger.tag!(attributes) if attributes
+      logger.isolation_level = isolation_level
       logger
     end
 
@@ -494,7 +495,7 @@ module Lumberjack
     #
     # @return [void]
     def clear_attributes(&block)
-      fiber_locals do |locals|
+      context_locals do |locals|
         locals.cleared = true
         context do |ctx|
           ctx.clear_attributes
@@ -529,7 +530,7 @@ module Lumberjack
     end
 
     def local_context
-      fiber_local&.context
+      current_context_local&.context
     end
 
     def default_context
@@ -594,7 +595,7 @@ module Lumberjack
     def merge_all_attributes
       attributes = nil
 
-      unless fiber_local&.cleared
+      unless current_context_local&.cleared
         global_context_attributes = Lumberjack.context_attributes
         if global_context_attributes && !global_context_attributes.empty?
           attributes ||= {}

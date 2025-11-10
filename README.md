@@ -22,6 +22,7 @@ The philosophy behind the library is to promote use of structured logging with t
      - [Context Blocks](#context-blocks)
      - [Nested Context Blocks](#nested-context-blocks)
      - [Forking Loggers](#forking-loggers)
+     - [Isolation Level](#isolation-level)
    - [Structured Logging With Attributes](#structured-logging-with-attributes)
      - [Basic Attribute Logging](#basic-attribute-logging)
      - [Adding attributes to the logger](#adding-attributes-to-the-logger)
@@ -112,6 +113,18 @@ user_service_logger.debug("Debug info")    # Includes version and component attr
 main_logger.info("Main logger info")       # Includes only version attribute
 main_logger.debug("Main logger debug info") # Not logged since level is :info
 ```
+
+#### Isolation Level
+
+By default each fiber will have its own logging context. This is useful in asynchronous applications where multiple fibers may be running concurrently. You can change the isolation level to `:thread` if you want each thread to have its own logging context instead.
+
+```ruby
+Lumberjack.isolation_level = :thread # Set isolation level globally
+
+logger = Lumberjack.logger.new(STDOUT, isolation_level: :thread) # Set isolation level per logger
+```
+
+Fiber isolation is the safest behavior since it completely isolates local contexts. However, in applications where threads are the main unit of work and fibers are never shared across threads, thread isolation may be more appropriate. Otherwise you can end up with logger losing the context block when switching fibers within the same thread.
 
 ### Structured Logging With Attributes
 

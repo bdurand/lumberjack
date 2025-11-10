@@ -179,6 +179,11 @@ RSpec.describe Lumberjack::Logger do
       _, attributes = logger.formatter.format(nil, {"test" => "foobar"})
       expect(attributes).to eq("test" => "FOOBAR")
     end
+
+    it "can set the isolation level" do
+      logger = Lumberjack::Logger.new(:test, isolation_level: :thread)
+      expect(logger.isolation_level).to eq :thread
+    end
   end
 
   describe "#set_progname", deprecation_mode: :silent do

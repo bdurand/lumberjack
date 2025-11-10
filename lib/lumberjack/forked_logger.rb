@@ -65,7 +65,7 @@ module Lumberjack
     # @param logger [Lumberjack::ContextLogger, #add_entry] The parent logger to forward entries to.
     #   Must respond to either +add_entry+ (for Lumberjack loggers) or standard Logger methods.
     def initialize(logger)
-      init_fiber_locals!
+      init_context_locals!
       @parent_logger = logger
       @context = Context.new
       @context.level ||= logger.level

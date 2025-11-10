@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.3
+
+### Added
+
+- Added `isolation_level` to loggers. By default this is set to `:fiber` which isolates logger contexts to the current fiber. That is each fiber will get its own context stack and starting a new fiber will start with a clean context. Setting `isolation_level` to `:thread` will isolate contexts to the current thread instead. This is useful if your application does not share fibers between threads and you want to maintain context across fibers in the same thread.
+
 ## 2.0.2
 
 ### Changed
