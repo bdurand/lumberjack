@@ -124,7 +124,7 @@ Lumberjack.isolation_level = :thread # Set isolation level globally
 logger = Lumberjack::Logger.new(STDOUT, isolation_level: :thread) # Set isolation level per logger
 ```
 
-Fiber isolation is the safest behavior since it completely isolates local contexts. However, in applications where threads are the main unit of work and fibers are never shared across threads, thread isolation may be more appropriate. Otherwise you can end up with logger losing the context block when switching fibers within the same thread.
+Fiber isolation is the safest behavior since it completely isolates local contexts. However, in applications where threads are the main unit of work and fibers are never shared across threads, thread isolation may be more appropriate. Otherwise you can end up with the logger losing the context block when switching fibers within the same thread.
 
 ### Structured Logging With Attributes
 
