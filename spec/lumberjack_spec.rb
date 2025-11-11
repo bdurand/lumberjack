@@ -69,6 +69,53 @@ RSpec.describe Lumberjack do
     end
   end
 
+  describe "#isolation_level" do
+    around do |example|
+      original_level = Lumberjack.isolation_level
+      begin
+        example.run
+      ensure
+        Lumberjack.isolation_level = original_level
+      end
+    end
+
+    it "defaults to :fiber" do
+      expect(Lumberjack.isolation_level).to eq :fiber
+    end
+
+    it "isolates the global context by fiber when set to :fiber" do
+      Lumberjack.isolation_level = :fiber
+      Lumberjack.context do
+        fiber = Fiber.new do
+          expect(Lumberjack.in_context?).to be false
+        end
+        fiber.resume
+        expect(Lumberjack.in_context?).to be true
+      end
+    end
+
+    it "isolates the global context by thread when set to :thread" do
+      Lumberjack.isolation_level = :thread
+      Lumberjack.context do
+        thread = Thread.new do
+          expect(Lumberjack.in_context?).to be false
+        end
+        fiber = Fiber.new do
+          expect(Lumberjack.in_context?).to be true
+        end
+        fiber.resume
+        thread.join
+        expect(Lumberjack.in_context?).to be true
+      end
+    end
+
+    it "is inherited by loggers" do
+      expect(Lumberjack::Logger.new(:test).isolation_level).to eq :fiber
+      Lumberjack.isolation_level = :thread
+      expect(Lumberjack::Logger.new(:test).isolation_level).to eq :thread
+    end
+  end
+
   describe "#tag" do
     it "does nothing when called outside of a context block" do
       Lumberjack.tag(foo: "bar")

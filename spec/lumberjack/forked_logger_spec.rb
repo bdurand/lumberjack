@@ -30,6 +30,12 @@ RSpec.describe Lumberjack::ForkedLogger do
     expect(forked_logger.level).to eq(Logger::WARN)
   end
 
+  it "inherits the parent logger's isolation level" do
+    logger.isolation_level = :thread
+    forked_logger = Lumberjack::ForkedLogger.new(logger)
+    expect(forked_logger.isolation_level).to eq(:thread)
+  end
+
   it "will log in the parent logger even if the parent logger has a higher threshold" do
     logger.level = :warn
     forked_logger = Lumberjack::ForkedLogger.new(logger)

@@ -42,7 +42,7 @@ module Lumberjack
   require_relative "lumberjack/attributes_helper"
   require_relative "lumberjack/context"
   require_relative "lumberjack/context_logger"
-  require_relative "lumberjack/fiber_locals"
+  require_relative "lumberjack/context_locals"
   require_relative "lumberjack/io_compatibility"
   require_relative "lumberjack/log_entry"
   require_relative "lumberjack/log_entry_matcher"
@@ -68,6 +68,9 @@ module Lumberjack
   @global_contexts_mutex = Mutex.new
   @deprecation_mode = nil
   @raise_logger_errors = false
+  @isolation_level = :fiber
+
+  extend ContextLocals
 
   class << self
     # Contexts can be used to store attributes that will be attached to all log entries in the block.
@@ -104,21 +107,15 @@ module Lumberjack
     # @return [Object] The result of the block.
     # @api private
     def use_context(context, &block)
-      fiber_id = Fiber.current.object_id
-      ctx = @global_contexts[fiber_id]
-      begin
-        @global_contexts_mutex.synchronize do
-          @global_contexts[fiber_id] = (context || Context.new)
-        end
+      unless block_given?
+        raise ArgumentError, "A block must be provided to the context method"
+      end
+
+      new_context = Context.new(context)
+      new_context.parent = current_context
+      new_context_locals do |locals|
+        locals.context = new_context
         yield
-      ensure
-        @global_contexts_mutex.synchronize do
-          if ctx.nil?
-            @global_contexts.delete(fiber_id)
-          else
-            @global_contexts[fiber_id] = ctx
-          end
-        end
       end
     end
 
@@ -126,7 +123,7 @@ module Lumberjack
     #
     # @return [Boolean]
     def in_context?
-      !!@global_contexts[Fiber.current.object_id]
+      !current_context.nil?
     end
 
     def context?
@@ -141,6 +138,19 @@ module Lumberjack
     def context_attributes
       current_context&.attributes
     end
+
+    # Set the isolation level for global contexts to be either per fiber or per thread. Default is :fiber.
+    #
+    # @param value [Symbol] The isolation level, either :fiber or :thread.
+    # @return [void]
+    def isolation_level=(value)
+      value = value&.to_sym
+      value = :fiber unless [:fiber, :thread].include?(value)
+      @isolation_level = value
+    end
+
+    # @return [Symbol] The current isolation level.
+    attr_reader :isolation_level
 
     # Alias for context_attributes to provide API compatibility with version 1.x.
     # This method will eventually be removed.
@@ -220,7 +230,7 @@ module Lumberjack
     private
 
     def current_context
-      @global_contexts[Fiber.current.object_id]
+      current_context_locals&.context
     end
   end
 end

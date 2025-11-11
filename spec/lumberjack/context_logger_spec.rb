@@ -635,6 +635,55 @@ RSpec.describe Lumberjack::ContextLogger do
       forked_logger = logger.fork(attributes: {foo: "bar"})
       expect(forked_logger.attributes).to eq({"foo" => "bar"})
     end
+
+    it "maintains the same isolation level as the parent logger" do
+      logger.isolation_level = :thread
+      forked_logger = logger.fork
+      expect(forked_logger.isolation_level).to eq(:thread)
+
+      logger.isolation_level = :fiber
+      forked_logger = logger.fork
+      expect(forked_logger.isolation_level).to eq(:fiber)
+    end
+  end
+
+  describe "#isolation_level" do
+    it "isolates the context to the current fiber by default" do
+      expect(logger.isolation_level).to eq(:fiber)
+
+      inner_attributes = nil
+
+      logger.tag(foo: "bar") do
+        fiber = Fiber.new do
+          inner_attributes = logger.attributes
+        end
+        fiber.resume
+      end
+
+      expect(inner_attributes).to eq({})
+    end
+
+    it "can isolate the context to the current thread" do
+      logger.isolation_level = :thread
+      expect(logger.isolation_level).to eq(:thread)
+
+      inner_attributes = nil
+      other_thread_attributes = nil
+
+      logger.tag(foo: "bar") do
+        thread = Thread.new do
+          other_thread_attributes = logger.attributes
+        end
+        fiber = Fiber.new do
+          inner_attributes = logger.attributes
+        end
+        thread.join
+        fiber.resume
+      end
+
+      expect(other_thread_attributes).to eq({})
+      expect(inner_attributes).to eq("foo" => "bar")
+    end
   end
 
   [:fatal, :error, :warn, :info, :debug, :unknown, :trace].each do |severity|

@@ -94,7 +94,7 @@ module Lumberjack
     def initialize(logdev, shift_age = 0, shift_size = 1048576,
       level: DEBUG, progname: nil, formatter: nil, datetime_format: nil,
       binmode: false, shift_period_suffix: "%Y%m%d", **kwargs)
-      init_fiber_locals!
+      init_context_locals!
 
       if shift_age.is_a?(Hash)
         Lumberjack::Utils.deprecated("Logger.new(options)", "Passing a Hash as the second argument to Logger.new is deprecated and will be removed in version 2.1; use keyword arguments instead.")
@@ -105,6 +105,8 @@ module Lumberjack
         datetime_format = options[:datetime_format] if options.include?(:datetime_format)
         kwargs = options.merge(kwargs)
       end
+
+      self.isolation_level = kwargs.delete(:isolation_level) || Lumberjack.isolation_level
 
       # Include standard args that affect devices with the optional kwargs which may
       # contain device specific options.
@@ -398,14 +400,14 @@ module Lumberjack
       return false unless device
 
       # Prevent infinite recursion if logging is attempted from within a logging call.
-      if fiber_local&.logging
+      if current_context_locals&.logging
         log_to_stderr(severity, message)
         return false
       end
 
       severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
 
-      fiber_locals do |locals|
+      new_context_locals do |locals|
         locals.logging = true # protection from infinite loops
 
         time = Time.now
