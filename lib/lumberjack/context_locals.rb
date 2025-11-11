@@ -3,7 +3,7 @@
 module Lumberjack
   # Provides isolated fiber or thread local storage for thread-safe data access.
   module ContextLocals
-    # Lightweight structure to hold fiber-local data.
+    # Lightweight structure to hold context-local data.
     #
     # @api private
     class Data
