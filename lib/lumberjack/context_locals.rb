@@ -32,33 +32,34 @@ module Lumberjack
 
     private
 
-    def context_locals(&block)
+    def new_context_locals(&block)
       init_context_locals! unless defined?(@context_locals)
 
-      scope_id = ((isolation_level == :fiber) ? Fiber : Thread).current.object_id
-      current = @context_locals[scope_id]
-      data = Data.new(current)
-      begin
-        @context_locals_mutex.synchronize do
-          @context_locals[scope_id] = data
-        end
-        yield data
-      ensure
-        @context_locals_mutex.synchronize do
-          if current.nil?
-            @context_locals.delete(scope_id)
-          else
-            @context_locals[scope_id] = current
+      set_context_locals_thread_id do
+        scope_id = context_locals_scope_id
+        current = @context_locals[scope_id] if scope_id
+        data = Data.new(current)
+        begin
+          @context_locals_mutex.synchronize do
+            @context_locals[scope_id] = data
+          end
+          yield data
+        ensure
+          @context_locals_mutex.synchronize do
+            if current.nil?
+              @context_locals.delete(scope_id)
+            else
+              @context_locals[scope_id] = current
+            end
           end
         end
       end
     end
 
-    def current_context_local
+    def current_context_locals
       return nil unless defined?(@context_locals)
 
-      scope_id = ((isolation_level == :fiber) ? Fiber : Thread).current.object_id
-      @context_locals[scope_id]
+      @context_locals[context_locals_scope_id]
     end
 
     # Initialize the context locals storage and mutex.
@@ -66,6 +67,30 @@ module Lumberjack
       @context_locals ||= {}
       @context_locals_mutex ||= Mutex.new
       @isolation_level ||= Lumberjack.isolation_level
+    end
+
+    def context_locals_scope_id
+      if isolation_level == :fiber
+        Fiber.current.object_id
+      else
+        Thread.current.thread_variable_get(:lumberjack_context_locals_thread_id)
+      end
+    end
+
+    # Create a consistent thread ID for context locals. We can't use Thread.current.object_id
+    # directly because it may change during execution (e.g., in JRuby when threads are
+    # migrated between native threads). Instead we store a unique ID in a thread variable.
+    def set_context_locals_thread_id
+      thread_id = Thread.current.thread_variable_get(:lumberjack_context_locals_thread_id)
+      return yield if thread_id
+
+      thread_id = Object.new.object_id
+      begin
+        Thread.current.thread_variable_set(:lumberjack_context_locals_thread_id, thread_id)
+        yield
+      ensure
+        Thread.current.thread_variable_set(:lumberjack_context_locals_thread_id, nil)
+      end
     end
   end
 end

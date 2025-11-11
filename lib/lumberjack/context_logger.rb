@@ -408,7 +408,7 @@ module Lumberjack
 
       new_context = Context.new(current_context)
       new_context.parent = local_context
-      context_locals do |locals|
+      new_context_locals do |locals|
         locals.context = new_context
         block.call(new_context)
       end
@@ -495,7 +495,7 @@ module Lumberjack
     #
     # @return [void]
     def clear_attributes(&block)
-      context_locals do |locals|
+      new_context_locals do |locals|
         locals.cleared = true
         context do |ctx|
           ctx.clear_attributes
@@ -530,7 +530,7 @@ module Lumberjack
     end
 
     def local_context
-      current_context_local&.context
+      current_context_locals&.context
     end
 
     def default_context
@@ -595,7 +595,7 @@ module Lumberjack
     def merge_all_attributes
       attributes = nil
 
-      unless current_context_local&.cleared
+      unless current_context_locals&.cleared
         global_context_attributes = Lumberjack.context_attributes
         if global_context_attributes && !global_context_attributes.empty?
           attributes ||= {}

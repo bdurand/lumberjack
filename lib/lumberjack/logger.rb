@@ -106,7 +106,7 @@ module Lumberjack
         kwargs = options.merge(kwargs)
       end
 
-      self.isolation_level = kwargs.delete(:isolation_level) if kwargs.include?(:isolation_level)
+      self.isolation_level = kwargs.delete(:isolation_level) || Lumberjack.isolation_level
 
       # Include standard args that affect devices with the optional kwargs which may
       # contain device specific options.
@@ -400,14 +400,14 @@ module Lumberjack
       return false unless device
 
       # Prevent infinite recursion if logging is attempted from within a logging call.
-      if current_context_local&.logging
+      if current_context_locals&.logging
         log_to_stderr(severity, message)
         return false
       end
 
       severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
 
-      context_locals do |locals|
+      new_context_locals do |locals|
         locals.logging = true # protection from infinite loops
 
         time = Time.now

@@ -66,6 +66,7 @@ module Lumberjack
     #   Must respond to either +add_entry+ (for Lumberjack loggers) or standard Logger methods.
     def initialize(logger)
       init_context_locals!
+      self.isolation_level = logger.isolation_level if logger.respond_to?(:isolation_level)
       @parent_logger = logger
       @context = Context.new
       @context.level ||= logger.level

@@ -70,6 +70,8 @@ module Lumberjack
   @raise_logger_errors = false
   @isolation_level = :fiber
 
+  extend ContextLocals
+
   class << self
     # Contexts can be used to store attributes that will be attached to all log entries in the block.
     # The context will apply to all Lumberjack loggers that are used within the block.
@@ -105,21 +107,15 @@ module Lumberjack
     # @return [Object] The result of the block.
     # @api private
     def use_context(context, &block)
-      scope_id = ((isolation_level == :fiber) ? Fiber : Thread).current.object_id
-      ctx = @global_contexts[scope_id]
-      begin
-        @global_contexts_mutex.synchronize do
-          @global_contexts[scope_id] = (context || Context.new)
-        end
+      unless block_given?
+        raise ArgumentError, "A block must be provided to the context method"
+      end
+
+      new_context = Context.new(context)
+      new_context.parent = current_context
+      new_context_locals do |locals|
+        locals.context = new_context
         yield
-      ensure
-        @global_contexts_mutex.synchronize do
-          if ctx.nil?
-            @global_contexts.delete(scope_id)
-          else
-            @global_contexts[scope_id] = ctx
-          end
-        end
       end
     end
 
@@ -127,8 +123,7 @@ module Lumberjack
     #
     # @return [Boolean]
     def in_context?
-      scope_id = ((isolation_level == :fiber) ? Fiber : Thread).current.object_id
-      !!@global_contexts[scope_id]
+      !current_context.nil?
     end
 
     def context?
@@ -235,8 +230,7 @@ module Lumberjack
     private
 
     def current_context
-      scope_id = ((isolation_level == :fiber) ? Fiber : Thread).current.object_id
-      @global_contexts[scope_id]
+      current_context_locals&.context
     end
   end
 end
