@@ -38,22 +38,31 @@ module Lumberjack
     def new_context_locals(&block)
       init_context_locals! unless defined?(@context_locals)
 
-      set_context_locals_thread_id do
-        scope_id = context_locals_scope_id
-        current = @context_locals[scope_id] if scope_id
-        data = Data.new(current)
-        begin
-          @context_locals_mutex.synchronize do
-            @context_locals[scope_id] = data
-          end
-          yield data
-        ensure
-          @context_locals_mutex.synchronize do
-            if current.nil?
-              @context_locals.delete(scope_id)
-            else
-              @context_locals[scope_id] = current
-            end
+      if isolation_level == :fiber
+        set_context_locals(&block)
+      else
+        set_context_locals_thread_id do
+          set_context_locals(&block)
+        end
+      end
+    end
+
+    def set_context_locals(&block)
+      scope_id = context_locals_scope_id
+      current = @context_locals[scope_id] if scope_id
+      data = Data.new(current)
+
+      begin
+        @context_locals_mutex.synchronize do
+          @context_locals[scope_id] = data
+        end
+        yield data
+      ensure
+        @context_locals_mutex.synchronize do
+          if current.nil?
+            @context_locals.delete(scope_id)
+          else
+            @context_locals[scope_id] = current
           end
         end
       end
