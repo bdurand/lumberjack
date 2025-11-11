@@ -26,6 +26,9 @@ module Lumberjack
       @isolation_level = value
     end
 
+    # Get the isolation level for context locals.
+    #
+    # @return [Symbol] The isolation level, either :fiber or :thread.
     def isolation_level
       @isolation_level ||= :fiber
     end
