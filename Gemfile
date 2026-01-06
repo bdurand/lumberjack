@@ -3,15 +3,14 @@ source "https://rubygems.org"
 gemspec
 
 gem "rake"
+gem "irb"
 gem "rspec", "~> 3.12"
 gem "timecop"
-gem "appraisal", require: false
-gem "standard", require: false
-gem "simplecov", require: false
-gem "rdoc", require: false
-gem "yard", require: false
+gem "standard", require: false, platforms: [:mri]
+gem "simplecov", require: false, platforms: [:mri]
+gem "yard", require: false, platforms: [:mri]
 
 group :development do
-  gem "ruby-prof", require: false
-  gem "memory_profiler", require: false
+  gem "ruby-prof", require: false, platforms: [:mri]
+  gem "memory_profiler", require: false, platforms: [:mri]
 end

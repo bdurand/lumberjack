@@ -49,11 +49,13 @@ module Lumberjack
 
     def set_context_locals(&block)
       scope_id = context_locals_scope_id
-      current = @context_locals[scope_id] if scope_id
-      data = Data.new(current)
+      current = nil
+      data = nil
 
       begin
         @context_locals_mutex.synchronize do
+          current = @context_locals[scope_id] if scope_id
+          data = Data.new(current)
           @context_locals[scope_id] = data
         end
         yield data
@@ -71,7 +73,10 @@ module Lumberjack
     def current_context_locals
       return nil unless defined?(@context_locals)
 
-      @context_locals[context_locals_scope_id]
+      scope_id = context_locals_scope_id
+      @context_locals_mutex.synchronize do
+        @context_locals[scope_id]
+      end
     end
 
     # Initialize the context locals storage and mutex.
