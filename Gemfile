@@ -10,6 +10,7 @@ gem "standard", require: false
 gem "simplecov", require: false
 gem "rdoc", require: false
 gem "yard", require: false
+gem "irb"
 
 group :development do
   gem "ruby-prof", require: false
