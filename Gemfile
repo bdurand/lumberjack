@@ -6,10 +6,9 @@ gem "rake"
 gem "irb"
 gem "rspec", "~> 3.12"
 gem "timecop"
-gem "appraisal", require: false
-gem "standard", require: false
-gem "simplecov", require: false
-gem "yard", require: false
+gem "standard", require: false, platforms: [:mri]
+gem "simplecov", require: false, platforms: [:mri]
+gem "yard", require: false, platforms: [:mri]
 
 group :development do
   gem "ruby-prof", require: false
