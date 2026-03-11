@@ -87,4 +87,9 @@ RSpec.describe Lumberjack::IOCompatibility do
   it "is not a tty?" do
     expect(logger.tty?).to be false
   end
+
+  it "alias isatty to tty?" do
+    expect(logger).to receive(:isatty).and_call_original
+    expect(logger.isatty).to be false
+  end
 end
