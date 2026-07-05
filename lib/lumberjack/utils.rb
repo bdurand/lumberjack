@@ -16,7 +16,7 @@ module Lumberjack
     private_constant :NON_SLUGGABLE_PATTERN
 
     @deprecations = nil
-    @deprecations_lock = nil
+    @deprecations_lock = Mutex.new
     @hostname = UNDEFINED
 
     class << self
@@ -39,7 +39,6 @@ module Lumberjack
       #   end
       def deprecated(method, message)
         if Lumberjack.deprecation_mode != :silent && !@deprecations&.include?(method)
-          @deprecations_lock ||= Mutex.new
           @deprecations_lock.synchronize do
             @deprecations ||= {}
             unless @deprecations.include?(method)

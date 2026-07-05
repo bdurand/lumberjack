@@ -196,4 +196,14 @@ RSpec.describe Lumberjack::LogEntry do
       })
     end
   end
+
+  describe "attribute aliasing" do
+    it "does not alias the attributes hash passed to the constructor" do
+      attributes = {"foo" => "bar"}
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, attributes)
+      attributes["foo"] = "changed"
+      attributes["added"] = "value"
+      expect(entry.attributes).to eq({"foo" => "bar"})
+    end
+  end
 end

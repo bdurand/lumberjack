@@ -117,4 +117,15 @@ RSpec.describe Lumberjack::Context do
       expect(context.progname).to be_nil
     end
   end
+
+  describe "attribute inheritance isolation" do
+    it "does not share array attribute values with the parent context" do
+      parent = Lumberjack::Context.new
+      parent.assign_attributes(tags: ["a"])
+      child = Lumberjack::Context.new(parent)
+      child["tags"] << "b"
+      expect(child["tags"]).to eq(["a", "b"])
+      expect(parent["tags"]).to eq(["a"])
+    end
+  end
 end

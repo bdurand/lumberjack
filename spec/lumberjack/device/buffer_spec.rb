@@ -132,4 +132,54 @@ RSpec.describe Lumberjack::Device::Buffer do
       end
     end
   end
+
+  describe "before_flush re-entrancy" do
+    it "does not deadlock when the callback flushes the buffer" do
+      buffer = nil
+      before_flush = proc { buffer.flush }
+      buffer = Lumberjack::Device::Buffer.new(device, buffer_size: 5, before_flush: before_flush)
+      begin
+        buffer.write(entry_1)
+        expect { buffer.flush }.not_to raise_error
+        expect(device.entries).to eq([entry_1])
+      ensure
+        buffer.close unless buffer.closed?
+      end
+    end
+
+    it "does not deadlock or recurse infinitely when the callback writes to the buffer" do
+      buffer = nil
+      before_flush = proc { buffer.write(entry_2) }
+      buffer = Lumberjack::Device::Buffer.new(device, buffer_size: 1, before_flush: before_flush)
+      begin
+        buffer.write(entry_1)
+        buffer.flush
+        expect(device.entries).to include(entry_1)
+        expect(device.entries).to include(entry_2)
+      ensure
+        buffer.close unless buffer.closed?
+      end
+    end
+  end
+
+  describe "thread safety" do
+    it "does not lose entries when multiple threads write concurrently" do
+      buffer = Lumberjack::Device::Buffer.new(device, buffer_size: 3)
+      thread_count = 8
+      entries_per_thread = 100
+
+      threads = thread_count.times.collect do |i|
+        Thread.new do
+          entries_per_thread.times do |n|
+            entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "thread #{i} entry #{n}", nil, Process.pid, nil)
+            buffer.write(entry)
+          end
+        end
+      end
+      threads.each(&:join)
+      buffer.close
+
+      expect(device.entries.size).to eq(thread_count * entries_per_thread)
+    end
+  end
 end

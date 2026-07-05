@@ -18,7 +18,7 @@ module Lumberjack
     class EntryBuffer
       attr_accessor :size
 
-      attr_reader :device, :last_flushed_at
+      attr_reader :device
 
       def initialize(device, size, before_flush)
         @device = device
@@ -31,33 +31,27 @@ module Lumberjack
       end
 
       def <<(entry)
-        return if closed?
+        flush_needed = false
 
         @lock.synchronize do
-          @entries << entry
-        end
-
-        flush if @entries.size >= @size
-      end
-
-      def flush
-        entries = nil
-
-        if closed?
-          @before_flush&.call
-          entries = @entries
-          @entries = []
-        else
-          @lock.synchronize do
-            @before_flush&.call
-            entries = @entries
-            @entries = []
+          unless @closed
+            @entries << entry
+            flush_needed = @entries.size >= @size
           end
         end
 
-        @last_flushed_at = Time.now
+        flush if flush_needed
+      end
 
-        return if entries.nil?
+      def flush
+        call_before_flush
+
+        entries = nil
+        @lock.synchronize do
+          entries = @entries
+          @entries = []
+          @last_flushed_at = Time.now
+        end
 
         entries.each do |entry|
           @device.write(entry)
@@ -67,20 +61,40 @@ module Lumberjack
       end
 
       def close
-        @closed = true
+        @lock.synchronize { @closed = true }
         flush
       end
 
       def closed?
-        @closed
+        @lock.synchronize { @closed }
       end
 
       def reopen
-        @closed = false
+        @lock.synchronize { @closed = false }
       end
 
       def empty?
-        @entries.empty?
+        @lock.synchronize { @entries.empty? }
+      end
+
+      def last_flushed_at
+        @lock.synchronize { @last_flushed_at }
+      end
+
+      private
+
+      # The callback must be invoked outside the mutex so that a callback that logs
+      # through this buffer cannot deadlock on a recursive lock. The thread local
+      # guards against infinite recursion when a callback write triggers another flush.
+      def call_before_flush
+        return if @before_flush.nil? || Thread.current[:lumberjack_device_buffer_before_flush]
+
+        begin
+          Thread.current[:lumberjack_device_buffer_before_flush] = true
+          @before_flush.call
+        ensure
+          Thread.current[:lumberjack_device_buffer_before_flush] = nil
+        end
       end
     end
 
@@ -132,7 +146,7 @@ module Lumberjack
     # Set the buffer size. The underlying device will only be written to when the buffer size
     # is exceeded.
     #
-    # @param [Integer] value The size of the buffer in bytes.
+    # @param [Integer] value The number of entries to buffer before flushing.
     # @return [void]
     def buffer_size=(value)
       @buffer.size = value
@@ -193,17 +207,6 @@ module Lumberjack
     # @api private
     def empty?
       @buffer.empty?
-    end
-
-    private
-
-    def create_flusher_thread(flush_seconds, buffer) # :nodoc:
-      Thread.new do
-        until buffer.closed?
-          sleep(flush_seconds)
-          buffer.flush if Time.now - buffer.last_flushed_at >= flush_seconds
-        end
-      end
     end
   end
 end

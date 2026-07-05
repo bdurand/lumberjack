@@ -21,6 +21,15 @@ RSpec.describe Lumberjack::TemplateRegistry do
     Lumberjack::TemplateRegistry.remove(:foobar)
   end
 
+  it "can check if a template is registered" do
+    template = lambda { |entry| "foobar" }
+    Lumberjack::TemplateRegistry.add(:foobar, template)
+    expect(Lumberjack::TemplateRegistry.registered?(:foobar)).to be true
+    expect(Lumberjack::TemplateRegistry.registered?(:other)).to be false
+  ensure
+    Lumberjack::TemplateRegistry.remove(:foobar)
+  end
+
   it "can instantiate a template class by name and options" do
     template = Lumberjack::TemplateRegistry.template(:local, exclude_pid: false)
     expect(template).to be_a(Lumberjack::LocalLogTemplate)
