@@ -160,6 +160,30 @@ RSpec.describe Lumberjack::Device::Buffer do
         buffer.close unless buffer.closed?
       end
     end
+
+    it "does not suppress the callback of a different buffer flushed from within a callback" do
+      other_device = Lumberjack::Device::Test.new
+      other_before_flush_called = false
+      other_before_flush = proc { other_before_flush_called = true }
+      other_buffer = Lumberjack::Device::Buffer.new(other_device, buffer_size: 5, before_flush: other_before_flush)
+
+      before_flush = proc do
+        other_buffer.write(entry_2)
+        other_buffer.flush
+      end
+      buffer = Lumberjack::Device::Buffer.new(device, buffer_size: 5, before_flush: before_flush)
+
+      begin
+        buffer.write(entry_1)
+        buffer.flush
+        expect(device.entries).to eq([entry_1])
+        expect(other_device.entries).to eq([entry_2])
+        expect(other_before_flush_called).to be true
+      ensure
+        buffer.close unless buffer.closed?
+        other_buffer.close unless other_buffer.closed?
+      end
+    end
   end
 
   describe "thread safety" do

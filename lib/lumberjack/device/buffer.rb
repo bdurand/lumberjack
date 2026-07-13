@@ -24,6 +24,7 @@ module Lumberjack
         @device = device
         @size = size
         @before_flush = before_flush if before_flush.respond_to?(:call)
+        @before_flush_guard = :"lumberjack_device_buffer_before_flush_#{object_id}"
         @lock = Mutex.new
         @entries = []
         @last_flushed_at = Time.now
@@ -86,14 +87,16 @@ module Lumberjack
       # The callback must be invoked outside the mutex so that a callback that logs
       # through this buffer cannot deadlock on a recursive lock. The thread local
       # guards against infinite recursion when a callback write triggers another flush.
+      # The guard is scoped per instance so a callback that logs through a different
+      # buffer does not suppress that buffer's own callback.
       def call_before_flush
-        return if @before_flush.nil? || Thread.current[:lumberjack_device_buffer_before_flush]
+        return if @before_flush.nil? || Thread.current[@before_flush_guard]
 
         begin
-          Thread.current[:lumberjack_device_buffer_before_flush] = true
+          Thread.current[@before_flush_guard] = true
           @before_flush.call
         ensure
-          Thread.current[:lumberjack_device_buffer_before_flush] = nil
+          Thread.current[@before_flush_guard] = nil
         end
       end
     end
@@ -124,7 +127,9 @@ module Lumberjack
     # @option options [Integer] :buffer_size The number of entries to buffer before flushing. Default is 0 (no buffering).
     # @option options [Integer] :flush_seconds If specified, a background thread will flush the buffer every N seconds.
     # @option options [Proc] :before_flush A callback that will be called before each flush. The callback should
-    #  respond to +call+ and take no arguments.
+    #  respond to +call+ and take no arguments. The callback is invoked outside of the buffer lock, so it may
+    #  be called concurrently from multiple threads flushing at the same time; it must be thread safe if it
+    #  modifies any shared state.
     def initialize(wrapped_device, options = {})
       buffer_options = [:buffer_size, :flush_seconds, :before_flush]
       device_options = options.reject { |k, _| buffer_options.include?(k) }
