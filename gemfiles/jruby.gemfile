@@ -1,0 +1,10 @@
+# Gemfile for JRuby builds. It omits irb because rdoc 8.0 (a dependency of irb)
+# requires rbs, which has native extensions that do not build on JRuby.
+
+source "https://rubygems.org"
+
+gemspec path: ".."
+
+gem "rake"
+gem "rspec", "~> 3.12"
+gem "timecop"
