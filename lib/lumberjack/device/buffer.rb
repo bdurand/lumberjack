@@ -26,6 +26,7 @@ module Lumberjack
         @before_flush = before_flush if before_flush.respond_to?(:call)
         @before_flush_guard = :"lumberjack_device_buffer_before_flush_#{object_id}"
         @lock = Mutex.new
+        @flush_lock = Mutex.new
         @entries = []
         @last_flushed_at = Time.now
         @closed = false
@@ -44,20 +45,26 @@ module Lumberjack
         flush if flush_needed
       end
 
+      # Concurrent flushes are serialized by a separate lock so that batches cannot be
+      # interleaved or reordered when written to the wrapped device. The entry lock is
+      # only held while swapping out the buffered entries so that threads writing new
+      # entries are not blocked while the wrapped device performs I/O.
       def flush
         call_before_flush
 
-        entries = nil
-        @lock.synchronize do
-          entries = @entries
-          @entries = []
-          @last_flushed_at = Time.now
-        end
+        @flush_lock.synchronize do
+          entries = nil
+          @lock.synchronize do
+            entries = @entries
+            @entries = []
+            @last_flushed_at = Time.now
+          end
 
-        entries.each do |entry|
-          @device.write(entry)
-        rescue => e
-          warn("Error writing log entry from buffer: #{e.inspect}")
+          entries.each do |entry|
+            @device.write(entry)
+          rescue => e
+            warn("Error writing log entry from buffer: #{e.inspect}")
+          end
         end
       end
 

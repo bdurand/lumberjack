@@ -187,6 +187,51 @@ RSpec.describe Lumberjack::Device::Buffer do
   end
 
   describe "thread safety" do
+    it "serializes writes to the wrapped device when flushing from multiple threads" do
+      tracking_device_class = Class.new(Lumberjack::Device) do
+        attr_reader :entries, :max_concurrent_writes
+
+        def initialize
+          @entries = []
+          @mutex = Mutex.new
+          @active_writes = 0
+          @max_concurrent_writes = 0
+        end
+
+        def write(entry)
+          @mutex.synchronize do
+            @active_writes += 1
+            @max_concurrent_writes = [@max_concurrent_writes, @active_writes].max
+          end
+          sleep(0.001)
+          @mutex.synchronize do
+            @entries << entry
+            @active_writes -= 1
+          end
+        end
+      end
+
+      tracking_device = tracking_device_class.new
+      buffer = Lumberjack::Device::Buffer.new(tracking_device, buffer_size: 100)
+      thread_count = 4
+      entries_per_thread = 5
+
+      threads = thread_count.times.collect do |i|
+        Thread.new do
+          entries_per_thread.times do |n|
+            entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "thread #{i} entry #{n}", nil, Process.pid, nil)
+            buffer.write(entry)
+            buffer.flush
+          end
+        end
+      end
+      threads.each(&:join)
+      buffer.close
+
+      expect(tracking_device.entries.size).to eq(thread_count * entries_per_thread)
+      expect(tracking_device.max_concurrent_writes).to eq(1)
+    end
+
     it "does not lose entries when multiple threads write concurrently" do
       buffer = Lumberjack::Device::Buffer.new(device, buffer_size: 3)
       thread_count = 8
