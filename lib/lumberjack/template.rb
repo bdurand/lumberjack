@@ -160,6 +160,7 @@ module Lumberjack
       self.datetime_format = (time_format || :milliseconds)
 
       @colorize = colorize
+      @pid_cache = nil
     end
 
     # Set the datetime format used for timestamp formatting in the template.
@@ -177,6 +178,15 @@ module Lumberjack
         format = MICROSECOND_TIME_FORMAT
       end
       @time_formatter = Formatter::DateTimeFormatter.new(format)
+
+      # Formatted timestamps can only be cached for the built-in formats where the
+      # subsecond precision is known.
+      @time_cache_units, @time_cache_divisor = if format == MILLISECOND_TIME_FORMAT
+        [1_000, 1_000_000]
+      elsif format == MICROSECOND_TIME_FORMAT
+        [1_000_000, 1_000]
+      end
+      @time_cache = nil
     end
 
     # Get the current datetime format string used for timestamp formatting.
@@ -202,7 +212,7 @@ module Lumberjack
         first_line = additional_lines.shift
       end
 
-      formatted_time = @time_formatter.call(entry.time) if @template_include_time
+      formatted_time = cached_formatted_time(entry.time) if @template_include_time
       severity = entry.severity_data
       format_args = [
         formatted_time,
@@ -212,7 +222,7 @@ module Lumberjack
         severity.emoji,
         severity.level,
         entry.progname,
-        entry.pid,
+        cached_pid_string(entry.pid),
         first_line
       ]
       append_attribute_args!(format_args, entry.attributes, @first_line_attributes)
@@ -237,10 +247,58 @@ module Lumberjack
 
       message = Template.colorize_entry(message, entry) if @colorize
 
+      # Normalize the output to end with exactly one line separator and no trailing
+      # whitespace so the writer can send it to the stream without any further processing.
+      message.rstrip!
+      message << Lumberjack::LINE_SEPARATOR
+
       message
     end
 
     private
+
+    # Format a timestamp, reusing the last formatted value when the time falls within
+    # the same subsecond tick as the previous entry. Formatting a time is relatively
+    # expensive, so this saves both CPU and a string allocation for entries logged in
+    # quick succession. The cache is a single frozen array published with one instance
+    # variable write, so concurrent readers see either the old or the new value; the
+    # worst case under contention is a redundant recompute, never an incorrect string.
+    #
+    # @param time [Time] The timestamp to format
+    # @return [String] The formatted timestamp
+    def cached_formatted_time(time)
+      return @time_formatter.call(time) unless @time_cache_divisor
+
+      # The key is the epoch time in the same units as the format's subsecond precision.
+      # Integer division truncates the same way the strftime %N directive does. The UTC
+      # offset must be part of the key because the formats render wall-clock components.
+      key = (time.to_i * @time_cache_units) + (time.nsec / @time_cache_divisor)
+      offset = time.utc_offset
+      cached = @time_cache
+      return cached[2] if cached && cached[0] == key && cached[1] == offset && cached[2]
+
+      formatted = @time_formatter.call(time).to_s.freeze
+      @time_cache = [key, offset, formatted].freeze
+      formatted
+    end
+
+    # Convert a process id to a string, caching the result since the pid rarely changes.
+    # Passing an Integer to sprintf allocates a new string on every call; reusing the
+    # frozen string avoids that. Uses the same benign-race publication pattern as the
+    # timestamp cache.
+    #
+    # @param pid [Integer, nil] The process id
+    # @return [String, nil] The pid as a string
+    def cached_pid_string(pid)
+      return pid unless pid.is_a?(Integer)
+
+      cached = @pid_cache
+      return cached[1] if cached && cached[0] == pid
+
+      pid_string = pid.to_s.freeze
+      @pid_cache = [pid, pid_string].freeze
+      pid_string
+    end
 
     # Build the arguments array for sprintf formatting by appending attribute values.
     # This method handles both the general :attributes placeholder and specific

@@ -81,6 +81,12 @@ RSpec.describe Lumberjack::LogEntry do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, attributes)
       expect(entry.attributes).to eq("a" => "A", "d.e" => "E")
     end
+
+    it "should use the attributes hash as is when it is already flat with no empty values" do
+      attributes = {"a" => "A", "b" => "B"}
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, attributes)
+      expect(entry.attributes).to equal(attributes)
+    end
   end
 
   describe "#empty?" do

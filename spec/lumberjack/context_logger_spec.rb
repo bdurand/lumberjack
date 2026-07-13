@@ -120,6 +120,127 @@ RSpec.describe Lumberjack::ContextLogger do
     end
   end
 
+  describe "context isolation under concurrency" do
+    it "does not leak context attributes between threads mixing context blocks and bare logging" do
+      logger = Lumberjack::Logger.new(:test, level: Logger::INFO)
+
+      threads = 8.times.map do |i|
+        Thread.new do
+          25.times do |j|
+            logger.context do
+              logger.tag(thread_id: i)
+              logger.info("tagged #{i}.#{j}")
+            end
+            logger.info("bare #{i}.#{j}")
+          end
+        end
+      end
+      threads.each(&:join)
+
+      logger.device.entries.each do |entry|
+        if entry.message.start_with?("tagged")
+          thread_id = entry.message[/tagged (\d+)/, 1].to_i
+          expect(entry.attributes).to eq({"thread_id" => thread_id})
+        else
+          expect(entry.attributes).to be_nil
+        end
+      end
+    end
+
+    it "does not leak context attributes with thread isolation and fibers inside threads" do
+      logger = Lumberjack::Logger.new(:test, level: Logger::INFO, isolation_level: :thread)
+
+      threads = 4.times.map do |i|
+        Thread.new do
+          10.times do |j|
+            logger.context do
+              logger.tag(thread_id: i)
+              Fiber.new { logger.info("tagged #{i}.#{j}") }.resume
+            end
+            logger.info("bare #{i}.#{j}")
+          end
+        end
+      end
+      threads.each(&:join)
+
+      logger.device.entries.each do |entry|
+        if entry.message.start_with?("tagged")
+          thread_id = entry.message[/tagged (\d+)/, 1].to_i
+          expect(entry.attributes).to eq({"thread_id" => thread_id})
+        else
+          expect(entry.attributes).to be_nil
+        end
+      end
+    end
+
+    it "returns to the empty state after all context blocks exit" do
+      logger = Lumberjack::Logger.new(:test, level: Logger::INFO)
+
+      logger.context do
+        logger.tag(foo: "bar")
+        logger.info("inside")
+      end
+      logger.info("outside")
+
+      entries = logger.device.entries
+      expect(entries.first.attributes).to eq({"foo" => "bar"})
+      expect(entries.last.attributes).to be_nil
+      expect(logger.attributes).to eq({})
+    end
+  end
+
+  describe "attribute merging" do
+    it "does not mutate the attributes hash passed by the caller" do
+      logger = Lumberjack::Logger.new(:test, level: Logger::INFO)
+      call_attributes = {"call" => "value"}
+
+      Lumberjack.context do
+        Lumberjack.tag(global: "value")
+        logger.context do
+          logger.tag(local: "value")
+          logger.info("test", call_attributes)
+        end
+      end
+      logger.info("no context", call_attributes)
+
+      expect(call_attributes).to eq({"call" => "value"})
+      expect(logger.device).to include(message: "test", attributes: {"global" => "value", "local" => "value", "call" => "value"})
+    end
+
+    it "merges attributes with call attributes taking precedence over context, default, and global attributes" do
+      logger = Lumberjack::Logger.new(:test, level: Logger::INFO)
+      logger.tag!(precedence: "default", default: true)
+
+      Lumberjack.context do
+        Lumberjack.tag(precedence: "global", global: true)
+        logger.context do
+          logger.tag(precedence: "local", local: true)
+          logger.info("overridden", precedence: "call")
+          logger.info("from context")
+        end
+      end
+
+      expect(logger.device).to include(message: "overridden", attributes: {"precedence" => "call", "global" => true, "default" => true, "local" => true})
+      expect(logger.device).to include(message: "from context", attributes: {"precedence" => "local", "global" => true, "default" => true, "local" => true})
+    end
+
+    it "suppresses default and global attributes inside clear_attributes blocks" do
+      logger = Lumberjack::Logger.new(:test, level: Logger::INFO)
+      logger.tag!(default: true)
+
+      Lumberjack.context do
+        Lumberjack.tag(global: true)
+        logger.clear_attributes do
+          logger.info("cleared", call: true)
+        end
+      end
+
+      expect(logger.device).to include(message: "cleared", attributes: {"call" => true})
+      entry = logger.device.entries.detect { |e| e.message == "cleared" }
+      expect(entry.attributes.keys).to eq(["call"])
+    end
+  end
+
   describe "#add" do
     it "returns true" do
       result = logger.add(Logger::INFO, "Test message")

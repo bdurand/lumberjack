@@ -293,8 +293,10 @@ module Lumberjack
       message_attributes = Utils.flatten_attributes(message_attributes) if message_attributes
 
       attributes = merge_attributes(attributes, message_attributes) if message_attributes
-      attributes = AttributesHelper.expand_runtime_values(attributes)
-      attributes = attribute_formatter.format(attributes) if attributes && attribute_formatter
+      if attributes
+        attributes = AttributesHelper.expand_runtime_values(attributes)
+        attributes = attribute_formatter.format(attributes) if attribute_formatter
+      end
 
       [message, attributes]
     end
