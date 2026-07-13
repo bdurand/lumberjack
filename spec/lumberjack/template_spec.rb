@@ -70,10 +70,10 @@ RSpec.describe Lumberjack::Template do
 
     it "does not cache timestamps formatted with a custom format" do
       template = Lumberjack::Template.new("{{time}} {{message}}", time_format: "%H:%M:%S.%2N")
-      time_1 = Time.local(2011, 1, 15, 14, 23, 45, 123_000)
-      time_2 = Time.local(2011, 1, 15, 14, 23, 45, 127_000)
-      expect(template.call(entry_at(time_1))).to eq("14:23:45.12 message#{Lumberjack::LINE_SEPARATOR}")
-      expect(template.call(entry_at(time_2))).to eq("14:23:45.12 message#{Lumberjack::LINE_SEPARATOR}")
+      time_1 = Time.local(2011, 1, 15, 14, 23, 45, 100_000)
+      time_2 = Time.local(2011, 1, 15, 14, 23, 45, 200_000)
+      expect(template.call(entry_at(time_1))).to eq("14:23:45.10 message#{Lumberjack::LINE_SEPARATOR}")
+      expect(template.call(entry_at(time_2))).to eq("14:23:45.20 message#{Lumberjack::LINE_SEPARATOR}")
     end
 
     it "resets the cache when the datetime format is changed" do
@@ -82,6 +82,39 @@ RSpec.describe Lumberjack::Template do
       expect(template.call(entry_at(time))).to eq("2011-01-15T14:23:45.123 message#{Lumberjack::LINE_SEPARATOR}")
       template.datetime_format = :microseconds
       expect(template.call(entry_at(time))).to eq("2011-01-15T14:23:45.123400 message#{Lumberjack::LINE_SEPARATOR}")
+    end
+  end
+
+  describe "pid caching" do
+    let(:template) { Lumberjack::Template.new("{{pid}} {{message}}") }
+
+    def entry_with_pid(pid)
+      Lumberjack::LogEntry.new(time, Logger::INFO, "message", "app", pid, nil)
+    end
+
+    it "reuses the cached pid string for repeated calls with the same pid" do
+      first = template.send(:cached_pid_string, 12345)
+      second = template.send(:cached_pid_string, 12345)
+      expect(second).to eq("12345")
+      expect(second).to equal(first)
+    end
+
+    it "refreshes the cache when the pid changes" do
+      original = template.send(:cached_pid_string, 12345)
+      updated = template.send(:cached_pid_string, 54321)
+      expect(updated).to eq("54321")
+      expect(updated).not_to equal(original)
+      expect(template.instance_variable_get(:@pid_cache)).to eq([54321, "54321"])
+    end
+
+    it "returns non-integer pids unchanged without populating the cache" do
+      expect(template.send(:cached_pid_string, nil)).to be_nil
+      expect(template.instance_variable_get(:@pid_cache)).to be_nil
+    end
+
+    it "populates the pid cache when rendering an entry" do
+      expect(template.call(entry_with_pid(999))).to eq("999 message#{Lumberjack::LINE_SEPARATOR}")
+      expect(template.instance_variable_get(:@pid_cache)).to eq([999, "999"])
     end
   end
 
