@@ -3,6 +3,7 @@ source "https://rubygems.org"
 gemspec
 
 gem "rake"
+gem "appraisal"
 gem "irb"
 gem "rspec", "~> 3.12"
 gem "timecop"
