@@ -17,6 +17,7 @@ module Lumberjack
   #   logger = Lumberjack::Logger.new(:my_device)
   module DeviceRegistry
     @registry = {stdout: :stdout, stderr: :stderr}
+    @lock = Mutex.new
 
     class << self
       # Register a device name. Device names can be used to associate a symbol with a device
@@ -31,7 +32,7 @@ module Lumberjack
       def add(name, klass)
         raise ArgumentError.new("name must be a symbol") unless name.is_a?(Symbol)
 
-        @registry[name] = klass
+        @lock.synchronize { @registry[name] = klass }
       end
 
       # Remove a device from the registry.
@@ -39,7 +40,7 @@ module Lumberjack
       # @param name [Symbol] The name of the device to remove
       # @return [void]
       def remove(name)
-        @registry.delete(name)
+        @lock.synchronize { @registry.delete(name) }
       end
 
       # Check if a device is registered.
@@ -47,7 +48,7 @@ module Lumberjack
       # @param name [Symbol] The name of the device
       # @return [Boolean] True if the device is registered, false otherwise
       def registered?(name)
-        @registry.include?(name)
+        @lock.synchronize { @registry.include?(name) }
       end
 
       # Instantiate a new device with the specified options from the device registry.
@@ -58,7 +59,7 @@ module Lumberjack
       def new_device(name, options)
         klass = device_class(name)
         unless klass
-          valid_names = @registry.keys.map(&:inspect).join(", ")
+          valid_names = registered_devices.keys.map(&:inspect).join(", ")
           raise ArgumentError.new("#{name.inspect} is not registered as a device name; valid names are: #{valid_names}")
         end
 
@@ -76,14 +77,14 @@ module Lumberjack
       # @param name [Symbol] The name of the device
       # @return [Class, nil] The registered device class or nil if not found
       def device_class(name)
-        @registry[name]
+        @lock.synchronize { @registry[name] }
       end
 
       # Return the map of registered device class names.
       #
       # @return [Hash]
       def registered_devices
-        @registry.dup
+        @lock.synchronize { @registry.dup }
       end
     end
   end

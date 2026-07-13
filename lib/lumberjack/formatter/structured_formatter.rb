@@ -16,8 +16,11 @@ module Lumberjack
 
       # Exception raised when a circular reference is detected during traversal.
       # This prevents infinite recursion when formatting objects that reference themselves.
-      class RecusiveReferenceError < StandardError
+      class RecursiveReferenceError < StandardError
       end
+
+      # @deprecated Misspelled alias kept for backward compatibility. Use RecursiveReferenceError.
+      RecusiveReferenceError = RecursiveReferenceError
 
       # @param formatter [Formatter, nil] The formatter to call on each element
       #   in the structure. If nil, elements are returned unchanged.
@@ -42,7 +45,7 @@ module Lumberjack
             hash = {}
             obj.each do |name, value|
               value = call_with_references(value, references)
-              hash[name.to_s] = value unless value.is_a?(RecusiveReferenceError)
+              hash[name.to_s] = value unless value.is_a?(RecursiveReferenceError)
             end
             hash
           end
@@ -51,7 +54,7 @@ module Lumberjack
             array = []
             obj.each do |value|
               value = call_with_references(value, references)
-              array << value unless value.is_a?(RecusiveReferenceError)
+              array << value unless value.is_a?(RecursiveReferenceError)
             end
             array
           end
@@ -64,7 +67,7 @@ module Lumberjack
 
       def with_object_reference(obj, references)
         if obj.is_a?(Enumerable)
-          return RecusiveReferenceError.new if references.include?(obj.object_id)
+          return RecursiveReferenceError.new if references.include?(obj.object_id)
 
           references << obj.object_id
           begin

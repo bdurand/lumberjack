@@ -183,30 +183,22 @@ module Lumberjack
       attributes_string
     end
 
-    # Flatten nested attributes and remove empty values.
+    # Flatten nested attributes and remove empty values. The returned hash is always
+    # a new copy so that the entry does not alias a hash owned by the caller (such as
+    # a live logger context hash that could be mutated after the entry is created).
     #
     # @param attributes [Hash] The attributes hash to compact
     # @return [Hash] The flattened attributes with empty values removed
     def flatten_attributes(attributes)
-      unless attributes.all? { |key, value| key.is_a?(String) && !value.is_a?(Hash) }
-        attributes = Utils.flatten_attributes(attributes)
+      attributes = if attributes.all? { |key, value| key.is_a?(String) && !value.is_a?(Hash) }
+        attributes.dup
+      else
+        Utils.flatten_attributes(attributes)
       end
 
-      delete_keys = nil
-      attributes.each do |key, value|
-        if value.nil? || value == ""
-          delete_keys ||= []
-          delete_keys << key
-        elsif value.is_a?(Array) && value.empty?
-          delete_keys ||= []
-          delete_keys << key
-        end
+      attributes.delete_if do |_key, value|
+        value.nil? || value == "" || (value.is_a?(Array) && value.empty?)
       end
-
-      return attributes if delete_keys.nil?
-
-      attributes = attributes.dup
-      delete_keys&.each { |key| attributes.delete(key) }
 
       attributes
     end

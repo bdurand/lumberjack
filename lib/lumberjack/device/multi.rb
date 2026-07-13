@@ -80,7 +80,7 @@ module Lumberjack
     # @return [void]
     def reopen(logdev = nil)
       devices.each do |device|
-        device.reopen(logdev = nil)
+        device.reopen(logdev)
       end
     end
 
@@ -91,7 +91,7 @@ module Lumberjack
     # @return [String, nil] The datetime format string from the first device
     #   that has one configured, or nil if no devices have a format set
     def datetime_format
-      devices.detect(&:datetime_format).datetime_format
+      devices.detect(&:datetime_format)&.datetime_format
     end
 
     # Set the datetime format on all configured devices that support it.

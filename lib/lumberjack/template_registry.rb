@@ -3,6 +3,7 @@
 module Lumberjack
   class TemplateRegistry
     @templates = {}
+    @lock = Mutex.new
 
     class << self
       # Register a log template class with a symbol.
@@ -14,15 +15,15 @@ module Lumberjack
           raise ArgumentError.new("template must be a String, Class, or respond to :call")
         end
 
-        @templates[name.to_sym] = template
+        @lock.synchronize { @templates[name.to_sym] = template }
       end
 
-      # Remove a template from the registry.        raise ArgumentError.new("template must be a String, Class, or respond to :call")
+      # Remove a template from the registry.
       #
       # @param name [Symbol] The name of the template to remove.
       # @return [void]
       def remove(name)
-        @templates.delete(name.to_sym)
+        @lock.synchronize { @templates.delete(name.to_sym) }
       end
 
       # Check if a template is registered.
@@ -30,7 +31,7 @@ module Lumberjack
       # @param name [Symbol] The name of the template.
       # @return [Boolean] True if the template is registered, false otherwise.
       def registered?(name)
-        @templates.include(name.to_sym)
+        @lock.synchronize { @templates.include?(name.to_sym) }
       end
 
       # Get a registered log template class by its symbol.
@@ -38,7 +39,7 @@ module Lumberjack
       # @param name [Symbol] The symbol of the registered log template class.
       # @return [Class, nil] The registered log template class, or nil if not found.
       def template(name, options = {})
-        template = @templates[name.to_sym]
+        template = @lock.synchronize { @templates[name.to_sym] }
         if template.is_a?(Class)
           template.new(options)
         elsif template.is_a?(String)
@@ -53,7 +54,7 @@ module Lumberjack
       #
       # @return [Array<Symbol>] An array of all registered log template symbols.
       def registered_templates
-        @templates.dup
+        @lock.synchronize { @templates.dup }
       end
     end
   end

@@ -18,6 +18,7 @@ module Lumberjack
   #   end
   module FormatterRegistry
     @registry = {}
+    @lock = Mutex.new
 
     class << self
       # Register a formatter name. Formatter names can be used to associate a symbol with a formatter
@@ -37,7 +38,7 @@ module Lumberjack
         formatter ||= block
         raise ArgumentError.new("formatter must be a class or respond to call") unless formatter.is_a?(Class) || formatter.respond_to?(:call)
 
-        @registry[name] = formatter
+        @lock.synchronize { @registry[name] = formatter }
       end
 
       # Remove a formatter from the registry.
@@ -45,7 +46,7 @@ module Lumberjack
       # @param name [Symbol] The name of the formatter to remove
       # @return [void]
       def remove(name)
-        @registry.delete(name)
+        @lock.synchronize { @registry.delete(name) }
       end
 
       # Check if a formatter is registered.
@@ -53,7 +54,7 @@ module Lumberjack
       # @param name [Symbol] The name of the formatter
       # @return [Boolean] True if the formatter is registered, false otherwise
       def registered?(name)
-        @registry.include?(name)
+        @lock.synchronize { @registry.include?(name) }
       end
 
       # Retrieve the formatter registered with the given name or nil if the name is not defined.
@@ -61,10 +62,10 @@ module Lumberjack
       # @param name [Symbol] The name of the formatter
       # @return [#call, nil] The registered formatter class or nil if not found
       def formatter(name, *args)
-        instance = @registry[name]
+        instance = @lock.synchronize { @registry[name] }
 
         if instance.nil?
-          valid_names = @registry.keys.map(&:inspect).join(", ")
+          valid_names = registered_formatters.keys.map(&:inspect).join(", ")
           raise ArgumentError.new("#{name.inspect} is not registered as a formatter name; valid names are: #{valid_names}")
         end
 
@@ -77,7 +78,7 @@ module Lumberjack
       #
       # @return [Hash]
       def registered_formatters
-        @registry.dup
+        @lock.synchronize { @registry.dup }
       end
     end
   end

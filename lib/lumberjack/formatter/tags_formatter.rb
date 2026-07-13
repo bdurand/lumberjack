@@ -13,7 +13,7 @@ module Lumberjack
     def call(tags)
       tags = tags.collect { |key, value| "#{key}=#{value}" } if tags.is_a?(Hash)
       if tags.is_a?(Array)
-        tags.collect { |tag| format_tag(tag) }.join(" ") unless tags.empty?
+        tags.collect { |tag| format_tag(tag) }.join(" ")
       else
         format_tag(tags)
       end
@@ -23,9 +23,9 @@ module Lumberjack
 
     def format_tag(tag)
       if tag.is_a?(Hash)
-        tag.collect { |key, value| "[#{key}=#{value.strip}]" }.join(" ")
+        tag.collect { |key, value| "[#{key}=#{value.to_s.strip}]" }.join(" ")
       else
-        "[#{tag.strip}]"
+        "[#{tag.to_s.strip}]"
       end
     end
   end

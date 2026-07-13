@@ -180,7 +180,7 @@ module Lumberjack
     # @return [Lumberjack::LogEntry, nil] The most recent log entry, or nil
     #   if no entries have been captured yet
     def last_entry
-      @buffer.last
+      @lock.synchronize { @buffer.last }
     end
 
     # Clear all captured log entries from the buffer. This method is useful
@@ -189,7 +189,7 @@ module Lumberjack
     #
     # @return [void]
     def clear
-      @buffer = []
+      @lock.synchronize { @buffer = [] }
       nil
     end
 

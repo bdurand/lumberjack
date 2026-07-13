@@ -30,6 +30,7 @@ jobs:
             standardrb: true
             yard: true
           - ruby: "jruby"
+            appraisal: "jruby"
           - ruby: "3.4"
           - ruby: "3.3"
           - ruby: "3.2"

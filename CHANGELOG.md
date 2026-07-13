@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.6
+
+### Fixed
+
+- `Lumberjack::Device::Multi#reopen` now passes the log destination through to the wrapped devices instead of always passing `nil`.
+- `Lumberjack::Device::Multi#datetime_format` no longer raises an error when none of the wrapped devices have a datetime format.
+- `Lumberjack::TemplateRegistry.registered?` no longer raises a `NoMethodError`.
+- `Lumberjack::Formatter::TagsFormatter` no longer raises an error on non-string tag values and now returns an empty string instead of `nil` for empty tag arrays.
+- The `before_flush` callback on `Lumberjack::Device::Buffer` is now invoked outside of the buffer lock so callbacks that log or flush no longer deadlock. As a result, the callback may be invoked concurrently by multiple threads and must be thread safe if it modifies shared state.
+- Hardened `Lumberjack::Device::Buffer` against race conditions that could drop entries when writing concurrently with `flush` or `close`. Concurrent flushes are now serialized so buffered batches can no longer be interleaved or reordered when written to the wrapped device.
+- `Lumberjack::Device::Test#clear` and `#last_entry` are now thread safe.
+- Device, formatter, and template registries are now thread safe.
+- Log entries no longer share their attributes hash with the caller, so mutating a logging context after an entry was created no longer changes entries held in memory by buffered or test devices.
+- Contexts no longer share array attribute values with their parent context, so appending to an inherited array attribute no longer mutates the parent context.
+- `Lumberjack.context` called without a block now returns the current context as documented instead of raising an `ArgumentError`.
+- Renamed misspelled `Lumberjack::Formatter::StructuredFormatter::RecusiveReferenceError` to `RecursiveReferenceError`. The old constant is kept as an alias for backward compatibility.
+
 ## 2.0.5
 
 ### Added
