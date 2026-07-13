@@ -81,6 +81,16 @@ RSpec.describe Lumberjack::LogEntry do
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, attributes)
       expect(entry.attributes).to eq("a" => "A", "d.e" => "E")
     end
+
+    it "should copy the attributes hash so the entry does not alias the caller's hash" do
+      attributes = {"a" => "A", "b" => "B"}
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, attributes)
+      expect(entry.attributes).to eq(attributes)
+      expect(entry.attributes).not_to equal(attributes)
+
+      attributes["c"] = "C"
+      expect(entry.attributes).to eq("a" => "A", "b" => "B")
+    end
   end
 
   describe "#empty?" do

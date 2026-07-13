@@ -190,14 +190,22 @@ module Lumberjack
     # @param attributes [Hash] The attributes hash to compact
     # @return [Hash] The flattened attributes with empty values removed
     def flatten_attributes(attributes)
-      attributes = if attributes.all? { |key, value| key.is_a?(String) && !value.is_a?(Hash) }
-        attributes.dup
-      else
-        Utils.flatten_attributes(attributes)
+      needs_flattening = false
+      delete_keys = nil
+      attributes.each do |key, value|
+        needs_flattening = true if !key.is_a?(String) || value.is_a?(Hash)
+        if value.nil? || value == "" || (value.is_a?(Array) && value.empty?)
+          delete_keys ||= []
+          delete_keys << key
+        end
       end
 
-      attributes.delete_if do |_key, value|
-        value.nil? || value == "" || (value.is_a?(Array) && value.empty?)
+      if needs_flattening
+        attributes = Utils.flatten_attributes(attributes)
+        attributes.delete_if { |_key, value| value.nil? || value == "" || (value.is_a?(Array) && value.empty?) }
+      else
+        attributes = attributes.dup
+        delete_keys&.each { |key| attributes.delete(key) }
       end
 
       attributes

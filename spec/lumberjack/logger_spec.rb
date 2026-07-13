@@ -448,6 +448,80 @@ RSpec.describe Lumberjack::Logger do
         expect(out.string.chomp).to eq("[2011-01-30T12:31:56.000 INFO spec(#{Process.pid})] test [tag:foo]")
         expect(captured_stderr.string).to include("WARN inner logging\n")
       end
+
+      it "should clear the recursion guard after logging so subsequent entries are written" do
+        save_stderr = $stderr
+        begin
+          $stderr = StringIO.new
+          logger.add_entry(Logger::INFO, "first", "spec", tag: lambda {
+            logger.warn("inner")
+            "foo"
+          })
+        ensure
+          $stderr = save_stderr
+        end
+
+        logger.add_entry(Logger::INFO, "second")
+        expect(out.string).to include(" second")
+      end
+
+      it "should clear the recursion guard when the device raises an error" do
+        save_stderr = $stderr
+        save_raise_logger_errors = Lumberjack.raise_logger_errors?
+        begin
+          $stderr = StringIO.new
+          Lumberjack.raise_logger_errors = false
+          allow(device).to receive(:write).and_raise(StandardError.new("boom"))
+          logger.add_entry(Logger::INFO, "test")
+
+          allow(device).to receive(:write).and_call_original
+          logger.add_entry(Logger::INFO, "recovered")
+          expect(out.string).to include(" recovered")
+          expect($stderr.string).not_to include("Recursive logging detected")
+        ensure
+          Lumberjack.raise_logger_errors = save_raise_logger_errors
+          $stderr = save_stderr
+        end
+      end
+
+      it "should allow a device to log to a different logger" do
+        other_out = StringIO.new
+        other_logger = Lumberjack::Logger.new(other_out, level: Logger::INFO)
+        chaining_device = Class.new(Lumberjack::Device) do
+          define_method(:write) do |entry|
+            other_logger.info("chained: #{entry.message}")
+          end
+        end.new
+
+        chaining_logger = Lumberjack::Logger.new(chaining_device, level: Logger::INFO)
+        save_stderr = $stderr
+        begin
+          $stderr = StringIO.new
+          chaining_logger.info("test")
+          expect($stderr.string).to eq("")
+        ensure
+          $stderr = save_stderr
+        end
+        expect(other_out.string).to include("chained: test")
+      end
+
+      it "should prevent recursive logging with thread isolation" do
+        thread_logger = Lumberjack::Logger.new(out, level: Logger::INFO, progname: "app", isolation_level: :thread)
+        save_stderr = $stderr
+        captured_stderr = StringIO.new
+        begin
+          $stderr = captured_stderr
+          thread_logger.add_entry(Logger::INFO, "test", "spec", tag: lambda {
+            thread_logger.warn("inner logging")
+            "foo"
+          })
+        ensure
+          $stderr = save_stderr
+        end
+
+        expect(out.string).to include("test [tag:foo]")
+        expect(captured_stderr.string).to include("WARN inner logging\n")
+      end
     end
 
     %w[fatal error warn info debug].each do |level|

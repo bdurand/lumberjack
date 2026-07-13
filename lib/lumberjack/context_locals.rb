@@ -7,11 +7,10 @@ module Lumberjack
     #
     # @api private
     class Data
-      attr_accessor :context, :logging, :cleared
+      attr_accessor :context, :cleared
 
       def initialize(copy = nil)
         @context = copy&.context
-        @logging = copy&.logging
         @cleared = copy&.cleared
       end
     end
@@ -72,6 +71,15 @@ module Lumberjack
 
     def current_context_locals
       return nil unless defined?(@context_locals)
+
+      # Fast path that avoids the mutex when no context locals are set anywhere. This is
+      # safe without synchronization: Hash#empty? only reads the size and cannot raise or
+      # return garbage during a concurrent update, so the worst case is a stale value. A
+      # stale false falls through to the synchronized lookup, which is always correct. A
+      # stale true cannot hide an entry for the current scope because entries for the
+      # current scope are only ever written from code running in that same scope, so any
+      # such write is already visible here by program order.
+      return nil if @context_locals.empty?
 
       scope_id = context_locals_scope_id
       @context_locals_mutex.synchronize do

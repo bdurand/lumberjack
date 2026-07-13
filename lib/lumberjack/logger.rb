@@ -95,6 +95,7 @@ module Lumberjack
       level: DEBUG, progname: nil, formatter: nil, datetime_format: nil,
       binmode: false, shift_period_suffix: "%Y%m%d", **kwargs)
       init_context_locals!
+      @recursion_guard_key = :"lumberjack_logging_#{object_id}"
 
       if shift_age.is_a?(Hash)
         Lumberjack::Utils.deprecated("Logger.new(options)", "Passing a Hash as the second argument to Logger.new is deprecated and will be removed in version 2.1; use keyword arguments instead.")
@@ -400,25 +401,30 @@ module Lumberjack
       return false unless device
 
       # Prevent infinite recursion if logging is attempted from within a logging call.
-      if current_context_locals&.logging
+      # The guard is stored in fiber-local storage since recursion is a property of the
+      # current call stack, which belongs to exactly one fiber.
+      if Thread.current[@recursion_guard_key]
         log_to_stderr(severity, message)
         return false
       end
 
       severity = Severity.label_to_level(severity) unless severity.is_a?(Integer)
 
-      new_context_locals do |locals|
-        locals.logging = true # protection from infinite loops
+      begin
+        Thread.current[@recursion_guard_key] = true
 
+        locals = current_context_locals
         time = Time.now
-        progname ||= self.progname
+        progname ||= locals&.context&.progname || default_context&.progname
         attributes = nil unless attributes.is_a?(Hash)
-        attributes = merge_attributes(merge_all_attributes, attributes)
+        attributes = merge_all_attributes(locals, attributes)
         message, attributes = formatter.format(message, attributes) if formatter
 
         entry = Lumberjack::LogEntry.new(time, severity, message, progname, Process.pid, attributes)
 
         write_to_device(entry)
+      ensure
+        Thread.current[@recursion_guard_key] = nil
       end
 
       true

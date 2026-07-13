@@ -549,7 +549,8 @@ module Lumberjack
     # Dereference arguments to log calls so we can have methods with compatibility with ::Logger
     def call_add_entry(severity, message_or_progname_or_attributes, progname_or_attributes, &block) # :nodoc:
       severity = Severity.coerce(severity) unless severity.is_a?(Integer)
-      return true unless level.nil? || severity >= level
+      current_level = level
+      return true unless current_level.nil? || severity >= current_level
 
       message = nil
       progname = nil
@@ -592,10 +593,13 @@ module Lumberjack
       end
     end
 
-    def merge_all_attributes
+    # Merge the attributes from the global context, default context, current context,
+    # and the optional extra attributes into a single hash. The context locals can be
+    # passed in to avoid looking them up again if the caller has already done so.
+    def merge_all_attributes(locals = current_context_locals, extra_attributes = nil)
       attributes = nil
 
-      unless current_context_locals&.cleared
+      unless locals&.cleared
         global_context_attributes = Lumberjack.context_attributes
         if global_context_attributes && !global_context_attributes.empty?
           attributes ||= {}
@@ -609,10 +613,16 @@ module Lumberjack
         end
       end
 
-      context_attributes = current_context&.attributes
+      context_attributes = (locals&.context || default_context)&.attributes
       if context_attributes && !context_attributes.empty?
         attributes ||= {}
         attributes.merge!(context_attributes)
+      end
+
+      if extra_attributes
+        # The merged hash is always freshly allocated, so it is safe to merge into it
+        # without exposing the mutation to any caller-visible hash.
+        attributes = attributes ? attributes.merge!(extra_attributes) : extra_attributes
       end
 
       attributes

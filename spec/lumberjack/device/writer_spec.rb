@@ -89,6 +89,13 @@ RSpec.describe Lumberjack::Device::Writer do
     expect(stream.string).to eq("[2011-01-15T14:23:45.123000 INFO  app(12345)] test message [foo:ABCD]#{Lumberjack::LINE_SEPARATOR}")
   end
 
+  it "does not mutate frozen strings written directly to the device" do
+    device = Lumberjack::Device::Writer.new(stream)
+    device.write(" frozen string ")
+    device.flush
+    expect(stream.string).to eq("frozen string#{Lumberjack::LINE_SEPARATOR}")
+  end
+
   it "should be able to specify a block template for log entries" do
     device = Lumberjack::Device::Writer.new(stream, template: lambda { |e| e.message.upcase })
     device.write(entry)
