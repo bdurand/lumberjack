@@ -64,13 +64,13 @@ module Lumberjack
   require_relative "lumberjack/tag_formatter"
   require_relative "lumberjack/tags"
 
-  @global_contexts = {}
-  @global_contexts_mutex = Mutex.new
   @deprecation_mode = nil
   @raise_logger_errors = false
   @isolation_level = :fiber
 
   extend ContextLocals
+
+  init_context_locals!
 
   class << self
     # Contexts can be used to store attributes that will be attached to all log entries in the block.
@@ -86,7 +86,9 @@ module Lumberjack
     # @return [Object] The result
     #   of the block
     def context(&block)
-      use_context(Context.new(current_context), &block)
+      return current_context || Context.new unless block
+
+      use_context(current_context, &block)
     end
 
     # Ensure that the block of code is wrapped by a global context. If there is not already

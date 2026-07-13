@@ -120,6 +120,14 @@ module Lumberjack
       false
     end
 
+    # Alias for tty? to provide complete IO compatibility.
+    #
+    # @return [Boolean]
+    # @api private
+    def isatty
+      tty?
+    end
+
     # Set the encoding for the stream. This method is provided for IO compatibility
     # but is a no-op since loggers handle encoding internally through their devices
     # and formatters.

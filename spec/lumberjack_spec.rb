@@ -29,6 +29,21 @@ RSpec.describe Lumberjack do
       result = Lumberjack.context { :foo }
       expect(result).to eq :foo
     end
+
+    it "should return the current context when called without a block" do
+      Lumberjack.context do
+        Lumberjack.tag(foo: "bar")
+        context = Lumberjack.context
+        expect(context).to be_a(Lumberjack::Context)
+        expect(context["foo"]).to eq "bar"
+      end
+    end
+
+    it "should return a new context outside of any scope when called without a block" do
+      context = Lumberjack.context
+      expect(context).to be_a(Lumberjack::Context)
+      expect(Lumberjack.in_context?).to eq false
+    end
   end
 
   describe "#ensure_context" do

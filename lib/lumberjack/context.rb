@@ -46,7 +46,12 @@ module Lumberjack
       @default_severity = nil
 
       if parent_context
-        @attributes = parent_context.attributes.dup if parent_context.attributes
+        if parent_context.attributes
+          # Dup array values so appending tags in this context does not mutate the parent.
+          @attributes = parent_context.attributes.transform_values do |value|
+            value.is_a?(Array) ? value.dup : value
+          end
+        end
         self.level = parent_context.level
         self.progname = parent_context.progname
       end

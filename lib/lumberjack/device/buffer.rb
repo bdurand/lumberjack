@@ -18,69 +18,93 @@ module Lumberjack
     class EntryBuffer
       attr_accessor :size
 
-      attr_reader :device, :last_flushed_at
+      attr_reader :device
 
       def initialize(device, size, before_flush)
         @device = device
         @size = size
         @before_flush = before_flush if before_flush.respond_to?(:call)
+        @before_flush_guard = :"lumberjack_device_buffer_before_flush_#{object_id}"
         @lock = Mutex.new
+        @flush_lock = Mutex.new
         @entries = []
         @last_flushed_at = Time.now
         @closed = false
       end
 
       def <<(entry)
-        return if closed?
+        flush_needed = false
 
         @lock.synchronize do
-          @entries << entry
-        end
-
-        flush if @entries.size >= @size
-      end
-
-      def flush
-        entries = nil
-
-        if closed?
-          @before_flush&.call
-          entries = @entries
-          @entries = []
-        else
-          @lock.synchronize do
-            @before_flush&.call
-            entries = @entries
-            @entries = []
+          unless @closed
+            @entries << entry
+            flush_needed = @entries.size >= @size
           end
         end
 
-        @last_flushed_at = Time.now
+        flush if flush_needed
+      end
 
-        return if entries.nil?
+      # Concurrent flushes are serialized by a separate lock so that batches cannot be
+      # interleaved or reordered when written to the wrapped device. The entry lock is
+      # only held while swapping out the buffered entries so that threads writing new
+      # entries are not blocked while the wrapped device performs I/O.
+      def flush
+        call_before_flush
 
-        entries.each do |entry|
-          @device.write(entry)
-        rescue => e
-          warn("Error writing log entry from buffer: #{e.inspect}")
+        @flush_lock.synchronize do
+          entries = nil
+          @lock.synchronize do
+            entries = @entries
+            @entries = []
+            @last_flushed_at = Time.now
+          end
+
+          entries.each do |entry|
+            @device.write(entry)
+          rescue => e
+            warn("Error writing log entry from buffer: #{e.inspect}")
+          end
         end
       end
 
       def close
-        @closed = true
+        @lock.synchronize { @closed = true }
         flush
       end
 
       def closed?
-        @closed
+        @lock.synchronize { @closed }
       end
 
       def reopen
-        @closed = false
+        @lock.synchronize { @closed = false }
       end
 
       def empty?
-        @entries.empty?
+        @lock.synchronize { @entries.empty? }
+      end
+
+      def last_flushed_at
+        @lock.synchronize { @last_flushed_at }
+      end
+
+      private
+
+      # The callback must be invoked outside the mutex so that a callback that logs
+      # through this buffer cannot deadlock on a recursive lock. The thread local
+      # guards against infinite recursion when a callback write triggers another flush.
+      # The guard is scoped per instance so a callback that logs through a different
+      # buffer does not suppress that buffer's own callback.
+      def call_before_flush
+        return if @before_flush.nil? || Thread.current[@before_flush_guard]
+
+        begin
+          Thread.current[@before_flush_guard] = true
+          @before_flush.call
+        ensure
+          Thread.current[@before_flush_guard] = nil
+        end
       end
     end
 
@@ -110,7 +134,9 @@ module Lumberjack
     # @option options [Integer] :buffer_size The number of entries to buffer before flushing. Default is 0 (no buffering).
     # @option options [Integer] :flush_seconds If specified, a background thread will flush the buffer every N seconds.
     # @option options [Proc] :before_flush A callback that will be called before each flush. The callback should
-    #  respond to +call+ and take no arguments.
+    #  respond to +call+ and take no arguments. The callback is invoked outside of the buffer lock, so it may
+    #  be called concurrently from multiple threads flushing at the same time; it must be thread safe if it
+    #  modifies any shared state.
     def initialize(wrapped_device, options = {})
       buffer_options = [:buffer_size, :flush_seconds, :before_flush]
       device_options = options.reject { |k, _| buffer_options.include?(k) }
@@ -132,7 +158,7 @@ module Lumberjack
     # Set the buffer size. The underlying device will only be written to when the buffer size
     # is exceeded.
     #
-    # @param [Integer] value The size of the buffer in bytes.
+    # @param [Integer] value The number of entries to buffer before flushing.
     # @return [void]
     def buffer_size=(value)
       @buffer.size = value
@@ -193,17 +219,6 @@ module Lumberjack
     # @api private
     def empty?
       @buffer.empty?
-    end
-
-    private
-
-    def create_flusher_thread(flush_seconds, buffer) # :nodoc:
-      Thread.new do
-        until buffer.closed?
-          sleep(flush_seconds)
-          buffer.flush if Time.now - buffer.last_flushed_at >= flush_seconds
-        end
-      end
     end
   end
 end

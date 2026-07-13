@@ -82,10 +82,14 @@ RSpec.describe Lumberjack::LogEntry do
       expect(entry.attributes).to eq("a" => "A", "d.e" => "E")
     end
 
-    it "should use the attributes hash as is when it is already flat with no empty values" do
+    it "should copy the attributes hash so the entry does not alias the caller's hash" do
       attributes = {"a" => "A", "b" => "B"}
       entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, attributes)
-      expect(entry.attributes).to equal(attributes)
+      expect(entry.attributes).to eq(attributes)
+      expect(entry.attributes).not_to equal(attributes)
+
+      attributes["c"] = "C"
+      expect(entry.attributes).to eq("a" => "A", "b" => "B")
     end
   end
 
@@ -200,6 +204,16 @@ RSpec.describe Lumberjack::LogEntry do
         "pid" => entry.pid,
         "attributes" => {"foo" => {"bar" => "baz"}}
       })
+    end
+  end
+
+  describe "attribute aliasing" do
+    it "does not alias the attributes hash passed to the constructor" do
+      attributes = {"foo" => "bar"}
+      entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "test", "app", 1500, attributes)
+      attributes["foo"] = "changed"
+      attributes["added"] = "value"
+      expect(entry.attributes).to eq({"foo" => "bar"})
     end
   end
 end

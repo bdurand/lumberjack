@@ -35,6 +35,19 @@ RSpec.describe Lumberjack::Device::Multi do
     device.reopen
   end
 
+  it "should pass the log destination through to each device on reopen" do
+    expect(device_1).to receive(:reopen).with("/tmp/new.log")
+    expect(device_2).to receive(:reopen).with("/tmp/new.log")
+    device.reopen("/tmp/new.log")
+  end
+
+  it "returns nil from datetime_format when no device has one" do
+    proc_device_1 = Lumberjack::Device::Writer.new(output_1, template: lambda { |entry| entry.message })
+    proc_device_2 = Lumberjack::Device::Writer.new(output_2, template: lambda { |entry| entry.message })
+    multi = Lumberjack::Device::Multi.new(proc_device_1, proc_device_2)
+    expect(multi.datetime_format).to be_nil
+  end
+
   it "should set the dateformat on each device" do
     device.datetime_format = "%Y-%m-%d"
     expect(device.datetime_format).to eq "%Y-%m-%d"
