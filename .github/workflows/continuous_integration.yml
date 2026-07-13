@@ -39,7 +39,9 @@ jobs:
           - ruby: "2.7"
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - name: Ruby CI
         uses: bdurand/github-actions/ruby-ci@v1.0.3
         with:
