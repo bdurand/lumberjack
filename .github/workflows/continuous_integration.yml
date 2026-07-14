@@ -38,29 +38,16 @@ jobs:
           - ruby: "3.0"
           - ruby: "2.7"
     steps:
-      - uses: actions/checkout@v6
-      - name: Set up Ruby ${{ matrix.ruby }}
-        uses: ruby/setup-ruby@v1
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          ruby-version: "${{ matrix.ruby }}"
-      - name: Setup bundler
-        if: matrix.bundler != ''
-        run: |
-          gem uninstall bundler --all
-          gem install bundler --no-document --version ${{ matrix.bundler }}
-      - name: Set Appraisal bundle
-        if: matrix.appraisal != ''
-        run: |
-          echo "using gemfile gemfiles/${{ matrix.appraisal }}.gemfile"
-          bundle config set gemfile "gemfiles/${{ matrix.appraisal }}.gemfile"
-      - name: Install gems
-        run: |
-          bundle install
-      - name: Run Tests
-        run: bundle exec rake
-      - name: standardrb
-        if:   matrix.standardrb == true
-        run:  bundle exec standardrb
-      - name: yard
-        if: matrix.yard == true
-        run:  bundle exec yard --fail-on-warning
+          persist-credentials: false
+      - name: Ruby CI
+        uses: bdurand/github-actions/ruby-ci@v1.0.3
+        with:
+          ruby: ${{ matrix.ruby }}
+          appraisal: ${{ matrix.appraisal }}
+          bundler: ${{ matrix.bundler }}
+          standardrb: ${{ matrix.standardrb }}
+          yard: ${{ matrix.yard }}
+          frozen_strings: ${{ matrix.frozen_strings }}
