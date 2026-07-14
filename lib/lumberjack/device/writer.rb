@@ -54,7 +54,9 @@ module Lumberjack
     # @option options [Boolean] :colorize (false) Whether to colorize log output
     def initialize(stream, options = {})
       @stream = stream
-      @stream.sync = true if @stream.respond_to?(:sync=) && options[:autoflush] != false
+      @autoflush = options[:autoflush] != false
+      @stream.sync = true if @stream.respond_to?(:sync=) && @autoflush
+      @lock = Mutex.new
 
       @binmode = options[:binmode]
 
@@ -107,8 +109,10 @@ module Lumberjack
     #
     # @return [void]
     def close
-      flush
-      stream.close
+      @lock.synchronize do
+        flush_stream
+        stream.close
+      end
     end
 
     # Flush the underlying stream to ensure all buffered data is written to the
@@ -117,7 +121,7 @@ module Lumberjack
     #
     # @return [void]
     def flush
-      stream.flush if stream.respond_to?(:flush)
+      @lock.synchronize { flush_stream }
     end
 
     # Get the current datetime format from the template if supported. Returns the
@@ -164,7 +168,20 @@ module Lumberjack
     # The underlying stream object that is being written to.
     #
     # @return [IO] The current stream object
-    attr_accessor :stream
+    attr_reader :stream
+
+    # Replace the underlying stream. The swap is synchronized against in-flight
+    # writes so a log line is never split across the old and new streams, and the
+    # autoflush setting is re-applied to the new stream.
+    #
+    # @param value [IO, #write] The new stream to write to
+    # @return [void]
+    def stream=(value)
+      @lock.synchronize do
+        value.sync = true if @autoflush && value.respond_to?(:sync=)
+        @stream = value
+      end
+    end
 
     private
 
@@ -177,17 +194,27 @@ module Lumberjack
     def write_to_stream(line)
       out = line.end_with?(Lumberjack::LINE_SEPARATOR) ? line : "#{line}#{Lumberjack::LINE_SEPARATOR}"
       begin
-        begin
-          stream.write(out)
-        rescue IOError => e
-          raise e if stream.closed?
+        @lock.synchronize do
+          target = stream
+          begin
+            target.write(out)
+          rescue IOError => e
+            raise e if target.closed?
 
-          stream.write(out)
+            target.write(out)
+          end
         end
       rescue => e
-        $stderr.write(error_message(e))
-        $stderr.write(out)
+        $stderr.write("#{error_message(e)}#{out}")
       end
+    end
+
+    # Flush the underlying stream without acquiring the lock. Callers are
+    # responsible for holding +@lock+ around this method.
+    #
+    # @return [void]
+    def flush_stream
+      stream.flush if stream.respond_to?(:flush)
     end
 
     # Generate a detailed error message for logging failures. This method creates
