@@ -55,7 +55,7 @@ module Lumberjack
     def initialize(stream, options = {})
       @stream = stream
       @autoflush = options[:autoflush] != false
-      @stream.sync = true if @stream.respond_to?(:sync=) && @autoflush
+      @stream.sync = @autoflush if @stream.respond_to?(:sync=)
       @lock = Mutex.new
 
       @binmode = options[:binmode]
@@ -178,7 +178,7 @@ module Lumberjack
     # @return [void]
     def stream=(value)
       @lock.synchronize do
-        value.sync = true if @autoflush && value.respond_to?(:sync=)
+        value.sync = @autoflush if value.respond_to?(:sync=)
         @stream = value
       end
     end
