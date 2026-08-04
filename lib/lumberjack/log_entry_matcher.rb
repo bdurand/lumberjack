@@ -14,6 +14,7 @@ module Lumberjack
   #
   # @see Lumberjack::Device::Test
   class LogEntryMatcher
+    require_relative "log_entry_matcher/indifferent_hash"
     require_relative "log_entry_matcher/score"
 
     # Create a new log entry matcher with optional filtering criteria. All
@@ -27,14 +28,18 @@ module Lumberjack
     #   Accepts numeric levels or symbolic names (:debug, :info, etc.)
     # @param progname [Object, nil] Pattern to match against program names.
     #   Supports strings, regular expressions, or any object responding to ===
-    # @param attributes [Hash, nil] Hash of attribute patterns to match against
-    #   log entry attributes. Supports nested attribute matching and dot notation
+    # @param attributes [Hash, Object, nil] Hash of attribute patterns to match against
+    #   log entry attributes. Supports nested attribute matching and dot notation.
+    #   Any other object is matched against the entire attributes hash with ===
+    #   so matchers like RSpec's hash_including can be used.
     def initialize(message: nil, severity: nil, progname: nil, attributes: nil)
       message = message.strip if message.is_a?(String)
       @message_filter = message
       @severity_filter = Severity.coerce(severity) if severity
       @progname_filter = progname
-      @attributes_filter = Utils.expand_attributes(attributes) if attributes
+      if attributes
+        @attributes_filter = attributes.is_a?(Hash) ? Utils.expand_attributes(attributes) : attributes
+      end
     end
 
     # Test whether a log entry matches all specified criteria. The entry must
@@ -49,7 +54,7 @@ module Lumberjack
       return false unless match_filter?(entry.progname, @progname_filter)
 
       if @attributes_filter
-        attributes = Utils.expand_attributes(entry.attributes)
+        attributes = IndifferentHash.wrap(Utils.expand_attributes(entry.attributes))
         return false unless match_attributes?(attributes, @attributes_filter)
       end
 
@@ -98,11 +103,13 @@ module Lumberjack
     # with support for partial matching and empty value detection.
     #
     # @param attributes [Hash] The expanded attributes hash from the log entry
-    # @param filter [Hash] The filter patterns to match against attributes
+    # @param filter [Hash, Object] The filter patterns to match against attributes.
+    #   Non-hash filters are matched against the attributes hash itself with ===.
     # @return [Boolean] True if all filter patterns match their corresponding attributes
     def match_attributes?(attributes, filter)
       return true unless filter
       return false unless attributes
+      return match_filter?(attributes, filter) unless filter.is_a?(Hash)
 
       filter.all? do |name, value_filter|
         name = name.to_s

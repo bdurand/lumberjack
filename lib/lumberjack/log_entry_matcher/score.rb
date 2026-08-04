@@ -47,9 +47,15 @@ class Lumberjack::LogEntryMatcher::Score
       end
 
       # Check attributes match
-      if attributes.is_a?(Hash) && !attributes.empty?
-        attributes_score = calculate_attributes_score(entry.attributes, attributes)
-        scores << attributes_score
+      if attributes.is_a?(Hash)
+        unless attributes.empty?
+          scores << calculate_attributes_score(entry.attributes, attributes)
+          weights << 0.3
+        end
+      elsif attributes
+        # Matchers like RSpec's hash_including are applied to the attributes hash as a whole.
+        entry_attributes = Lumberjack::LogEntryMatcher::IndifferentHash.wrap(Lumberjack::Utils.expand_attributes(entry.attributes))
+        scores << calculate_field_score(entry_attributes, attributes)
         weights << 0.3
       end
 
@@ -132,7 +138,9 @@ class Lumberjack::LogEntryMatcher::Score
       return 0.0 unless entry_attributes && attributes_filter.is_a?(Hash)
 
       attributes_filter = deep_stringify_keys(Lumberjack::Utils.expand_attributes(attributes_filter))
-      attributes = deep_stringify_keys(Lumberjack::Utils.expand_attributes(entry_attributes))
+      attributes = Lumberjack::LogEntryMatcher::IndifferentHash.wrap(
+        deep_stringify_keys(Lumberjack::Utils.expand_attributes(entry_attributes))
+      )
 
       total_attribute_filters = count_attribute_filters(attributes_filter)
       return 0.0 if total_attribute_filters == 0
