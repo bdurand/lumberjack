@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contexts no longer share array attribute values with their parent context, so appending to an inherited array attribute no longer mutates the parent context.
 - `Lumberjack.context` called without a block now returns the current context as documented instead of raising an `ArgumentError`.
 - Renamed misspelled `Lumberjack::Formatter::StructuredFormatter::RecusiveReferenceError` to `RecursiveReferenceError`. The old constant is kept as an alias for backward compatibility.
+- `Lumberjack::LogEntryMatcher` no longer ignores an `attributes` filter that is not a hash. Passing a matcher like RSpec's `hash_including` as the entire filter silently matched every entry; it is now applied to the entry's attributes hash with `===`.
+- `Lumberjack::LogEntryMatcher` now exposes log entry attributes to matchers with indifferent key access, so matchers that do their own key lookups (i.e. RSpec's `hash_including`) can use either string or symbol attribute names.
 
 ## 2.0.5
 

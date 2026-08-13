@@ -180,6 +180,34 @@ RSpec.describe Lumberjack::LogEntryMatcher do
         matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: "value"})
         expect(matcher.match?(entry)).to be false
       end
+
+      it "matches a hash matcher against a nested attribute" do
+        attributes["foo.bar"] = "baz"
+        attributes["foo.bip"] = "bop"
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {foo: hash_including("bar" => "baz")}).match?(entry)).to be true
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {foo: hash_including("bar" => "boo")}).match?(entry)).to be false
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {foo: hash_including("nope" => "baz")}).match?(entry)).to be false
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {nope: hash_including("bar" => "baz")}).match?(entry)).to be false
+      end
+
+      it "matches a hash matcher against the entire attributes hash" do
+        attributes["foo.bar"] = "baz"
+        attributes["key"] = "value"
+        expect(Lumberjack::LogEntryMatcher.new(attributes: hash_including("foo" => {"bar" => "baz"})).match?(entry)).to be true
+        expect(Lumberjack::LogEntryMatcher.new(attributes: hash_including("foo" => {"bar" => "boo"})).match?(entry)).to be false
+        expect(Lumberjack::LogEntryMatcher.new(attributes: hash_including("nope" => "baz")).match?(entry)).to be false
+        expect(Lumberjack::LogEntryMatcher.new(attributes: hash_including("key" => "value")).match?(entry)).to be true
+      end
+
+      it "allows hash matchers to use either string or symbol keys" do
+        attributes["foo.bar"] = "baz"
+        expect(Lumberjack::LogEntryMatcher.new(attributes: hash_including(foo: {bar: "baz"})).match?(entry)).to be true
+        expect(Lumberjack::LogEntryMatcher.new(attributes: hash_including(foo: {bar: "boo"})).match?(entry)).to be false
+        expect(Lumberjack::LogEntryMatcher.new(attributes: hash_including(nope: "baz")).match?(entry)).to be false
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {foo: hash_including(bar: "baz")}).match?(entry)).to be true
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {foo: hash_including(bar: "boo")}).match?(entry)).to be false
+        expect(Lumberjack::LogEntryMatcher.new(attributes: {foo: hash_including(nope: "baz")}).match?(entry)).to be false
+      end
     end
 
     describe "multiple filters" do
