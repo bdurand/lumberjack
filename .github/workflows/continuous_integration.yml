@@ -43,7 +43,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Ruby CI
-        uses: bdurand/github-actions/ruby-ci@v1.0.3
+        uses: bdurand/github-actions/ruby-ci@v1.0.4
         with:
           ruby: ${{ matrix.ruby }}
           appraisal: ${{ matrix.appraisal }}
