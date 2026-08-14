@@ -76,8 +76,10 @@ module Lumberjack
     #
     # The returned hash uses string keys for the fields ("message", "severity",
     # "progname", and "attributes"). Each mismatched field maps to a hash with
-    # +:expected+ (the raw filter value) and +:actual+ (the entry value). Severity
-    # values are converted to labels on both sides for readability.
+    # +:expected+ and +:actual+ (the entry value). Severity values are converted
+    # to labels on both sides for readability. When a formatter is set and the
+    # filter value was formatted, +:expected+ shows the formatted filter value
+    # so both sides of the mismatch are in the same form.
     #
     # Attribute mismatches are reported per attribute using dot notation keys.
     # A missing attribute is reported with +actual: nil+. An attribute that was
@@ -93,7 +95,7 @@ module Lumberjack
       result = {}
 
       unless match_message?(entry.message)
-        result["message"] = {expected: @message_filter, actual: entry.message}
+        result["message"] = {expected: expected_message, actual: entry.message}
       end
 
       unless match_filter?(entry.severity, @severity_filter)
@@ -184,6 +186,19 @@ module Lumberjack
       match_filter?(message, formatted)
     end
 
+    # The message filter value to report in a diff. The formatted value is used
+    # when the formatter changed the filter so both sides of a mismatch are in
+    # the same form.
+    #
+    # @return [Object] The message filter value to report.
+    def expected_message
+      if @formatter && !@message_filter.nil? && !pattern_filter?(@message_filter)
+        formatted_message_filter
+      else
+        @message_filter
+      end
+    end
+
     # Format the message filter with the message formatter. The result is
     # memoized so the formatter is only invoked once per matcher.
     #
@@ -224,16 +239,14 @@ module Lumberjack
         if attribute_value.is_a?(Hash)
           if value_filter.is_a?(Hash)
             mismatches.merge!(attribute_mismatches(attribute_value, value_filter, key, allow_formatting: allow_formatting))
-          elsif !match_leaf?(key, attribute_value, value_filter, allow_formatting)
-            mismatches[key] = {expected: value_filter, actual: attribute_value}
+          else
+            add_leaf_mismatches(mismatches, key, attribute_value, value_filter, allow_formatting)
           end
         elsif value_filter.nil? || (value_filter.is_a?(Enumerable) && value_filter.empty?)
           empty_value = attribute_value.nil? || (attribute_value.is_a?(Array) && attribute_value.empty?)
           mismatches[key] = {expected: value_filter, actual: attribute_value} unless empty_value
         elsif attributes.include?(name)
-          unless match_leaf?(key, attribute_value, value_filter, allow_formatting)
-            mismatches[key] = {expected: value_filter, actual: attribute_value}
-          end
+          add_leaf_mismatches(mismatches, key, attribute_value, value_filter, allow_formatting)
         else
           mismatches[key] = {expected: value_filter, actual: nil}
         end
@@ -242,29 +255,39 @@ module Lumberjack
       mismatches
     end
 
-    # Match a single attribute value against a filter. If the raw comparison fails,
-    # the filter is formatted with the attribute formatter and compared again. A
-    # formatted result that is a hash is compared recursively against the entry
-    # value with formatting disabled since its values are already formatted.
+    # Match a single attribute value against a filter and add any mismatches to
+    # the collector. If the raw comparison fails, the filter is formatted with the
+    # attribute formatter and compared again. Mismatches are reported with the
+    # formatted filter value so both sides are in the same form. A formatted result
+    # that is a hash is compared recursively against the entry value with formatting
+    # disabled since its values are already formatted, and mismatches are reported
+    # per attribute under the leaf's dot notation name.
     #
+    # @param mismatches [Hash] The mismatch collector.
     # @param path [String] The dot notation name of the attribute.
     # @param value [Object] The entry attribute value.
     # @param filter [Object] The filter pattern.
     # @param allow_formatting [Boolean] Whether the filter can be formatted on a failed comparison.
-    # @return [Boolean] True if the value matches.
-    def match_leaf?(path, value, filter, allow_formatting)
-      return true if match_filter?(value, filter)
-      return false unless allow_formatting && @formatter && !pattern_filter?(filter)
+    # @return [void]
+    def add_leaf_mismatches(mismatches, path, value, filter, allow_formatting)
+      return if match_filter?(value, filter)
+
+      unless allow_formatting && @formatter && !pattern_filter?(filter)
+        mismatches[path] = {expected: filter, actual: value}
+        return
+      end
 
       formatted = formatted_attribute_filter(path, filter)
-      return false if formatted.equal?(filter)
-
-      if formatted.is_a?(Hash)
-        return false unless value.is_a?(Hash)
-
-        attribute_mismatches(value, Utils.expand_attributes(formatted), allow_formatting: false).empty?
-      else
-        match_filter?(value, formatted)
+      if formatted.equal?(filter)
+        mismatches[path] = {expected: filter, actual: value}
+      elsif formatted.is_a?(Hash)
+        if value.is_a?(Hash)
+          mismatches.merge!(attribute_mismatches(value, Utils.expand_attributes(formatted), path, allow_formatting: false))
+        else
+          mismatches[path] = {expected: formatted, actual: value}
+        end
+      elsif !match_filter?(value, formatted)
+        mismatches[path] = {expected: formatted, actual: value}
       end
     end
 

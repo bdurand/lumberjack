@@ -496,10 +496,37 @@ RSpec.describe Lumberjack::LogEntryMatcher do
       expect(matcher.diff(entry)).to eq({})
     end
 
-    it "shows the raw filter value in the diff when both comparisons fail" do
+    it "shows the formatted filter value in the diff when both comparisons fail" do
       other = RuntimeError.new("different")
       matcher = Lumberjack::LogEntryMatcher.new(message: other, formatter: entry_formatter)
-      expect(matcher.diff(entry)).to eq({"message" => {expected: other, actual: entry.message}})
+      expect(matcher.diff(entry)).to eq({"message" => {expected: other.inspect, actual: entry.message}})
+    end
+
+    it "reports mismatches inside a formatted attribute filter per attribute" do
+      other = RuntimeError.new("different")
+      other.set_backtrace(exception.backtrace)
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: {error: other}, formatter: entry_formatter)
+      expect(matcher.diff(entry)).to eq({
+        "attributes" => {"error.message" => {expected: "different", actual: "boom"}}
+      })
+    end
+
+    it "shows the formatted attribute filter value in the diff when both comparisons fail" do
+      formatter = Lumberjack::EntryFormatter.build do |config|
+        config.format_attributes(Symbol, &:to_s)
+      end
+      plain_entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test", nil, nil, {"status" => "active"})
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: {status: :inactive}, formatter: formatter)
+      expect(matcher.diff(plain_entry)).to eq({
+        "attributes" => {"status" => {expected: "inactive", actual: "active"}}
+      })
+    end
+
+    it "shows the raw filter value in the diff when the formatter does not change it" do
+      matcher = Lumberjack::LogEntryMatcher.new(message: "Other message", attributes: {key: "value"}, formatter: entry_formatter)
+      diff = matcher.diff(entry)
+      expect(diff["message"]).to eq({expected: "Other message", actual: entry.message})
+      expect(diff["attributes"]).to eq({"key" => {expected: "value", actual: nil}})
     end
   end
 

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added `Lumberjack::LogEntryMatcher#diff` which returns only the fields that do not match a log entry, with the expected and actual values. This can be used to diagnose why a test assertion failed.
-- Added a `formatter` option to `Lumberjack::LogEntryMatcher`. Filter values are compared raw first; if that fails, they are formatted with the entry formatter and compared again. This allows expectations to be written with unformatted values (an Exception, for example) and still match the formatted values captured on a log entry.
+- Added a `formatter` option to `Lumberjack::LogEntryMatcher`. Filter values are compared raw first; if that fails, they are formatted with the entry formatter and compared again. This allows expectations to be written with unformatted values (an Exception, for example) and still match the formatted values captured on a log entry. `#diff` reports expected values in their formatted form so both sides of a mismatch are in the same form.
 - Added `Lumberjack::Device::Test#entry_formatter` (also settable with the `:entry_formatter` option) which is used as the default formatter for `include?`, `match`, and `closest_match`. Those methods also accept a per call `formatter` argument.
 
 ### Fixed
