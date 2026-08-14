@@ -116,16 +116,38 @@ module Lumberjack
         message << "#{indent_str}severity: #{Lumberjack::Severity.level_to_label(severity)}" if severity
         message << "#{indent_str}message: #{expectation["message"]}" if expectation.include?("message")
         message << "#{indent_str}progname: #{expectation["progname"]}" if expectation.include?("progname")
-        if expectation["attributes"].is_a?(Hash) && !expectation["attributes"].empty?
-          attributes = Lumberjack::Utils.flatten_attributes(expectation["attributes"])
-          label = "attributes:"
-          prefix = "#{indent_str}#{label}"
-          attributes.sort_by(&:first).each do |name, value|
-            message << "#{prefix} #{name}: #{value.inspect}"
-            prefix = "#{indent_str}#{" " * label.length}"
+        expected_attributes = expectation["attributes"]
+        if expected_attributes.is_a?(Hash)
+          unless expected_attributes.empty?
+            attributes = Lumberjack::Utils.flatten_attributes(expected_attributes)
+            label = "attributes:"
+            prefix = "#{indent_str}#{label}"
+            attributes.sort_by(&:first).each do |name, value|
+              message << "#{prefix} #{name}: #{formatted_value(value)}"
+              prefix = "#{indent_str}#{" " * label.length}"
+            end
           end
+        elsif expected_attributes
+          # Matchers like RSpec's hash_including are matched against the attributes hash as a whole.
+          message << "#{indent_str}attributes: #{formatted_value(expected_attributes)}"
         end
         message.join(Lumberjack::LINE_SEPARATOR)
+      end
+
+      private
+
+      # Format a value for display in an expectation. Matcher objects (i.e. RSpec matchers)
+      # that implement a +description+ method are displayed using that description since
+      # inspecting them is not very informative.
+      #
+      # @param value [Object] The value to format.
+      # @return [String] The formatted value.
+      def formatted_value(value)
+        if value.respond_to?(:description) && !value.is_a?(Module)
+          value.description.to_s
+        else
+          value.inspect
+        end
       end
     end
 
