@@ -223,6 +223,286 @@ RSpec.describe Lumberjack::LogEntryMatcher do
     end
   end
 
+  describe "#diff" do
+    let(:entry) { Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test message", "AppName", Process.pid, attributes) }
+    let(:attributes) { {} }
+
+    it "returns an empty hash when the entry matches" do
+      matcher = Lumberjack::LogEntryMatcher.new(message: "Test message", severity: :info, progname: "AppName")
+      expect(matcher.diff(entry)).to eq({})
+    end
+
+    it "returns an empty hash when the matcher has no filters" do
+      expect(Lumberjack::LogEntryMatcher.new.diff(entry)).to eq({})
+    end
+
+    it "reports a message mismatch with the raw filter value" do
+      matcher = Lumberjack::LogEntryMatcher.new(message: /Different/)
+      expect(matcher.diff(entry)).to eq({"message" => {expected: /Different/, actual: "Test message"}})
+    end
+
+    it "reports a severity mismatch using severity labels" do
+      matcher = Lumberjack::LogEntryMatcher.new(severity: :error)
+      expect(matcher.diff(entry)).to eq({"severity" => {expected: "ERROR", actual: "INFO"}})
+    end
+
+    it "reports a progname mismatch" do
+      matcher = Lumberjack::LogEntryMatcher.new(progname: "OtherApp")
+      expect(matcher.diff(entry)).to eq({"progname" => {expected: "OtherApp", actual: "AppName"}})
+    end
+
+    it "reports multiple mismatched fields" do
+      matcher = Lumberjack::LogEntryMatcher.new(message: "Other", severity: :error, progname: "AppName")
+      expect(matcher.diff(entry)).to eq({
+        "message" => {expected: "Other", actual: "Test message"},
+        "severity" => {expected: "ERROR", actual: "INFO"}
+      })
+    end
+
+    it "reports attribute mismatches using dot notation keys" do
+      attributes["key"] = "value"
+      attributes["error.kind"] = "RuntimeError"
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: "value", error: {kind: "ArgumentError"}})
+      expect(matcher.diff(entry)).to eq({"attributes" => {"error.kind" => {expected: "ArgumentError", actual: "RuntimeError"}}})
+    end
+
+    it "reports a missing attribute with a nil actual value" do
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: "value"})
+      expect(matcher.diff(entry)).to eq({"attributes" => {"key" => {expected: "value", actual: nil}}})
+    end
+
+    it "reports an attribute that was expected to be absent" do
+      attributes["key"] = "value"
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: nil})
+      expect(matcher.diff(entry)).to eq({"attributes" => {"key" => {expected: nil, actual: "value"}}})
+    end
+
+    it "reports an attribute that was expected to be empty" do
+      attributes["key"] = ["value"]
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: []})
+      expect(matcher.diff(entry)).to eq({"attributes" => {"key" => {expected: [], actual: ["value"]}}})
+    end
+
+    it "reports a hash filter against a non hash value as a single mismatch" do
+      attributes["key"] = "value"
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: {key: {nested: 1}})
+      expect(matcher.diff(entry)).to eq({"attributes" => {"key" => {expected: {"nested" => 1}, actual: "value"}}})
+    end
+
+    it "reports a failed matcher applied to the entire attributes hash as a single mismatch" do
+      attributes["key"] = "value"
+      hash_matcher = hash_including("other" => "value")
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: hash_matcher)
+      expect(matcher.diff(entry)).to eq({"attributes" => {expected: hash_matcher, actual: {"key" => "value"}}})
+    end
+
+    it "returns an empty hash when a matcher applied to the entire attributes hash matches" do
+      attributes["key"] = "value"
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: hash_including("key" => "value"))
+      expect(matcher.diff(entry)).to eq({})
+    end
+
+    it "reports a failed matcher on a nested attribute keyed by its dot notation name" do
+      attributes["foo.bar"] = "baz"
+      hash_matcher = hash_including("bar" => "boo")
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: {foo: hash_matcher})
+      expect(matcher.diff(entry)).to eq({"attributes" => {"foo" => {expected: hash_matcher, actual: {"bar" => "baz"}}}})
+    end
+
+    it "is empty exactly when the entry matches" do
+      attributes["key"] = "value"
+      matchers = [
+        Lumberjack::LogEntryMatcher.new(message: "Test message", attributes: {key: "value"}),
+        Lumberjack::LogEntryMatcher.new(message: "Other"),
+        Lumberjack::LogEntryMatcher.new(severity: :error, progname: "Nope"),
+        Lumberjack::LogEntryMatcher.new(attributes: {key: "other"}),
+        Lumberjack::LogEntryMatcher.new(attributes: {other: nil}),
+        Lumberjack::LogEntryMatcher.new(attributes: hash_including("key" => "value"))
+      ]
+      matchers.each do |matcher|
+        expect(matcher.diff(entry).empty?).to eq matcher.match?(entry)
+      end
+    end
+  end
+
+  describe "formatter matching" do
+    let(:entry_formatter) do
+      Lumberjack::EntryFormatter.build do |config|
+        config.format_message(Exception) do |e|
+          Lumberjack::MessageAttributes.new(e.inspect, {error: {kind: e.class.name, message: e.message, trace: e.backtrace}})
+        end
+        config.format_attributes(Exception) do |e|
+          {kind: e.class.name, message: e.message, trace: e.backtrace}
+        end
+      end
+    end
+
+    let(:exception) do
+      raise "boom"
+    rescue => e
+      e
+    end
+
+    let(:entry) do
+      logger = Lumberjack::Logger.new(:test, formatter: entry_formatter)
+      logger.error(exception)
+      logger.device.last_entry
+    end
+
+    it "matches an unformatted message filter against the formatted message" do
+      matcher = Lumberjack::LogEntryMatcher.new(message: exception, formatter: entry_formatter)
+      expect(matcher.match?(entry)).to be true
+    end
+
+    it "matches an unformatted attribute filter against the formatted attributes" do
+      matcher = Lumberjack::LogEntryMatcher.new(
+        message: exception.inspect,
+        attributes: {error: exception},
+        formatter: entry_formatter
+      )
+      expect(matcher.match?(entry)).to be true
+    end
+
+    it "matches fully expanded attribute filters" do
+      matcher = Lumberjack::LogEntryMatcher.new(
+        message: exception.inspect,
+        attributes: {error: {kind: exception.class.name, message: exception.message, trace: exception.backtrace}},
+        formatter: entry_formatter
+      )
+      expect(matcher.match?(entry)).to be true
+    end
+
+    it "does not match when the formatted values are different" do
+      other = RuntimeError.new("different")
+      matcher = Lumberjack::LogEntryMatcher.new(message: other, formatter: entry_formatter)
+      expect(matcher.match?(entry)).to be false
+
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: {error: other}, formatter: entry_formatter)
+      expect(matcher.match?(entry)).to be false
+    end
+
+    it "matches an exception without a backtrace against an entry without a trace attribute" do
+      quiet_exception = RuntimeError.new("quiet")
+      logger = Lumberjack::Logger.new(:test, formatter: entry_formatter)
+      logger.error(quiet_exception)
+      quiet_entry = logger.device.last_entry
+
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: {error: quiet_exception}, formatter: entry_formatter)
+      expect(matcher.match?(quiet_entry)).to be true
+    end
+
+    it "does not invoke the formatter when the raw value matches" do
+      calls = 0
+      formatter = Lumberjack::EntryFormatter.build do |config|
+        config.format_message(String) do |value|
+          calls += 1
+          value
+        end
+      end
+      plain_entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test message", nil, nil, {})
+      matcher = Lumberjack::LogEntryMatcher.new(message: "Test message", formatter: formatter)
+      expect(matcher.match?(plain_entry)).to be true
+      expect(calls).to eq 0
+    end
+
+    it "formats a filter value only once when matching multiple entries" do
+      calls = 0
+      formatter = Lumberjack::EntryFormatter.build do |config|
+        config.format_message(Symbol) do |value|
+          calls += 1
+          value.to_s
+        end
+      end
+      plain_entries = Array.new(3) { |i| Lumberjack::LogEntry.new(Time.now, Logger::INFO, "message #{i}", nil, nil, {}) }
+      matcher = Lumberjack::LogEntryMatcher.new(message: :other, formatter: formatter)
+      plain_entries.each { |plain_entry| matcher.match?(plain_entry) }
+      expect(calls).to eq 1
+    end
+
+    it "applies attribute name formatters to filter values using dot notation names" do
+      formatter = Lumberjack::EntryFormatter.build do |config|
+        config.format_attribute_name("user.id") { |value| value.to_s.rjust(5, "0") }
+      end
+      plain_entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test", nil, nil, {"user.id" => "00042"})
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: {user: {id: 42}}, formatter: formatter)
+      expect(matcher.match?(plain_entry)).to be true
+    end
+
+    it "does not format values inside an already formatted attribute filter" do
+      formatter = Lumberjack::EntryFormatter.build do |config|
+        config.format_message(Exception, &:inspect)
+        config.format_attributes(Exception) { |e| {kind: e.class.name, message: e.message} }
+        config.format_attributes(String) { |s| "str:#{s}" }
+      end
+      logger = Lumberjack::Logger.new(:test, formatter: formatter)
+      logger.error("error", error: exception)
+      formatted_entry = logger.device.last_entry
+
+      matcher = Lumberjack::LogEntryMatcher.new(attributes: {error: exception}, formatter: formatter)
+      expect(matcher.match?(formatted_entry)).to be true
+    end
+
+    it "does not format pattern filters" do
+      formatter = Lumberjack::EntryFormatter.build do |config|
+        config.format_attributes(Numeric, &:to_s)
+      end
+      plain_entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test message", nil, nil, {"count" => 5, "name" => "test"})
+
+      expect(Lumberjack::LogEntryMatcher.new(message: /Test/, formatter: formatter).match?(plain_entry)).to be true
+      expect(Lumberjack::LogEntryMatcher.new(attributes: {count: be > 1}, formatter: formatter).match?(plain_entry)).to be true
+      expect(Lumberjack::LogEntryMatcher.new(attributes: {count: be > 10}, formatter: formatter).match?(plain_entry)).to be false
+      expect(Lumberjack::LogEntryMatcher.new(attributes: hash_including("name" => "test"), formatter: formatter).match?(plain_entry)).to be true
+    end
+
+    it "does not format severity or progname filters" do
+      formatter = Lumberjack::EntryFormatter.build do |config|
+        config.format_message(Symbol, &:to_s)
+      end
+      plain_entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test message", "AppName", nil, {})
+      matcher = Lumberjack::LogEntryMatcher.new(progname: :AppName, formatter: formatter)
+      expect(matcher.match?(plain_entry)).to be false
+    end
+
+    it "does not raise when a formatter raises an error" do
+      save_stderr = $stderr
+      begin
+        $stderr = StringIO.new
+        formatter = Lumberjack::EntryFormatter.build do |config|
+          config.format_message(Symbol) { |value| raise "formatter error" }
+        end
+        plain_entry = Lumberjack::LogEntry.new(Time.now, Logger::INFO, "Test message", nil, nil, {})
+        matcher = Lumberjack::LogEntryMatcher.new(message: :other, formatter: formatter)
+        expect(matcher.match?(plain_entry)).to be false
+      ensure
+        $stderr = save_stderr
+      end
+    end
+
+    it "accepts a logger as the formatter" do
+      logger = Lumberjack::Logger.new(:test, formatter: entry_formatter)
+      logger.error(exception)
+      matcher = Lumberjack::LogEntryMatcher.new(message: exception, formatter: logger)
+      expect(matcher.match?(logger.device.last_entry)).to be true
+    end
+
+    it "raises an ArgumentError when the formatter is not an EntryFormatter or Logger" do
+      expect {
+        Lumberjack::LogEntryMatcher.new(message: "test", formatter: "bogus")
+      }.to raise_error(ArgumentError)
+    end
+
+    it "returns an empty diff when the entry matches through formatting" do
+      matcher = Lumberjack::LogEntryMatcher.new(message: exception, attributes: {error: exception}, formatter: entry_formatter)
+      expect(matcher.diff(entry)).to eq({})
+    end
+
+    it "shows the raw filter value in the diff when both comparisons fail" do
+      other = RuntimeError.new("different")
+      matcher = Lumberjack::LogEntryMatcher.new(message: other, formatter: entry_formatter)
+      expect(matcher.diff(entry)).to eq({"message" => {expected: other, actual: entry.message}})
+    end
+  end
+
   describe "#closest" do
     let(:user_logged_in) { Lumberjack::LogEntry.new(Time.now, Logger::INFO, "User logged in successfully", nil, nil, nil) }
     let(:database_slow) { Lumberjack::LogEntry.new(Time.now, Logger::WARN, "Database connection slow", nil, nil, nil) }

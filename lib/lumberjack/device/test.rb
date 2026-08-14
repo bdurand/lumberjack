@@ -86,6 +86,17 @@ module Lumberjack
     # @return [Hash] A copy of the options hash passed during initialization
     attr_reader :options
 
+    # @!attribute [rw] entry_formatter
+    #   Entry formatter used by +include?+, +match+, and +closest_match+ when
+    #   building matchers. Log entries are captured after the logger's formatter
+    #   has been applied, so setting this to the same formatter used by the logger
+    #   allows expectations to be written with unformatted values:
+    #
+    #     logger.device.entry_formatter = logger.formatter
+    #
+    #   @return [Lumberjack::EntryFormatter, nil] The entry formatter used for matching
+    attr_accessor :entry_formatter
+
     class << self
       # Format a log entry or expectation hash into a more human readable format. This is
       # intended for use in test failure messages to help diagnose why a match failed when
@@ -159,9 +170,12 @@ module Lumberjack
     # @option options [Integer] :max_entries (1000) The maximum number of entries
     #   to retain in the buffer. When this limit is exceeded, the oldest entries
     #   are automatically removed to maintain the size limit.
+    # @option options [Lumberjack::EntryFormatter] :entry_formatter Entry formatter
+    #   used when matching entries. See {#entry_formatter}.
     def initialize(options = {})
       @buffer = []
       @max_entries = options[:max_entries] || 1000
+      @entry_formatter = options[:entry_formatter]
       @lock = Mutex.new
       @options = options.dup
     end
@@ -252,6 +266,9 @@ module Lumberjack
     #   { user: { id: value } }). Values can be exact matches or test framework matchers
     # @option options [String, Regexp, Object] :progname Pattern to match against
     #   the program name that generated the log entry
+    # @option options [Lumberjack::EntryFormatter, Lumberjack::Logger] :formatter
+    #   Formatter used to format filter values when a raw comparison fails. Defaults
+    #   to the device {#entry_formatter}.
     #
     # @return [Boolean] True if any captured entries match all specified criteria,
     #   false otherwise
@@ -303,6 +320,9 @@ module Lumberjack
     #   log entry attributes. Supports nested matching using dot notation
     # @param progname [String, Regexp, Object, nil] Pattern to match against
     #   the program name that generated the log entry
+    # @param formatter [Lumberjack::EntryFormatter, Lumberjack::Logger, nil] Formatter
+    #   used to format filter values when a raw comparison fails. Defaults to the
+    #   device {#entry_formatter}.
     #
     # @return [Lumberjack::LogEntry, nil] The first matching log entry, or nil
     #   if no entries match the specified criteria
@@ -327,8 +347,14 @@ module Lumberjack
     #     attributes: {"request.endpoint" => "/users", "response.status" => 200}
     #   )
     #   expect(api_entry.attributes["request.endpoint"]).to eq("/users")
-    def match(message: nil, severity: nil, attributes: nil, progname: nil)
-      matcher = LogEntryMatcher.new(message: message, severity: severity, attributes: attributes, progname: progname)
+    def match(message: nil, severity: nil, attributes: nil, progname: nil, formatter: nil)
+      matcher = LogEntryMatcher.new(
+        message: message,
+        severity: severity,
+        attributes: attributes,
+        progname: progname,
+        formatter: formatter || entry_formatter
+      )
       entries.detect { |entry| matcher.match?(entry) }
     end
 
@@ -349,10 +375,19 @@ module Lumberjack
     #   log entry attributes. Supports nested matching using dot notation
     # @param progname [String, Regexp, Object, nil] Pattern to match against
     #   the program name that generated the log entry
+    # @param formatter [Lumberjack::EntryFormatter, Lumberjack::Logger, nil] Formatter
+    #   used to format filter values when a raw comparison fails. Defaults to the
+    #   device {#entry_formatter}.
     # @return [Lumberjack::LogEntry, nil] The closest matching log entry, or nil
     #   if no entries meet the minimum score threshold
-    def closest_match(message: nil, severity: nil, attributes: nil, progname: nil)
-      matcher = LogEntryMatcher.new(message: message, severity: severity, attributes: attributes, progname: progname)
+    def closest_match(message: nil, severity: nil, attributes: nil, progname: nil, formatter: nil)
+      matcher = LogEntryMatcher.new(
+        message: message,
+        severity: severity,
+        attributes: attributes,
+        progname: progname,
+        formatter: formatter || entry_formatter
+      )
       matcher.closest(entries)
     end
   end

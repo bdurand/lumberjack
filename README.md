@@ -724,6 +724,41 @@ You should make sure to call `logger.device.clear` between tests to clear the ca
 > [!NOTE]
 > Log entries are captured after formatters have been applied. This provides a mechanism for including the formatting logic in your tests.
 
+Since entries are captured after formatting, you can set an entry formatter on the `Test` device to write expectations with unformatted values. Filter values are compared raw first; if that fails, they are formatted and compared again.
+
+```ruby
+formatter = Lumberjack::EntryFormatter.build do |config|
+  config.format_message(Exception) do |e|
+    Lumberjack::MessageAttributes.new(e.inspect, {error: {kind: e.class.name, message: e.message, trace: e.backtrace}})
+  end
+  config.format_attributes(Exception) do |e|
+    {kind: e.class.name, message: e.message, trace: e.backtrace}
+  end
+end
+
+logger = Lumberjack::Logger.new(:test, formatter: formatter)
+logger.device.entry_formatter = logger.formatter
+
+exception = RuntimeError.new("boom")
+logger.error(exception)
+
+# These all match the same entry.
+expect(logger.device).to include(message: exception)
+expect(logger.device).to include(message: exception.inspect, attributes: {error: exception})
+expect(logger.device).to include(
+  message: exception.inspect,
+  attributes: {error: {kind: "RuntimeError", message: "boom"}}
+)
+```
+
+You can use `Lumberjack::LogEntryMatcher#diff` to see why an entry did not match. It returns only the fields that do not match, with the expected and actual values.
+
+```ruby
+matcher = Lumberjack::LogEntryMatcher.new(message: "User logged in", attributes: {user_id: 456})
+matcher.diff(logger.device.last_entry)
+# => {"attributes" => {"user_id" => {expected: 456, actual: 123}}}
+```
+
 > [!TIP]
 > The [lumberjack_capture_device](https://github.com/bdurand/lumberjack_capture_device) gem provides some additional testing utilities and rspec integration.
 

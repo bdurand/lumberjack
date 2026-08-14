@@ -12,6 +12,13 @@ module Lumberjack
   # device in testing scenarios but can be used anywhere log entry filtering
   # is needed.
   #
+  # A matcher can optionally be constructed with an entry formatter. Filter
+  # values are always compared raw first. If a raw comparison fails, the filter
+  # value is run through the formatter and compared again. Since log entries
+  # are formatted before they are written to a device, this allows expectations
+  # to be written with unformatted values (an Exception, for example) and still
+  # match the formatted values captured on the entry.
+  #
   # @see Lumberjack::Device::Test
   class LogEntryMatcher
     require_relative "log_entry_matcher/indifferent_hash"
@@ -32,7 +39,16 @@ module Lumberjack
     #   log entry attributes. Supports nested attribute matching and dot notation.
     #   Any other object is matched against the entire attributes hash with ===
     #   so matchers like RSpec's hash_including can be used.
-    def initialize(message: nil, severity: nil, progname: nil, attributes: nil)
+    # @param formatter [Lumberjack::EntryFormatter, Lumberjack::Logger, nil] Optional
+    #   formatter used to format filter values when a raw comparison fails. A Logger
+    #   can be passed to use its entry formatter. The message filter is formatted with
+    #   the message formatter; when the result is a MessageAttributes, only the message
+    #   part is used and the derived attributes are ignored. Attribute filter values are
+    #   formatted with the attribute formatter using their dot notation names. Pattern
+    #   objects (classes, regular expressions, ranges, procs, hashes, and test framework
+    #   matchers) are never formatted.
+    # @raise [ArgumentError] If the formatter is not an EntryFormatter or a Logger.
+    def initialize(message: nil, severity: nil, progname: nil, attributes: nil, formatter: nil)
       message = message.strip if message.is_a?(String)
       @message_filter = message
       @severity_filter = Severity.coerce(severity) if severity
@@ -40,6 +56,8 @@ module Lumberjack
       if attributes
         @attributes_filter = attributes.is_a?(Hash) ? Utils.expand_attributes(attributes) : attributes
       end
+      @formatter = resolve_formatter(formatter)
+      @formatted_attribute_filters = {}
     end
 
     # Test whether a log entry matches all specified criteria. The entry must
@@ -49,16 +67,54 @@ module Lumberjack
     # @param entry [Lumberjack::LogEntry] The log entry to test against the matcher
     # @return [Boolean] True if the entry matches all specified criteria, false otherwise
     def match?(entry)
-      return false unless match_filter?(entry.message, @message_filter)
-      return false unless match_filter?(entry.severity, @severity_filter)
-      return false unless match_filter?(entry.progname, @progname_filter)
+      diff(entry).empty?
+    end
+
+    # Compare a log entry against the matcher criteria and return only the fields
+    # that do not match. An empty hash means the entry matches, so
+    # +diff(entry).empty?+ is always equal to +match?(entry)+.
+    #
+    # The returned hash uses string keys for the fields ("message", "severity",
+    # "progname", and "attributes"). Each mismatched field maps to a hash with
+    # +:expected+ (the raw filter value) and +:actual+ (the entry value). Severity
+    # values are converted to labels on both sides for readability.
+    #
+    # Attribute mismatches are reported per attribute using dot notation keys.
+    # A missing attribute is reported with +actual: nil+. An attribute that was
+    # expected to be absent (a nil or empty filter value) is reported with the
+    # raw filter as +:expected+ and the entry value as +:actual+. When the
+    # attributes filter is not a hash (a matcher object applied to the whole
+    # attributes hash), a failure is reported as a single hash with +:expected+
+    # and +:actual+ keys instead of per attribute detail.
+    #
+    # @param entry [Lumberjack::LogEntry] The log entry to compare against the matcher
+    # @return [Hash] A hash of the fields that do not match; empty if the entry matches
+    def diff(entry)
+      result = {}
+
+      unless match_message?(entry.message)
+        result["message"] = {expected: @message_filter, actual: entry.message}
+      end
+
+      unless match_filter?(entry.severity, @severity_filter)
+        result["severity"] = {expected: Severity.level_to_label(@severity_filter), actual: entry.severity_label}
+      end
+
+      unless match_filter?(entry.progname, @progname_filter)
+        result["progname"] = {expected: @progname_filter, actual: entry.progname}
+      end
 
       if @attributes_filter
         attributes = IndifferentHash.wrap(Utils.expand_attributes(entry.attributes))
-        return false unless match_attributes?(attributes, @attributes_filter)
+        if @attributes_filter.is_a?(Hash)
+          mismatches = attribute_mismatches(attributes, @attributes_filter)
+          result["attributes"] = mismatches unless mismatches.empty?
+        elsif !match_filter?(attributes, @attributes_filter)
+          result["attributes"] = {expected: @attributes_filter, actual: attributes}
+        end
       end
 
-      true
+      result
     end
 
     # Find the closest matching log entry from a list of candidates. This method
@@ -86,6 +142,21 @@ module Lumberjack
       )
     end
 
+    # Coerce the formatter argument into an EntryFormatter or nil.
+    #
+    # @param formatter [Lumberjack::EntryFormatter, Lumberjack::Logger, nil] The formatter argument.
+    # @return [Lumberjack::EntryFormatter, nil] The resolved entry formatter.
+    def resolve_formatter(formatter)
+      return nil if formatter.nil?
+      return formatter if formatter.is_a?(Lumberjack::EntryFormatter)
+
+      if formatter.respond_to?(:formatter) && formatter.formatter.is_a?(Lumberjack::EntryFormatter)
+        formatter.formatter
+      else
+        raise ArgumentError.new("formatter must be a Lumberjack::EntryFormatter or Lumberjack::Logger")
+      end
+    end
+
     # Apply a filter pattern against a value using case equality. Returns true
     # if no filter is specified (nil) or if the filter matches the value.
     #
@@ -98,36 +169,136 @@ module Lumberjack
       filter === value
     end
 
-    # Recursively match nested attribute structures against filter patterns.
-    # Handles both simple attribute matching and complex nested hash structures
-    # with support for partial matching and empty value detection.
+    # Match the message filter against an entry message. If the raw comparison
+    # fails, the filter is formatted with the message formatter and compared again.
     #
-    # @param attributes [Hash] The expanded attributes hash from the log entry
-    # @param filter [Hash, Object] The filter patterns to match against attributes.
-    #   Non-hash filters are matched against the attributes hash itself with ===.
-    # @return [Boolean] True if all filter patterns match their corresponding attributes
-    def match_attributes?(attributes, filter)
-      return true unless filter
-      return false unless attributes
-      return match_filter?(attributes, filter) unless filter.is_a?(Hash)
+    # @param message [Object] The entry message.
+    # @return [Boolean] True if the message matches.
+    def match_message?(message)
+      return true if match_filter?(message, @message_filter)
+      return false if @formatter.nil? || @message_filter.nil? || pattern_filter?(@message_filter)
 
-      filter.all? do |name, value_filter|
-        name = name.to_s
-        attribute_values = attributes[name]
-        if attribute_values.is_a?(Hash)
-          if value_filter.is_a?(Hash)
-            match_attributes?(attribute_values, value_filter)
-          else
-            match_filter?(attribute_values, value_filter)
-          end
-        elsif value_filter.nil? || (value_filter.is_a?(Enumerable) && value_filter.empty?)
-          attribute_values.nil? || (attribute_values.is_a?(Array) && attribute_values.empty?)
-        elsif attributes.include?(name)
-          match_filter?(attribute_values, value_filter)
-        else
-          false
+      formatted = formatted_message_filter
+      return false if formatted.equal?(@message_filter)
+
+      match_filter?(message, formatted)
+    end
+
+    # Format the message filter with the message formatter. The result is
+    # memoized so the formatter is only invoked once per matcher.
+    #
+    # @return [Object] The formatted message filter.
+    def formatted_message_filter
+      return @formatted_message_filter if defined?(@formatted_message_filter)
+
+      value = @message_filter
+      message_formatter = @formatter.message_formatter
+      if message_formatter.respond_to?(:format)
+        begin
+          value = message_formatter.format(@message_filter)
+        rescue
+          value = @message_filter
         end
       end
+      value = value.message if value.is_a?(MessageAttributes)
+      value = value.strip if value.is_a?(String)
+      @formatted_message_filter = value
+    end
+
+    # Recursively compare attribute filter patterns against entry attributes and
+    # collect the mismatches. Keys in the returned hash use dot notation.
+    #
+    # @param attributes [Hash] The expanded attributes hash from the log entry.
+    # @param filter [Hash] The filter patterns to match against the attributes.
+    # @param path [String, nil] The dot notation path of the current nesting level.
+    # @param allow_formatting [Boolean] Whether filter values can be formatted on a failed comparison.
+    # @return [Hash] The mismatched attributes keyed by dot notation name.
+    def attribute_mismatches(attributes, filter, path = nil, allow_formatting: true)
+      mismatches = {}
+
+      filter.each do |name, value_filter|
+        name = name.to_s
+        key = path ? "#{path}.#{name}" : name
+        attribute_value = attributes[name]
+
+        if attribute_value.is_a?(Hash)
+          if value_filter.is_a?(Hash)
+            mismatches.merge!(attribute_mismatches(attribute_value, value_filter, key, allow_formatting: allow_formatting))
+          elsif !match_leaf?(key, attribute_value, value_filter, allow_formatting)
+            mismatches[key] = {expected: value_filter, actual: attribute_value}
+          end
+        elsif value_filter.nil? || (value_filter.is_a?(Enumerable) && value_filter.empty?)
+          empty_value = attribute_value.nil? || (attribute_value.is_a?(Array) && attribute_value.empty?)
+          mismatches[key] = {expected: value_filter, actual: attribute_value} unless empty_value
+        elsif attributes.include?(name)
+          unless match_leaf?(key, attribute_value, value_filter, allow_formatting)
+            mismatches[key] = {expected: value_filter, actual: attribute_value}
+          end
+        else
+          mismatches[key] = {expected: value_filter, actual: nil}
+        end
+      end
+
+      mismatches
+    end
+
+    # Match a single attribute value against a filter. If the raw comparison fails,
+    # the filter is formatted with the attribute formatter and compared again. A
+    # formatted result that is a hash is compared recursively against the entry
+    # value with formatting disabled since its values are already formatted.
+    #
+    # @param path [String] The dot notation name of the attribute.
+    # @param value [Object] The entry attribute value.
+    # @param filter [Object] The filter pattern.
+    # @param allow_formatting [Boolean] Whether the filter can be formatted on a failed comparison.
+    # @return [Boolean] True if the value matches.
+    def match_leaf?(path, value, filter, allow_formatting)
+      return true if match_filter?(value, filter)
+      return false unless allow_formatting && @formatter && !pattern_filter?(filter)
+
+      formatted = formatted_attribute_filter(path, filter)
+      return false if formatted.equal?(filter)
+
+      if formatted.is_a?(Hash)
+        return false unless value.is_a?(Hash)
+
+        attribute_mismatches(value, Utils.expand_attributes(formatted), allow_formatting: false).empty?
+      else
+        match_filter?(value, formatted)
+      end
+    end
+
+    # Determine if a filter is a pattern that must never be formatted since
+    # formatting it would destroy its matching behavior.
+    #
+    # @param filter [Object] The filter to check.
+    # @return [Boolean] True if the filter is a pattern object.
+    def pattern_filter?(filter)
+      filter.is_a?(Module) || filter.is_a?(Regexp) || filter.is_a?(Range) ||
+        filter.is_a?(Proc) || filter.is_a?(Hash) || filter.respond_to?(:matches?)
+    end
+
+    # Format an attribute filter value with the attribute formatter using its dot
+    # notation name so name based formatters apply. Results are memoized per name.
+    # The raw filter is returned if formatting fails or removes the attribute.
+    #
+    # @param path [String] The dot notation name of the attribute.
+    # @param filter [Object] The filter value to format.
+    # @return [Object] The formatted filter value.
+    def formatted_attribute_filter(path, filter)
+      return @formatted_attribute_filters[path] if @formatted_attribute_filters.include?(path)
+
+      attribute_formatter = @formatter.attribute_formatter
+      formatted = filter
+      if attribute_formatter.respond_to?(:format)
+        begin
+          result = attribute_formatter.format({path => filter})
+          formatted = result.fetch(path, filter) if result.is_a?(Hash)
+        rescue
+          formatted = filter
+        end
+      end
+      @formatted_attribute_filters[path] = formatted
     end
   end
 end
