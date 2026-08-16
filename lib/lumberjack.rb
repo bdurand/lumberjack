@@ -59,11 +59,6 @@ module Lumberjack
   require_relative "lumberjack/template"
   require_relative "lumberjack/utils"
 
-  # Deprecated
-  require_relative "lumberjack/tag_context"
-  require_relative "lumberjack/tag_formatter"
-  require_relative "lumberjack/tags"
-
   @deprecation_mode = nil
   @raise_logger_errors = false
   @isolation_level = :fiber
@@ -128,12 +123,6 @@ module Lumberjack
       !current_context.nil?
     end
 
-    def context?
-      Utils.deprecated("Lumberjack.context?", "Lumberjack.context? is deprecated and will be removed in version 2.1; use in_context? instead.") do
-        in_context?
-      end
-    end
-
     # Return attributes that will be applied to all Lumberjack loggers.
     #
     # @return [Hash, nil]
@@ -153,17 +142,6 @@ module Lumberjack
 
     # @return [Symbol] The current isolation level.
     attr_reader :isolation_level
-
-    # Alias for context_attributes to provide API compatibility with version 1.x.
-    # This method will eventually be removed.
-    #
-    # @return [Hash, nil]
-    # @deprecated Use {.context_attributes}
-    def context_tags
-      Utils.deprecated("Lumberjack.context_tags", "Lumberjack.context_tags is deprecated and will be removed in version 2.1; use context_attributes instead.") do
-        context_attributes
-      end
-    end
 
     # Tag all loggers with attributes on the current context.
     #

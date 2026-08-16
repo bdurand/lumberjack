@@ -94,17 +94,6 @@ module Lumberjack
         attributes == other.attributes
     end
 
-    # Alias for tags to provide backward compatibility with version 1.x API. This method
-    # will eventually be removed.
-    #
-    # @return [Hash, nil] The attributes of the log entry.
-    # @deprecated Use {#attributes} instead.
-    def tags
-      Utils.deprecated("LogEntry#tags", "Lumberjack::LogEntry#tags is deprecated and will be removed in version 2.1; use attributes instead.") do
-        attributes
-      end
-    end
-
     # Access an attribute value by name. Supports both simple and nested attribute
     # access using dot notation for hierarchical data structures.
     #
@@ -116,17 +105,6 @@ module Lumberjack
       AttributesHelper.new(attributes)[name]
     end
 
-    # Alias method for #[] to provide backward compatibility with version 1.x API. This
-    # method will eventually be removed.
-    #
-    # @return [Hash]
-    # @deprecated Use {#[]} instead.
-    def tag(name)
-      Utils.deprecated("LogEntry#tag", "Lumberjack::LogEntry#tag is deprecated and will be removed in version 2.1; use [] instead.") do
-        self[name]
-      end
-    end
-
     # Expand flat attributes with dot notation into a nested hash structure.
     # Attributes containing dots in their names are converted into hierarchical
     # nested hashes for structured data representation.
@@ -134,17 +112,6 @@ module Lumberjack
     # @return [Hash] The attributes expanded into a nested structure
     def nested_attributes
       Utils.expand_attributes(attributes)
-    end
-
-    # Alias for nested_attributes to provide API compatibility with version 1.x.
-    # This method will eventually be removed.
-    #
-    # @return [Hash]
-    # @deprecated Use {#nested_attributes} instead.
-    def nested_tags
-      Utils.deprecated("LogEntry#nested_tags", "Lumberjack::LogEntry#nested_tags is deprecated and will be removed in version 2.1; use nested_attributes instead.") do
-        nested_attributes
-      end
     end
 
     # Determine if the log entry contains no meaningful content. An entry is

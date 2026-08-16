@@ -69,11 +69,9 @@ module Lumberjack
     #   log files will be rolled when they get to the size specified in shift_size and the number of
     #   files to keep will be determined by this value. Otherwise it will be interpreted as a date
     #   rolling value and must be one of "daily", "weekly", or "monthly". This parameter has no
-    #   effect unless the device parameter is a file path or file stream. This can also be
-    #   specified with the :roll keyword argument.
+    #   effect unless the device parameter is a file path or file stream.
     # @param shift_size [Integer] The size in bytes of the log files before rolling them. This can
     #   be passed as a string with a unit suffix of K, M, or G (e.g. "10M" for 10 megabytes).
-    #   This can also be specified with the :max_size keyword argument.
     # @param level [Integer, Symbol, String] The logging level below which messages will be ignored.
     # @param progname [String] The name of the program that will be recorded with each log entry.
     # @param formatter [Lumberjack::EntryFormatter, Lumberjack::Formatter, ::Logger::Formatter, :default, #call]
@@ -97,16 +95,6 @@ module Lumberjack
       init_context_locals!
       @recursion_guard_key = :"lumberjack_logging_#{object_id}"
 
-      if shift_age.is_a?(Hash)
-        Lumberjack::Utils.deprecated("Logger.new(options)", "Passing a Hash as the second argument to Logger.new is deprecated and will be removed in version 2.1; use keyword arguments instead.")
-        options = shift_age
-        level = options[:level] if options.include?(:level)
-        progname = options[:progname] if options.include?(:progname)
-        formatter = options[:formatter] if options.include?(:formatter)
-        datetime_format = options[:datetime_format] if options.include?(:datetime_format)
-        kwargs = options.merge(kwargs)
-      end
-
       self.isolation_level = kwargs.delete(:isolation_level) || Lumberjack.isolation_level
 
       # Include standard args that affect devices with the optional kwargs which may
@@ -114,36 +102,13 @@ module Lumberjack
       device_options = kwargs.merge(shift_age: shift_age, shift_size: size_with_units(shift_size), binmode: binmode, shift_period_suffix: shift_period_suffix)
       device_options[:standard_logger_formatter] = formatter if standard_logger_formatter?(formatter)
 
-      if device_options.include?(:roll)
-        Utils.deprecated("Logger.options(:roll)", "Lumberjack::Logger :roll option is deprecated and will be removed in version 2.1; use the shift_age argument instead.")
-        device_options[:shift_age] = device_options.delete(:roll) unless shift_age != 0
-      end
-
-      if device_options.include?(:max_size)
-        Utils.deprecated("Logger.options(:max_size)", "Lumberjack::Logger :max_size option is deprecated and will be removed in version 2.1; use the shift_size argument instead.")
-        device_options[:shift_age] = 10 if shift_age == 0
-        device_options[:shift_size] = device_options.delete(:max_size)
-      end
-
-      message_formatter = nil
-      if device_options.include?(:message_formatter)
-        Utils.deprecated("Logger.options(:message_formatter)", "Lumberjack::Logger :message_formatter option is deprecated and will be removed in version 2.1; use the formatter argument instead to specify an EntryFormatter.")
-        message_formatter = device_options.delete(:message_formatter)
-      end
-
-      attribute_formatter = nil
-      if device_options.include?(:tag_formatter)
-        Utils.deprecated("Logger.options(:tag_formatter)", "Lumberjack::Logger :tag_formatter option is deprecated and will be removed in version 2.1; use the formatter argument instead to specify an EntryFormatter.")
-        attribute_formatter = device_options.delete(:tag_formatter)
-      end
-
       @logdev = Device.open_device(logdev, device_options)
 
       @context = Context.new
       self.level = level || DEBUG
       self.progname = progname
 
-      self.formatter = build_entry_formatter(formatter, message_formatter, attribute_formatter)
+      self.formatter = build_entry_formatter(formatter)
       self.datetime_format = datetime_format if datetime_format
 
       @closed = false
@@ -170,7 +135,7 @@ module Lumberjack
     # @param value [Lumberjack::EntryFormatter, ::Logger::Formatter, #call] The formatter to use.
     # @return [void]
     def formatter=(value)
-      @formatter = build_entry_formatter(value, nil, nil)
+      @formatter = build_entry_formatter(value)
     end
 
     # Get the timestamp format on the device if it has one.
@@ -220,20 +185,6 @@ module Lumberjack
       formatter.attribute_formatter = value
     end
 
-    # @deprecated Use {#attribute_formatter} instead.
-    def tag_formatter
-      Utils.deprecated("Logger#tag_formatter", "Lumberjack::Logger#tag_formatter is deprecated and will be removed in version 2.1; use attribute_formatter instead.") do
-        formatter.attributes.attribute_formatter
-      end
-    end
-
-    # @deprecated Use {#attribute_formatter=} instead.
-    def tag_formatter=(value)
-      Utils.deprecated("Logger#tag_formatter=", "Lumberjack::Logger#tag_formatter= is deprecated and will be removed in version 2.1; use attribute_formatter= instead.") do
-        formatter.attributes.attribute_formatter = value
-      end
-    end
-
     # Flush the logging device. Messages are not guaranteed to be written until this method is called.
     #
     # @return [void]
@@ -268,125 +219,6 @@ module Lumberjack
       @closed = false
       device.reopen(logdev) if device.respond_to?(:reopen)
       self
-    end
-
-    # Set the program name that is associated with log messages. If a block
-    # is given, the program name will be valid only within the block.
-    #
-    # @param value [String] The program name to use.
-    # @return [void]
-    # @deprecated Use with_progname or progname= instead.
-    def set_progname(value, &block)
-      Utils.deprecated("Logger#set_progname", "Lumberjack::Logger#set_progname is deprecated and will be removed in version 2.1; use with_progname or progname= instead.") do
-        if block
-          with_progname(value, &block)
-        else
-          self.progname = value
-        end
-      end
-    end
-
-    # Alias method for #attributes to provide backward compatibility with version 1.x API. This
-    # method will eventually be removed.
-    #
-    # @return [Hash]
-    # @deprecated Use {#attributes} instead
-    def tags
-      Utils.deprecated("Logger#tags", "Lumberjack::Logger#tags is deprecated and will be removed in version 2.1; use attributes instead.") do
-        attributes
-      end
-    end
-
-    # Alias method for #attribute_value to provide backward compatibility with version 1.x API. This
-    # method will eventually be removed.
-    #
-    # @return [Hash]
-    # @deprecated Use {#attribute_value} instead
-    def tag_value(name)
-      Utils.deprecated("Logger#tag_value", "Lumberjack::Logger#tag_value is deprecated and will be removed in version 2.1; use attribute_value instead.") do
-        attribute_value(name)
-      end
-    end
-
-    # Use tag! instead
-    #
-    # @return [void]
-    # @deprecated Use {#tag!} instead.
-    def tag_globally(tags)
-      Utils.deprecated("Logger#tag_globally", "Lumberjack::Logger#tag_globally is deprecated and will be removed in version 2.1; use tag! instead.") do
-        tag!(tags)
-      end
-    end
-
-    # Use context? instead
-    #
-    # @return [Boolean]
-    # @deprecated Use {#in_context?} instead.
-    def in_tag_context?
-      Utils.deprecated("Logger#in_tag_context?", "Lumberjack::Logger#in_tag_context? is deprecated and will be removed in version 2.1; use in_context? instead.") do
-        context?
-      end
-    end
-
-    # Remove a tag from the current context block. If this is called inside a context block,
-    # the attributes will only be removed for the duration of that block. Otherwise they will be removed
-    # from the global attributes.
-    #
-    # @param tag_names [Array<String, Symbol>] The attributes to remove.
-    # @return [void]
-    # @deprecated Use untag or untag! instead.
-    def remove_tag(*tag_names)
-      Utils.deprecated("Logger#remove_tag", "Lumberjack::Logger#remove_tag is deprecated and will be removed in version 2.1; use untag or untag! instead.") do
-        attributes = current_context&.attributes
-        AttributesHelper.new(attributes).delete(*tag_names) if attributes
-      end
-    end
-
-    # Alias for append_to(:tagged) for compatibility with ActiveSupport support in Lumberjack 1.x.
-    # This functionality has been moved to the lumberjack_rails gem. Note that in that gem the
-    # tags are added to the :tags attribute instead of the :tagged attribute.
-    #
-    # @see append_to
-    # @deprecated This implementation is deprecated. Install the lumberjack_rails gem for full support.
-    def tagged(*tags, &block)
-      deprecation_message = "Install the lumberjack_rails gem for full support of the tagged method."
-      Utils.deprecated("Logger#tagged", deprecation_message) do
-        append_to(:tagged, *tags, &block)
-      end
-    end
-
-    # Alias for clear_attributes.
-    #
-    # @see clear_attributes
-    # @deprecated Use clear_attributes instead.
-    def untagged(&block)
-      Utils.deprecated("Logger#untagged", "Lumberjack::Logger#untagged is deprecated and will be removed in version 2.1; use clear_attributes instead.") do
-        clear_attributes(&block)
-      end
-    end
-
-    # Alias for with_level for compatibility with ActiveSupport loggers. This functionality
-    # has been moved to the lumberjack_rails gem.
-    #
-    # @see with_level
-    # @deprecated This implementation is deprecated. Install the lumberjack_rails gem for full support.
-    def log_at(level, &block)
-      deprecation_message = "Install the lumberjack_rails gem for full support of the log_at method."
-      Utils.deprecated("Logger#log_at", deprecation_message) do
-        with_level(level, &block)
-      end
-    end
-
-    # Alias for with_level for compatibilty with ActiveSupport loggers. This functionality
-    # has been moved to the lumberjack_rails gem.
-    #
-    # @see with_level
-    # @deprecated This implementation is deprecated. Install the lumberjack_rails gem for full support.
-    def silence(level = Logger::ERROR, &block)
-      deprecation_message = "Install the lumberjack_rails gem for full support of the silence method."
-      Utils.deprecated("Logger#silence", deprecation_message) do
-        with_level(level, &block)
-      end
     end
 
     # Add an entry to the log.
@@ -455,18 +287,14 @@ module Lumberjack
       raise e if Lumberjack.raise_logger_errors?
     end
 
-    def build_entry_formatter(formatter, message_formatter, attribute_formatter) # :nodoc:
-      entry_formatter = formatter if formatter.is_a?(Lumberjack::EntryFormatter)
+    def build_entry_formatter(formatter) # :nodoc:
+      return formatter if formatter.is_a?(Lumberjack::EntryFormatter)
 
-      unless entry_formatter
-        message_formatter ||= formatter if formatter.is_a?(Lumberjack::Formatter) || formatter == :default
-        entry_formatter = Lumberjack::EntryFormatter.new
-      end
+      entry_formatter = Lumberjack::EntryFormatter.new
 
-      message_formatter = Lumberjack::Formatter.default if message_formatter == :default
-
+      message_formatter = formatter if formatter.is_a?(Lumberjack::Formatter)
+      message_formatter = Lumberjack::Formatter.default if formatter == :default
       entry_formatter.message_formatter = message_formatter if message_formatter
-      entry_formatter.attribute_formatter = attribute_formatter if attribute_formatter
 
       entry_formatter
     end

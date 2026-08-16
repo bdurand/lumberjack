@@ -14,38 +14,6 @@ RSpec.describe Lumberjack::AttributeFormatter do
     end
   end
 
-  describe "#add", deprecation_mode: :silent do
-    it "adds an attribute formatter for a specific attribute" do
-      attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add(:foo) { |val| val.to_s.upcase }
-      expect(attribute_formatter.format(foo: "bar")).to eq({"foo" => "BAR"})
-    end
-
-    it "adds an attribute for a class" do
-      attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add(String) { |val| val.to_s.upcase }
-      expect(attribute_formatter.format(foo: "bar")).to eq({"foo" => "BAR"})
-    end
-  end
-
-  describe "#remove", deprecation_mode: :silent do
-    it "removes an attribute formatter for a specific attribute" do
-      attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add(:foo) { |val| val.to_s.upcase }
-      expect(attribute_formatter.format(foo: "bar")).to eq({"foo" => "BAR"})
-      attribute_formatter.remove(:foo)
-      expect(attribute_formatter.format(foo: "bar")).to eq({foo: "bar"})
-    end
-
-    it "removes an attribute formatter for a class" do
-      attribute_formatter = Lumberjack::AttributeFormatter.new
-      attribute_formatter.add(String) { |val| val.to_s.upcase }
-      expect(attribute_formatter.format(foo: "bar")).to eq({"foo" => "BAR"})
-      attribute_formatter.remove(String)
-      expect(attribute_formatter.format(foo: "bar")).to eq({foo: "bar"})
-    end
-  end
-
   describe "#format" do
     it "should do nothing by default" do
       attribute_formatter = Lumberjack::AttributeFormatter.new

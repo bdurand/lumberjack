@@ -32,8 +32,6 @@ module Lumberjack
     require_relative "device/null"
     require_relative "device/test"
     require_relative "device/buffer"
-    require_relative "device/size_rolling_log_file"
-    require_relative "device/date_rolling_log_file"
 
     class << self
       # Open a logging device with the given options.

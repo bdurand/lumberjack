@@ -223,12 +223,4 @@ RSpec.describe Lumberjack::Template do
       expect(template.call(entry)).to eq("here - bar - (tag=a)#{Lumberjack::LINE_SEPARATOR}")
     end
   end
-
-  describe "v1 template format", deprecation_mode: :silent do
-    it "uses :name as placeholders in place of {{name}} and tags instead of attributes" do
-      template = Lumberjack::Template.new(":time :severity :progname, :message: - :foo - :tags")
-      entry = Lumberjack::LogEntry.new(time, Logger::INFO, "here", "app", 12345, "foo" => "bar", "tag" => "a")
-      expect(template.call(entry)).to eq("2011-01-15T14:23:45.123 INFO app, here: - bar - [tag:a]#{Lumberjack::LINE_SEPARATOR}")
-    end
-  end
 end

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 2.0.6
+## 2.1.0
 
 ### Added
 
@@ -28,6 +28,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed misspelled `Lumberjack::Formatter::StructuredFormatter::RecusiveReferenceError` to `RecursiveReferenceError`. The old constant is kept as an alias for backward compatibility.
 - `Lumberjack::LogEntryMatcher` no longer ignores an `attributes` filter that is not a hash. Passing a matcher like RSpec's `hash_including` as the entire filter silently matched every entry; it is now applied to the entry's attributes hash with `===`.
 - `Lumberjack::LogEntryMatcher` now exposes log entry attributes to matchers with indifferent key access, so matchers that do their own key lookups (i.e. RSpec's `hash_including`) can use either string or symbol attribute names.
+
+### Removed
+
+- Removed the methods, arguments, and classes that were deprecated in version 2.0.
+  - `Lumberjack.context?` (use `Lumberjack.in_context?`)
+  - `Lumberjack.context_tags` (use `Lumberjack.context_attributes`)
+  - `Lumberjack::Logger#tags` (use `#attributes`)
+  - `Lumberjack::Logger#tag_value` (use `#attribute_value`)
+  - `Lumberjack::Logger#tag_globally` (use `#tag!`)
+  - `Lumberjack::Logger#in_tag_context?` (use `#in_context?`)
+  - `Lumberjack::Logger#remove_tag` (use `#untag` or `#untag!`)
+  - `Lumberjack::Logger#tag_formatter` and `#tag_formatter=` (use `#attribute_formatter` and `#attribute_formatter=`)
+  - `Lumberjack::Logger#set_progname` (use `#with_progname` or `#progname=`)
+  - `Lumberjack::Logger#tagged`, `#untagged`, `#log_at`, and `#silence` (install the `lumberjack_rails` gem or use `#append_to`, `#clear_attributes`, and `#with_level`)
+  - Passing an options hash as the second argument to `Lumberjack::Logger.new` (use keyword arguments)
+  - The `:roll`, `:max_size`, `:message_formatter`, and `:tag_formatter` options on `Lumberjack::Logger.new` (use the `shift_age`, `shift_size`, and `formatter` arguments)
+  - `Lumberjack::LogEntry#tags`, `#tag`, and `#nested_tags` (use `#attributes`, `#[]`, and `#nested_attributes`)
+  - `Lumberjack::Formatter.empty` (use `.new`)
+  - `Lumberjack::AttributeFormatter#add` and `#remove` (use `#add_class`/`#add_attribute` and `#remove_class`/`#remove_attribute`)
+  - `Lumberjack::Utils.flatten_tags` and `.expand_tags` (use `.flatten_attributes` and `.expand_attributes`)
+  - `Lumberjack::TagFormatter` (use `Lumberjack::AttributeFormatter`)
+  - `Lumberjack::TagContext` (use `Lumberjack::AttributesHelper`)
+  - `Lumberjack::Tags` (use `Lumberjack::AttributesHelper`)
+  - `Lumberjack::Formatter::TaggedMessage` (use `Lumberjack::MessageAttributes`)
+  - `Lumberjack::Device::DateRollingLogFile` and `Lumberjack::Device::SizeRollingLogFile` (use `Lumberjack::Device::LogFile`)
+  - `Lumberjack::Formatter::StructuredFormatter::RecusiveReferenceError` misspelled alias (use `RecursiveReferenceError`)
+  - Version 1.x template syntax using `:placeholder` (use `{{placeholder}}`)
 
 ## 2.0.5
 

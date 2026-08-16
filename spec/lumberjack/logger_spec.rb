@@ -149,35 +149,9 @@ RSpec.describe Lumberjack::Logger do
       expect(logger.progname).to eq("app")
     end
 
-    it "allows the deprecated method of passing an options hash", deprecation_mode: :silent do
-      output = StringIO.new
-      logger = Lumberjack::Logger.new(output, {level: :warn, template: "{{message}} {{attributes}}"}, attribute_format: "%s=%s")
-      expect(logger.level).to eq(Logger::WARN)
-      logger.warn("test", foo: "bar")
-      expect(output.string).to eq("test foo=bar#{Lumberjack::LINE_SEPARATOR}")
-    end
-
-    it "allows using the deprecated :max_size option without blowing up", deprecation_mode: :silent do
-      expect { Lumberjack::Logger.new(File::NULL, max_size: 10) }.to_not raise_error
-    end
-
     it "converts the shift_size option to a numeric if given as a string with units" do
       logger = Lumberjack::Logger.new(File::NULL, 0, "10M")
       expect(logger.device.send(:stream).instance_variable_get(:@shift_size)).to eq(10 * 1024 * 1024)
-    end
-
-    it "allows using the deprecated :message_formatter option without blowing up", deprecation_mode: :silent do
-      message_formatter = Lumberjack::Formatter.new.add(String) { |s| s.upcase }
-      logger = Lumberjack::Logger.new(File::NULL, message_formatter: message_formatter)
-      msg, _ = logger.formatter.format("foobar", {})
-      expect(msg).to eq("FOOBAR")
-    end
-
-    it "allows using the deprecated :tag_formatter option without blowing up", deprecation_mode: :silent do
-      attribute_formatter = Lumberjack::TagFormatter.new.add_class(String) { |s| s.upcase }
-      logger = Lumberjack::Logger.new(File::NULL, tag_formatter: attribute_formatter)
-      _, attributes = logger.formatter.format(nil, {"test" => "foobar"})
-      expect(attributes).to eq("test" => "FOOBAR")
     end
 
     it "can set the isolation level" do
@@ -186,23 +160,10 @@ RSpec.describe Lumberjack::Logger do
     end
   end
 
-  describe "#set_progname", deprecation_mode: :silent do
-    it "should be able to set the progname in a block" do
-      logger = Lumberjack::Logger.new(StringIO.new)
-      logger.set_progname("app")
-      expect(logger.progname).to eq("app")
-      block_executed = false
-      logger.set_progname("xxx") do
-        block_executed = true
-        expect(logger.progname).to eq("xxx")
-      end
-      expect(block_executed).to eq(true)
-      expect(logger.progname).to eq("app")
-    end
-
+  describe "#with_progname" do
     it "should be able to set the local progname in a block" do
       logger = Lumberjack::Logger.new(StringIO.new)
-      logger.set_progname("app")
+      logger.progname = "app"
       logger.with_progname("xxx") do
         expect(logger.progname).to eq("xxx")
       end
@@ -213,7 +174,7 @@ RSpec.describe Lumberjack::Logger do
       out = StringIO.new
       logger = Lumberjack::Logger.new(out, progname: "thread1", template: "{{progname}} {{message}}")
       Fiber.new do
-        logger.set_progname("fiber1") do
+        logger.with_progname("fiber1") do
           expect(logger.progname).to eq("fiber1")
         end
       end.resume
@@ -597,33 +558,8 @@ RSpec.describe Lumberjack::Logger do
       end
     end
 
-    describe "#tag_globally", deprecation_mode: :silent do
+    describe "attributes" do
       let(:device) { Lumberjack::Device::Writer.new(out, template: "{{message}} - {{count}} - {{attributes}}") }
-
-      it "should be able to add global attributes to the logger" do
-        logger.tag_globally(count: 1, foo: "bar")
-        logger.info("one")
-        logger.info("two", count: 2)
-        lines = out.string.split(n)
-        expect(lines[0]).to eq "one - 1 - [foo:bar]"
-        expect(lines[1]).to eq "two - 2 - [foo:bar]"
-      end
-    end
-
-    describe "#remove_tag", deprecation_mode: :silent do
-      let(:device) { Lumberjack::Device::Writer.new(out, template: "{{message}} - {{count}} - {{attributes}}") }
-
-      it "should remove context attributes in a context block and global attributes outside of one" do
-        logger.tag!(foo: "bar", wip: "wap")
-        logger.context do
-          logger.tag(baz: "boo", bip: "bap")
-          logger.remove_tag(:baz)
-          logger.remove_tag(:foo)
-          expect(logger.attributes).to eq({"foo" => "bar", "wip" => "wap", "bip" => "bap"})
-        end
-        logger.remove_tag(:foo)
-        expect(logger.attributes).to eq({"wip" => "wap"})
-      end
 
       it "should be able to extract attributes from an object with a formatter that returns Lumberjack::MessageAttributes" do
         logger.formatter.format_message(Exception, ->(e) {
@@ -636,64 +572,11 @@ RSpec.describe Lumberjack::Logger do
       end
 
       it "should apply an attribute formatter to the attributes" do
-        logger.attribute_formatter.add(:foo, &:reverse).add(:count) { |val| val * 100 }
+        logger.attribute_formatter.add_attribute(:foo, &:reverse).add_attribute(:count) { |val| val * 100 }
         logger.info("message", count: 2, foo: "abc")
         line = out.string.chomp
         expect(line).to eq "message - 200 - [foo:cba]"
       end
-    end
-  end
-
-  describe "#tagged", deprecation_mode: :silent do
-    let(:logger) { Lumberjack::Logger.new(:test) }
-
-    it "adds tags to the tagged attribute" do
-      logger.tagged("foo", "bar") do
-        expect(logger.attributes).to eq({"tagged" => ["foo", "bar"]})
-        logger.tagged("baz")
-        expect(logger.attributes).to eq({"tagged" => ["foo", "bar", "baz"]})
-      end
-    end
-  end
-
-  describe "#untagged", deprecation_mode: :silent do
-    let(:logger) { Lumberjack::Logger.new(:test) }
-
-    it "removes tags from the tagged attribute" do
-      logger.tag(foo: "bar") do
-        logger.untagged do
-          expect(logger.attributes).to be_empty
-        end
-      end
-    end
-  end
-
-  describe "#log_at", deprecation_mode: :silent do
-    let(:logger) { Lumberjack::Logger.new(:test) }
-
-    it "changes the log level temporarily" do
-      logger.log_at(:info) do
-        expect(logger.level).to eq(Logger::INFO)
-      end
-      expect(logger.level).to eq(Logger::DEBUG)
-    end
-  end
-
-  describe "#silence", deprecation_mode: :silent do
-    let(:logger) { Lumberjack::Logger.new(:test) }
-
-    it "temporarily suppresses logging" do
-      logger.silence do
-        expect(logger.level).to eq(Logger::ERROR)
-      end
-      expect(logger.level).to eq(Logger::DEBUG)
-    end
-
-    it "can specify the log level" do
-      logger.silence(Logger::WARN) do
-        expect(logger.level).to eq(Logger::WARN)
-      end
-      expect(logger.level).to eq(Logger::DEBUG)
     end
   end
 end

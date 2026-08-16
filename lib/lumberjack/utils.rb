@@ -208,18 +208,6 @@ module Lumberjack
         flatten_hash_recursive(attr_hash)
       end
 
-      # Alias for {.flatten_attributes} to provide compatibility with the 1.x API.
-      # This method will eventually be removed in a future version.
-      #
-      # @param tag_hash [Hash] The hash to flatten.
-      # @return [Hash<String, Object>] The flattened hash.
-      # @deprecated Use {.flatten_attributes} instead.
-      def flatten_tags(tag_hash)
-        Utils.deprecated("Lumberjack::Utils.flatten_tags", "Lumberjack::Utils.flatten_tags is deprecated and will be removed in version 2.1; use flatten_attributes instead.") do
-          flatten_attributes(tag_hash)
-        end
-      end
-
       # Expand a hash containing dot notation keys into a nested hash structure.
       # This is the inverse operation of {.flatten_attributes} and is useful for converting
       # flat attribute structures back into nested hashes.
@@ -245,18 +233,6 @@ module Lumberjack
         return {} unless attributes.is_a?(Hash)
 
         expand_dot_notation_hash(attributes)
-      end
-
-      # Alias for {.expand_attributes} to provide compatibility with the 1.x API.
-      # This method will eventually be removed in a future version.
-      #
-      # @param tags [Hash] The hash to expand.
-      # @return [Hash] The expanded hash.
-      # @deprecated Use {.expand_attributes} instead.
-      def expand_tags(tags)
-        Utils.deprecated("Lumberjack::Utils.expand_tags", "Lumberjack::Utils.expand_tags is deprecated and will be removed in version 2.1; use expand_attributes instead.") do
-          expand_attributes(tags)
-        end
       end
 
       private

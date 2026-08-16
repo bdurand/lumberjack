@@ -148,21 +148,6 @@ classDiagram
         +reopen(logdev) void
     }
 
-    class DeviceDateRollingLogFile["Device::DateRollingLogFile"] {
-        +String path
-        +String frequency
-        +initialize(path, options)
-        +roll_file?() Boolean
-    }
-
-    class DeviceSizeRollingLogFile["Device::SizeRollingLogFile"] {
-        +String path
-        +Integer max_size
-        +Integer keep
-        +initialize(path, options)
-        +roll_file?() Boolean
-    }
-
     class DeviceMulti["Device::Multi"] {
         +Array devices
         +initialize(*devices)
@@ -251,8 +236,6 @@ classDiagram
     Device <|-- DeviceNull : implements
     Device <|-- DeviceLoggerWrapper : implements
     DeviceWriter <|-- DeviceLogFile : inherits
-    DeviceLogFile <|-- DeviceDateRollingLogFile : inherits
-    DeviceLogFile <|-- DeviceSizeRollingLogFile : inherits
 
     DeviceWriter --* Template : uses
     DeviceWriter --* DeviceBuffer : uses
