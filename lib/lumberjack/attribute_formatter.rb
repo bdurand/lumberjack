@@ -95,37 +95,6 @@ module Lumberjack
       self
     end
 
-    # Add formatters for specific attribute names or object classes. This is a convenience method
-    # that automatically delegates to {#add_class} or {#add_attribute} based on the input type.
-    #
-    # When you pass a Module/Class, it creates a class-based formatter that applies to all
-    # attribute values of that type. When you pass a String, it creates an attribute-specific
-    # formatter for that exact attribute name.
-    #
-    # Class formatters are applied recursively to nested hashes and arrays, making them
-    # powerful for formatting complex nested structures.
-    #
-    # @param names_or_classes [String, Module, Array<String, Module>] Attribute names or object classes.
-    # @param formatter [Lumberjack::Formatter, #call, Symbol, nil] The formatter to use.
-    # @yield [value] Block-based formatter that receives the attribute value.
-    # @yieldparam value [Object] The attribute value to format.
-    # @yieldreturn [Object] The formatted attribute value.
-    # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
-    # @deprecated Use {#add_class} or {#add_attribute} instead.
-    def add(names_or_classes, formatter = nil, *args, &block)
-      Utils.deprecated("AttributeFormatter#add", "AttributeFormatter#add is deprecated and will be removed in version 2.1; use #add_class or #add_attribute instead.") do
-        Array(names_or_classes).each do |obj|
-          if obj.is_a?(Module)
-            add_class(obj, formatter, *args, &block)
-          else
-            add_attribute(obj, formatter, *args, &block)
-          end
-        end
-      end
-
-      self
-    end
-
     # Add formatters for specific object classes. The formatter will be applied to any attribute
     # value that is an instance of the registered class. This is particularly useful for formatting
     # all instances of specific data types consistently across your logs.
@@ -200,26 +169,6 @@ module Lumberjack
         end
       end
 
-      self
-    end
-
-    # Remove formatters for specific attribute names or classes. This reverts the specified
-    # attributes or classes to use the default formatter (if configured) or no formatting.
-    #
-    # @param names_or_classes [String, Module, Array<String, Module>] Attribute names or classes
-    #   to remove formatters for.
-    # @return [Lumberjack::AttributeFormatter] Returns self for method chaining.
-    # @deprecated Use {#remove_class} or {#remove_attribute} instead.
-    def remove(names_or_classes)
-      Utils.deprecated("AttributeFormatter#remove", "AttributeFormatter#remove is deprecated and will be removed in version 2.1; use #remove_class or #remove_attribute instead.") do
-        Array(names_or_classes).each do |key|
-          if key.is_a?(Module)
-            @class_formatter.remove(key)
-          else
-            @attribute_formatter.delete(key.to_s)
-          end
-        end
-      end
       self
     end
 

@@ -46,7 +46,6 @@ module Lumberjack
     require_relative "formatter/structured_formatter"
     require_relative "formatter/tags_formatter"
     require_relative "formatter/truncate_formatter"
-    require_relative "formatter/tagged_message"
 
     class << self
       # Build a new formatter using a configuration block. The block receives the new formatter
@@ -65,16 +64,6 @@ module Lumberjack
         formatter = new
         block&.call(formatter)
         formatter
-      end
-
-      # Create a new empty formatter with no mappings. This is an alias for #new.
-      #
-      # @return [Lumberjack::Formatter] A new formatter with no default mappings.
-      # @deprecated Use #new instead.
-      def empty
-        Utils.deprecated("Formatter.empty", "Lumberjack::Formatter.empty is deprecated and will be removed in version 2.1; use new instead.") do
-          new
-        end
       end
 
       # Create a new formatter with default mappings.

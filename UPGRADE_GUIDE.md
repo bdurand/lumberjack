@@ -45,7 +45,7 @@ logger.tag(attributes) do
 end
 ```
 
-Internal uses of the word "tag" have all been updated to use "attribute" instead. The "tag" versions of the methods will still work, but they have been [marked as deprecated](CHANGELOG.md#deprecated) and will be removed in a future version.
+Internal uses of the word "tag" have all been updated to use "attribute" instead. The "tag" versions of the methods still work in version 2.0, but they are deprecated and have been removed in version 2.1.
 
 Global attributes are now set with the `tag!` method instead of `tag_globally` or calling `tag` outside of a context.
 

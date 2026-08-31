@@ -101,9 +101,8 @@ module Lumberjack
     MILLISECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%3N"
     MICROSECOND_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%6N"
     PLACEHOLDER_PATTERN = /{{ *((?:[^}]|}(?!}))*) *}}/i
-    V1_PLACEHOLDER_PATTERN = /:[a-z0-9_.-]+/i
     RESET_CHAR = "\e[0m"
-    private_constant :TEMPLATE_ARGUMENT_ORDER, :MILLISECOND_TIME_FORMAT, :MICROSECOND_TIME_FORMAT, :PLACEHOLDER_PATTERN, :V1_PLACEHOLDER_PATTERN, :RESET_CHAR
+    private_constant :TEMPLATE_ARGUMENT_ORDER, :MILLISECOND_TIME_FORMAT, :MICROSECOND_TIME_FORMAT, :PLACEHOLDER_PATTERN, :RESET_CHAR
 
     class << self
       def colorize_entry(formatted_string, entry)
@@ -133,22 +132,10 @@ module Lumberjack
     def initialize(first_line = nil, additional_lines: nil, time_format: nil, attribute_format: nil, colorize: false)
       first_line ||= DEFAULT_FIRST_LINE_TEMPLATE
       first_line = "#{first_line.chomp}#{Lumberjack::LINE_SEPARATOR}"
-      if !first_line.include?("{{") && first_line.match?(V1_PLACEHOLDER_PATTERN)
-        Utils.deprecated("Template.v1", "Templates now use {{placeholder}} instead of :placeholder and :tags has been replaced with {{attributes}}.") do
-          @first_line_template, @first_line_attributes = compile_v1(first_line)
-        end
-      else
-        @first_line_template, @first_line_attributes = compile(first_line)
-      end
+      @first_line_template, @first_line_attributes = compile(first_line)
 
       additional_lines ||= DEFAULT_ADDITIONAL_LINES_TEMPLATE
-      if !additional_lines.include?("{{") && additional_lines.match?(V1_PLACEHOLDER_PATTERN)
-        Utils.deprecated("Template.v1", "Templates now use {{placeholder}} instead of :placeholder and :tags has been replaced with {{attributes}}.") do
-          @additional_line_template, @additional_line_attributes = compile_v1(additional_lines)
-        end
-      else
-        @additional_line_template, @additional_line_attributes = compile(additional_lines)
-      end
+      @additional_line_template, @additional_line_attributes = compile(additional_lines)
 
       @attribute_template = attribute_format || DEFAULT_ATTRIBUTE_FORMAT
       unless @attribute_template.scan("%s").size == 2
@@ -345,30 +332,6 @@ module Lumberjack
       attribute_vars = []
       template = template.gsub(PLACEHOLDER_PATTERN) do |match|
         var_name = match.sub(/{{ */, "").sub(/ *}}/, "")
-        position = TEMPLATE_ARGUMENT_ORDER.index(var_name)
-        if position
-          "%#{position + 1}$s"
-        else
-          attribute_vars << var_name
-          "%#{TEMPLATE_ARGUMENT_ORDER.size + attribute_vars.size}$s"
-        end
-      end
-      [template, attribute_vars]
-    end
-
-    # Parse and compile a template string into a sprintf-compatible format string
-    # and extract attribute variable names. This method handles placeholder
-    # substitution and escape sequence processing.
-    #
-    # @param template [String] The raw template string with placeholders
-    # @return [Array<String, Array<String>>] A tuple of [compiled_template, attribute_vars]
-    def compile_v1(template) # :nodoc:
-      template = template.gsub(":tags", ":attributes").gsub(/ ?:attributes/, ":attributes")
-      template = template.gsub(/%(?!%)/, "%%")
-
-      attribute_vars = []
-      template = template.gsub(V1_PLACEHOLDER_PATTERN) do |match|
-        var_name = match[1, match.length]
         position = TEMPLATE_ARGUMENT_ORDER.index(var_name)
         if position
           "%#{position + 1}$s"

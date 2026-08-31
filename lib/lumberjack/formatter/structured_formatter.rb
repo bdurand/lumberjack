@@ -19,9 +19,6 @@ module Lumberjack
       class RecursiveReferenceError < StandardError
       end
 
-      # @deprecated Misspelled alias kept for backward compatibility. Use RecursiveReferenceError.
-      RecusiveReferenceError = RecursiveReferenceError
-
       # @param formatter [Formatter, nil] The formatter to call on each element
       #   in the structure. If nil, elements are returned unchanged.
       def initialize(formatter = nil)
