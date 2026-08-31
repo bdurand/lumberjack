@@ -267,7 +267,9 @@ module Lumberjack
     # @param time [Time] The timestamp to format
     # @return [String] The formatted timestamp
     def cached_formatted_time(time)
-      return @time_formatter.call(time) unless @time_cache_divisor
+      # Only Time exposes the epoch, nanosecond, and offset accessors the cache key needs.
+      # Other timestamp objects (Date, DateTime, etc.) are always formatted directly.
+      return @time_formatter.call(time) unless @time_cache_divisor && time.is_a?(Time)
 
       # The key is the epoch time in the same units as the format's subsecond precision.
       # Integer division truncates the same way the strftime %N directive does. The UTC

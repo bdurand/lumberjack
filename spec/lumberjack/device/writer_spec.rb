@@ -28,6 +28,14 @@ RSpec.describe Lumberjack::Device::Writer do
         @string << @buffer
         @buffer = +""
       end
+
+      def close
+        @closed = true
+      end
+
+      def closed?
+        !!@closed
+      end
     end
   end
 
@@ -48,10 +56,58 @@ RSpec.describe Lumberjack::Device::Writer do
     expect(io.sync).to be true
   end
 
-  it "disables io sync if autoflush is false" do
+  it "does not set io sync if autoflush is false" do
     io = io_class.new
     Lumberjack::Device::Writer.new(io, autoflush: false)
     expect(io.sync).to be false
+  end
+
+  it "leaves sync alone on a stream that already has it enabled if autoflush is false" do
+    io = io_class.new
+    io.sync = true
+    Lumberjack::Device::Writer.new(io, autoflush: false)
+    expect(io.sync).to be true
+  end
+
+  it "does not change sync on a replacement stream if autoflush is false" do
+    device = Lumberjack::Device::Writer.new(io_class.new, autoflush: false)
+    replacement = io_class.new
+    replacement.sync = true
+    device.stream = replacement
+    expect(replacement.sync).to be true
+  end
+
+  it "sets sync on a replacement stream when autoflush is enabled" do
+    device = Lumberjack::Device::Writer.new(io_class.new)
+    replacement = io_class.new
+    device.stream = replacement
+    expect(replacement.sync).to be true
+  end
+
+  describe "#close" do
+    it "flushes and closes the stream" do
+      io = io_class.new
+      device = Lumberjack::Device::Writer.new(io, template: "{{message}}")
+      device.write(entry)
+      device.close
+      expect(io.string).to eq("test message#{Lumberjack::LINE_SEPARATOR}")
+      expect(io.closed?).to be true
+    end
+
+    it "calls flush on subclasses that override it" do
+      subclass = Class.new(Lumberjack::Device::Writer) do
+        attr_reader :flush_count
+
+        def flush
+          @flush_count = (@flush_count || 0) + 1
+          super
+        end
+      end
+
+      device = subclass.new(io_class.new, template: "{{message}}")
+      device.close
+      expect(device.flush_count).to eq(1)
+    end
   end
 
   describe "#path" do

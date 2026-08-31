@@ -134,6 +134,57 @@ RSpec.describe Lumberjack::Device::Test do
     end
   end
 
+  describe "#entry_formatter" do
+    let(:entry_formatter) do
+      Lumberjack::EntryFormatter.build do |config|
+        config.format_message(Exception) do |e|
+          Lumberjack::MessageAttributes.new(e.inspect, {error: {kind: e.class.name, message: e.message, trace: e.backtrace}})
+        end
+        config.format_attributes(Exception) do |e|
+          {kind: e.class.name, message: e.message, trace: e.backtrace}
+        end
+      end
+    end
+
+    let(:exception) do
+      raise "boom"
+    rescue => e
+      e
+    end
+
+    it "can be set with a constructor option" do
+      device = Lumberjack::Device::Test.new(entry_formatter: entry_formatter)
+      expect(device.entry_formatter).to eq entry_formatter
+    end
+
+    it "can be set with the accessor" do
+      device.entry_formatter = entry_formatter
+      expect(device.entry_formatter).to eq entry_formatter
+    end
+
+    it "can be set through the logger constructor" do
+      logger = Lumberjack::Logger.new(:test, entry_formatter: entry_formatter)
+      expect(logger.device.entry_formatter).to eq entry_formatter
+    end
+
+    it "is used to match unformatted values" do
+      logger = Lumberjack::Logger.new(:test, formatter: entry_formatter)
+      logger.device.entry_formatter = logger.formatter
+      logger.error(exception)
+
+      expect(logger.device.include?(message: exception)).to be true
+      expect(logger.device.match(attributes: {error: exception})).to eq logger.device.last_entry
+    end
+
+    it "can be overridden with a formatter argument on match methods" do
+      logger = Lumberjack::Logger.new(:test, formatter: entry_formatter)
+      logger.error(exception)
+
+      expect(logger.device.match(message: exception)).to be_nil
+      expect(logger.device.match(message: exception, formatter: entry_formatter)).to eq logger.device.last_entry
+    end
+  end
+
   describe "#closest_match" do
     let(:entry_1) { Lumberjack::LogEntry.new(Time.now, Logger::INFO, "User logged in successfully", nil, nil, {"user" => "alice"}) }
     let(:entry_2) { Lumberjack::LogEntry.new(Time.now, Logger::WARN, "User failed to login", nil, nil, {"component" => "database"}) }

@@ -76,6 +76,21 @@ RSpec.describe Lumberjack::Template do
       expect(template.call(entry_at(time_2))).to eq("14:23:45.20 message#{Lumberjack::LINE_SEPARATOR}")
     end
 
+    it "formats timestamps that are not Time objects" do
+      require "date"
+      template = Lumberjack::Template.new("{{time}} {{message}}")
+      date_time = DateTime.new(2011, 1, 15, 14, 23, 45, "+00:00")
+      expect(template.call(entry_at(date_time))).to eq("2011-01-15T14:23:45.000 message#{Lumberjack::LINE_SEPARATOR}")
+    end
+
+    it "does not cache timestamps that are not Time objects" do
+      require "date"
+      template = Lumberjack::Template.new("{{time}} {{message}}")
+      template.call(entry_at(DateTime.new(2011, 1, 15, 14, 23, 45, "+00:00")))
+      expect(template.instance_variable_get(:@time_cache)).to be_nil
+      expect(template.call(entry_at(DateTime.new(2011, 1, 15, 14, 23, 46, "+00:00")))).to eq("2011-01-15T14:23:46.000 message#{Lumberjack::LINE_SEPARATOR}")
+    end
+
     it "resets the cache when the datetime format is changed" do
       template = Lumberjack::Template.new("{{time}} {{message}}")
       time = Time.local(2011, 1, 15, 14, 23, 45, 123_400)

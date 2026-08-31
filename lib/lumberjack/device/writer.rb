@@ -55,7 +55,9 @@ module Lumberjack
     def initialize(stream, options = {})
       @stream = stream
       @autoflush = options[:autoflush] != false
-      @stream.sync = @autoflush if @stream.respond_to?(:sync=)
+      # Only turn sync on; the stream may be shared with other code (i.e. $stdout), so
+      # disabling autoflush must not change how anything else writing to it behaves.
+      @stream.sync = true if @autoflush && @stream.respond_to?(:sync=)
       @lock = Mutex.new
 
       @binmode = options[:binmode]
@@ -109,10 +111,10 @@ module Lumberjack
     #
     # @return [void]
     def close
-      @lock.synchronize do
-        flush_stream
-        stream.close
-      end
+      # Call the public flush so that subclasses that override it still get a chance to
+      # drain whatever they buffer. It must be called outside the lock since it takes it.
+      flush
+      @lock.synchronize { stream.close }
     end
 
     # Flush the underlying stream to ensure all buffered data is written to the
@@ -121,7 +123,9 @@ module Lumberjack
     #
     # @return [void]
     def flush
-      @lock.synchronize { flush_stream }
+      @lock.synchronize do
+        stream.flush if stream.respond_to?(:flush)
+      end
     end
 
     # Get the current datetime format from the template if supported. Returns the
@@ -178,7 +182,7 @@ module Lumberjack
     # @return [void]
     def stream=(value)
       @lock.synchronize do
-        value.sync = @autoflush if value.respond_to?(:sync=)
+        value.sync = true if @autoflush && value.respond_to?(:sync=)
         @stream = value
       end
     end
@@ -207,14 +211,6 @@ module Lumberjack
       rescue => e
         $stderr.write("#{error_message(e)}#{out}")
       end
-    end
-
-    # Flush the underlying stream without acquiring the lock. Callers are
-    # responsible for holding +@lock+ around this method.
-    #
-    # @return [void]
-    def flush_stream
-      stream.flush if stream.respond_to?(:flush)
     end
 
     # Generate a detailed error message for logging failures. This method creates
